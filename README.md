@@ -1,16 +1,16 @@
-# 🌟 Star Hopper Adventures 🐰
+# 🎯 AR Catcher - Gyroscope Motion Game 🌟
 
-A fun and engaging 3D platform puzzle game for kids aged 5+, built with React, Vite, and Three.js!
+An exciting AR-style catching game for kids that uses your phone's gyroscope to look around and catch flying objects in 3D space!
 
 ## 🎮 Game Features
 
-- **Cute 3D bunny character** that hops and collects stars
-- **Multiple levels** with increasing difficulty
-- **Puzzle elements** including color sequences and special blocks
-- **Responsive design** - works perfectly on 4-inch to 10-inch screens
-- **Touch controls** for mobile devices
-- **Keyboard support** for desktop play
-- **Beautiful 3D graphics** with clouds, sparkles, and colorful platforms
+- **📱 Gyroscope Controls** - Move your phone like a window to look around
+- **🎯 AR-Style Gameplay** - Objects fly towards you from all directions
+- **🔥 Combo System** - Build combos for multiplied points (up to 5x!)
+- **⚙️ Calibration System** - Adjust sensitivity and calibrate for comfortable play
+- **🌟 Dynamic Difficulty** - Speed increases as you score more points
+- **🎨 Beautiful 3D Graphics** - Colorful objects with particle effects
+- **🔊 Sound Effects** - Satisfying catch sounds and audio feedback
 
 ## 🚀 Getting Started
 
@@ -36,45 +36,56 @@ The built files will be in the `dist` folder.
 
 ## 🎯 How to Play
 
+### Setup
+1. **Start the game** - Click "Start Game!"
+2. **Calibrate controls** - Adjust sensitivity (1.5x default is recommended)
+3. **Hold phone upright** - Like looking through a window
+
+### Gameplay
+- **📱 Move your phone** to look around the 3D space
+- **🎯 Align objects** with the center circle to catch them
+- **🔥 Build combos** by catching multiple objects in a row
+- **⏰ Score points** before the 60-second timer runs out
+
 ### Controls
-
-**Desktop:**
-- **Arrow Keys** or **A/D**: Move left/right
-- **Space** or **W** or **Up Arrow**: Jump
-
-**Mobile/Touch:**
-- Use the **on-screen buttons** to move and jump
-
-### Objective
-
-- Collect all the stars in each level
-- Jump on colored blocks to solve puzzles
-- Reach new platforms to explore the world
-- Complete levels to unlock new challenges
+- **Gyroscope** (Primary): Tilt and rotate your phone to look around
+- **Touch/Mouse** (Fallback): Drag to look around if gyro unavailable
 
 ## 🌈 Game Elements
 
-### Platform Types
+### Objects
+- 15 different emoji objects (⭐ 🎈 🎁 💎 🍎 🍊 🍓 🌟 🏀 ⚽ etc.)
+- Each worth 10-30 base points
+- Colorful glowing effects
+- Particle trails as they fly
 
-1. **Static Platforms** (Green/Blue/Orange): Normal platforms to jump on
-2. **Moving Platforms** (Purple): Move back and forth
-3. **Bouncy Platforms** (Green): Give extra jump height
-4. **Disappearing Platforms** (Red): Vanish after stepping on them
-5. **Rotating Platforms** (Blue): Spin continuously
-
-### Puzzle Blocks
-
-- Jump on colored blocks in the correct sequence
-- Look for number hints to solve puzzles
-- Complete puzzles to unlock bonus stars
+### Scoring System
+- **Base Points**: 10, 20, or 30 per object
+- **Combo Multipliers**: 
+  - 2 catches = 2x points
+  - 3 catches = 3x points
+  - 4 catches = 4x points
+  - 5+ catches = 5x points
+- **Rankings**:
+  - 🏆 Master Catcher (200+ points)
+  - 🥈 Expert Catcher (150+ points)
+  - 🥉 Skilled Player (100+ points)
+  - ⭐ Good Try (50+ points)
+  - 🎯 Keep Practicing (< 50 points)
 
 ## 📱 Mobile Optimization
 
-The game is fully optimized for mobile devices:
-- Responsive UI that adapts to screen size
-- Large, easy-to-tap controls for small fingers
-- Smooth performance on mobile browsers
-- Works in both portrait and landscape orientations
+### Gyroscope Support
+- **iOS**: Automatic permission request for iOS 13+
+- **Android**: Works automatically
+- **Sensitivity Settings**: Adjustable from 0.5x to 3.0x
+- **Calibration**: Set your comfortable holding position
+
+### Performance
+- Optimized for 60 FPS gameplay
+- Responsive design for all screen sizes
+- Works in portrait and landscape modes
+- High contrast mode for outdoor play
 
 ## 🛠️ Technical Stack
 
@@ -87,35 +98,74 @@ The game is fully optimized for mobile devices:
 
 ## 🎨 Features for Kids
 
-- Bright, colorful graphics
-- Simple, intuitive controls
-- Forgiving gameplay (can't fall off the world)
-- Encouraging messages and rewards
-- Safe, ad-free environment
-- No in-app purchases or external links
+- **Simple Controls** - Just move your phone to play
+- **Instant Feedback** - Visual and audio rewards
+- **No Penalties** - Missing objects just resets combo
+- **Encouraging Messages** - Positive reinforcement
+- **Safe Environment** - No ads or external links
+- **Age Appropriate** - Perfect for ages 5+
 
 ## 🔧 Development
 
 ### Project Structure
 
 ```
-star-hopper-game/
+ar-catcher-game/
 ├── src/
 │   ├── components/
-│   │   ├── Game.jsx         # Main game logic
-│   │   ├── Player.jsx       # Bunny character
-│   │   ├── Platform.jsx     # Platform types
-│   │   ├── Star.jsx         # Collectible stars
-│   │   ├── PuzzleBlock.jsx  # Puzzle elements
-│   │   ├── Cloud.jsx        # Decorative clouds
-│   │   └── UI components... # Menus and HUD
-│   ├── App.jsx              # Main app component
-│   ├── App.css              # Styles
-│   └── main.jsx             # Entry point
+│   │   ├── FlyingObject.jsx    # Objects that fly towards player
+│   │   ├── Catcher.jsx          # Center catching ring
+│   │   ├── GyroCamera.jsx       # Gyroscope camera controls
+│   │   ├── CalibrationScreen.jsx # Sensitivity setup
+│   │   ├── GameUI.jsx           # Score and timer display
+│   │   ├── StartScreen.jsx      # Welcome screen
+│   │   ├── GameOver.jsx         # End game screen
+│   │   └── ARBackground.jsx     # 3D environment
+│   ├── App.jsx                  # Main game logic
+│   ├── App.css                  # Styles
+│   └── main.jsx                 # Entry point
 ├── index.html
-└── package.json
+├── package.json
+└── vercel.json                  # Deployment config
 ```
+
+### Customization
+
+#### Adjust Difficulty
+Edit spawn rates and speeds in `App.jsx`:
+```javascript
+const spawnInterval = Math.max(1000, 2000 - score * 5); // Spawn rate
+speed: 3 + Math.random() * 2 // Object speed
+```
+
+#### Change Objects
+Modify the types array in `App.jsx`:
+```javascript
+const types = ['⭐', '🎈', '🎁', '💎', '🍎', ...];
+```
+
+#### Sensitivity Defaults
+Change default sensitivity in `CalibrationScreen.jsx`:
+```javascript
+const [sensitivity, setSensitivity] = useState(1.5); // Default 1.5x
+```
+
+## 🚀 Deployment
+
+### Vercel
+The project includes a `vercel.json` configuration file for easy deployment:
+```json
+{
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
+}
+```
+
+Simply connect your GitHub repository to Vercel for automatic deployments.
 
 ## 🎉 Have Fun!
 
-This game is designed to be fun, educational, and safe for young children. Enjoy playing Star Hopper Adventures!
+This game provides an engaging AR-like experience that encourages physical movement and hand-eye coordination. Perfect for kids who love interactive, motion-based games!
+
+Enjoy catching those flying objects! 🎯🌟📱

@@ -2,70 +2,69 @@ import React, { useEffect, useRef } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
-const GyroCamera = ({ onGyroUpdate, gyroPermission, setGyroPermission }) => {
+const GyroCamera = ({ onGyroUpdate, gyroPermission, setGyroPermission, sensitivity = 1.5, calibrationOffset = { x: 0, y: 0, z: 0 } }) => {
   const { camera } = useThree();
   const targetRotation = useRef({ x: 0, y: 0, z: 0 });
   const currentRotation = useRef({ x: 0, y: 0, z: 0 });
   const initialOrientation = useRef(null);
+  const lastOrientation = useRef({ alpha: 0, beta: 0, gamma: 0 });
   
   useEffect(() => {
     // Check if gyroscope is available
     if (window.DeviceOrientationEvent) {
-      // Check if permission is needed (iOS 13+)
-      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission()
-          .then(response => {
-            if (response === 'granted') {
-              setGyroPermission(true);
-              setupGyroscope();
-            }
-          })
-          .catch(console.error);
-      } else {
-        // Android and older iOS
-        setGyroPermission(true);
-        setupGyroscope();
-      }
+      setupGyroscope();
+    } else {
+      // Fallback to mouse/touch controls
+      setupMouseControls();
     }
     
     function setupGyroscope() {
       const handleOrientation = (event) => {
         const { alpha, beta, gamma } = event;
         
+        // Skip if no real data
+        if (alpha === null && beta === null && gamma === null) return;
+        
         // Store initial orientation
         if (!initialOrientation.current) {
-          initialOrientation.current = { alpha, beta, gamma };
+          initialOrientation.current = { 
+            alpha: alpha || 0, 
+            beta: beta || 0, 
+            gamma: gamma || 0 
+          };
         }
         
-        // Calculate relative rotation from initial position
-        const relativeAlpha = alpha - initialOrientation.current.alpha;
-        const relativeBeta = beta - initialOrientation.current.beta;
-        const relativeGamma = gamma - initialOrientation.current.gamma;
+        // Calculate relative rotation from initial position with calibration offset
+        const relativeAlpha = (alpha || 0) - initialOrientation.current.alpha;
+        const relativeBeta = (beta || 0) - initialOrientation.current.beta - calibrationOffset.x;
+        const relativeGamma = (gamma || 0) - initialOrientation.current.gamma - calibrationOffset.y;
         
-        // Convert to camera rotation
-        // Beta: pitch (x-axis) - phone tilt forward/backward
-        // Gamma: roll (z-axis) - phone tilt left/right
-        // Alpha: yaw (y-axis) - phone rotation
+        // Apply sensitivity and convert to camera rotation
+        // Increased base multipliers for more responsive movement
         targetRotation.current = {
-          x: THREE.MathUtils.clamp((relativeBeta - 45) * 0.5, -45, 45),
-          y: THREE.MathUtils.clamp(relativeGamma * 0.8, -60, 60),
+          x: THREE.MathUtils.clamp(relativeBeta * sensitivity, -90, 90),
+          y: THREE.MathUtils.clamp(relativeGamma * sensitivity * 1.5, -120, 120), // More horizontal range
           z: 0
         };
         
+        lastOrientation.current = { alpha, beta, gamma };
         onGyroUpdate(targetRotation.current);
       };
       
-      // Also handle device motion for smoother experience
+      // Also handle device motion for additional responsiveness
       const handleMotion = (event) => {
-        if (event.rotationRate) {
+        if (event.rotationRate && event.rotationRate.beta !== null) {
           const { alpha, beta, gamma } = event.rotationRate;
-          // Use rotation rate for smoother updates
-          targetRotation.current.x += beta * 0.01;
-          targetRotation.current.y += gamma * 0.01;
           
-          // Clamp values
-          targetRotation.current.x = THREE.MathUtils.clamp(targetRotation.current.x, -45, 45);
-          targetRotation.current.y = THREE.MathUtils.clamp(targetRotation.current.y, -60, 60);
+          // Add rotation rate to current rotation for more responsive feel
+          if (Math.abs(beta) > 0.5 || Math.abs(gamma) > 0.5) {
+            targetRotation.current.x += beta * sensitivity * 0.5;
+            targetRotation.current.y += gamma * sensitivity * 0.5;
+            
+            // Clamp values
+            targetRotation.current.x = THREE.MathUtils.clamp(targetRotation.current.x, -90, 90);
+            targetRotation.current.y = THREE.MathUtils.clamp(targetRotation.current.y, -120, 120);
+          }
         }
       };
       
@@ -78,8 +77,7 @@ const GyroCamera = ({ onGyroUpdate, gyroPermission, setGyroPermission }) => {
       };
     }
     
-    // Fallback to mouse/touch controls if gyro not available
-    if (!window.DeviceOrientationEvent) {
+    function setupMouseControls() {
       let mouseX = 0;
       let mouseY = 0;
       
@@ -88,8 +86,8 @@ const GyroCamera = ({ onGyroUpdate, gyroPermission, setGyroPermission }) => {
         mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
         
         targetRotation.current = {
-          x: mouseY * 45,
-          y: mouseX * 60,
+          x: mouseY * 60 * sensitivity,
+          y: mouseX * 90 * sensitivity,
           z: 0
         };
         
@@ -103,8 +101,8 @@ const GyroCamera = ({ onGyroUpdate, gyroPermission, setGyroPermission }) => {
           mouseY = -(touch.clientY / window.innerHeight) * 2 + 1;
           
           targetRotation.current = {
-            x: mouseY * 45,
-            y: mouseX * 60,
+            x: mouseY * 60 * sensitivity,
+            y: mouseX * 90 * sensitivity,
             z: 0
           };
           
@@ -113,26 +111,26 @@ const GyroCamera = ({ onGyroUpdate, gyroPermission, setGyroPermission }) => {
       };
       
       window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('touchmove', handleTouchMove);
+      window.addEventListener('touchmove', handleTouchMove, { passive: false });
       
       return () => {
         window.removeEventListener('mousemove', handleMouseMove);
         window.removeEventListener('touchmove', handleTouchMove);
       };
     }
-  }, [onGyroUpdate, setGyroPermission]);
+  }, [onGyroUpdate, setGyroPermission, sensitivity, calibrationOffset]);
   
   useFrame(() => {
-    // Smooth camera rotation
+    // Smooth camera rotation with faster lerp for more responsiveness
     currentRotation.current.x = THREE.MathUtils.lerp(
       currentRotation.current.x,
       targetRotation.current.x,
-      0.1
+      0.15 // Increased from 0.1 for faster response
     );
     currentRotation.current.y = THREE.MathUtils.lerp(
       currentRotation.current.y,
       targetRotation.current.y,
-      0.1
+      0.15
     );
     
     // Apply rotation to camera

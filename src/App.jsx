@@ -9,6 +9,7 @@ import GyroCamera from './components/GyroCamera';
 import GameOver from './components/GameOver';
 import StartScreen from './components/StartScreen';
 import ARBackground from './components/ARBackground';
+import CalibrationScreen from './components/CalibrationScreen';
 
 // Initialize sounds
 const sounds = {
@@ -34,13 +35,16 @@ function App() {
   const [timeLeft, setTimeLeft] = useState(60);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+  const [showCalibration, setShowCalibration] = useState(false);
   const [flyingObjects, setFlyingObjects] = useState([]);
   const [combo, setCombo] = useState(0);
   const [showCombo, setShowCombo] = useState(false);
   const [cameraRotation, setCameraRotation] = useState({ x: 0, y: 0, z: 0 });
   const [gyroPermission, setGyroPermission] = useState(false);
+  const [gyroSensitivity, setGyroSensitivity] = useState(1.5); // Default higher sensitivity
   const [showInstructions, setShowInstructions] = useState(true);
   const [catcherGlow, setCatcherGlow] = useState(false);
+  const [calibrationOffset, setCalibrationOffset] = useState({ x: 0, y: 0, z: 0 });
   
   const nextObjectId = useRef(0);
   const spawnTimer = useRef(null);
@@ -49,13 +53,13 @@ function App() {
   useEffect(() => {
     if (gameStarted && !gameOver) {
       const spawnObject = () => {
-        const types = ['⭐', '🎈', '🎁', '💎', '🍎', '🍊', '🍓', '🌟', '🏀', '⚽'];
+        const types = ['⭐', '🎈', '🎁', '💎', '🍎', '🍊', '🍓', '🌟', '🏀', '⚽', '🎯', '🎪', '🎭', '🎸', '🎨'];
         const colors = ['#FFD700', '#FF69B4', '#00CED1', '#FF6347', '#32CD32', '#FF8C00', '#9370DB', '#FF1493', '#4169E1', '#FFB6C1'];
         
         // Spawn from random positions around the player
         const angle = Math.random() * Math.PI * 2;
         const distance = 15 + Math.random() * 10;
-        const height = Math.random() * 10 - 5;
+        const height = (Math.random() - 0.5) * 15; // More vertical spread
         
         const newObject = {
           id: nextObjectId.current++,
@@ -67,7 +71,7 @@ function App() {
           type: types[Math.floor(Math.random() * types.length)],
           color: colors[Math.floor(Math.random() * colors.length)],
           points: Math.floor(Math.random() * 3 + 1) * 10,
-          speed: 3 + Math.random() * 2,
+          speed: 3 + Math.random() * 2 + Math.min(score / 100, 3), // Speed increases with score
           caught: false
         };
         
@@ -75,14 +79,15 @@ function App() {
         sounds.whoosh.play();
       };
       
-      // Spawn objects at intervals
-      spawnTimer.current = setInterval(spawnObject, 2000);
+      // Spawn objects at intervals (faster as game progresses)
+      const spawnInterval = Math.max(1000, 2000 - score * 5);
+      spawnTimer.current = setInterval(spawnObject, spawnInterval);
       
       return () => {
         if (spawnTimer.current) clearInterval(spawnTimer.current);
       };
     }
-  }, [gameStarted, gameOver]);
+  }, [gameStarted, gameOver, score]);
 
   // Game timer
   useEffect(() => {
@@ -104,6 +109,13 @@ function App() {
   }, [gameStarted, showInstructions]);
 
   const handleStartGame = () => {
+    setShowCalibration(true);
+  };
+
+  const handleCalibrationComplete = (offset, sensitivity) => {
+    setCalibrationOffset(offset);
+    setGyroSensitivity(sensitivity);
+    setShowCalibration(false);
     setGameStarted(true);
     setScore(0);
     setTimeLeft(60);
@@ -165,10 +177,15 @@ function App() {
 
   return (
     <div className="game-container ar-mode">
-      {!gameStarted ? (
+      {!gameStarted && !showCalibration ? (
         <StartScreen 
           onStart={handleStartGame}
           gyroPermission={gyroPermission}
+          setGyroPermission={setGyroPermission}
+        />
+      ) : showCalibration ? (
+        <CalibrationScreen 
+          onComplete={handleCalibrationComplete}
           setGyroPermission={setGyroPermission}
         />
       ) : (
@@ -207,6 +224,8 @@ function App() {
               onGyroUpdate={handleGyroUpdate}
               gyroPermission={gyroPermission}
               setGyroPermission={setGyroPermission}
+              sensitivity={gyroSensitivity}
+              calibrationOffset={calibrationOffset}
             />
             
             <Catcher 
