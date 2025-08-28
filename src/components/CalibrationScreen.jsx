@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 
 const CalibrationScreen = ({ onComplete, setGyroPermission }) => {
-  const [sensitivity, setSensitivity] = useState(1.5);
+  const [sensitivity, setSensitivity] = useState(1.2); // Slightly lower default for smoother movement
+  const [smoothing, setSmoothing] = useState('medium');
   const [isCalibrating, setIsCalibrating] = useState(false);
   const [calibrationStep, setCalibrationStep] = useState(0);
   const [baseOrientation, setBaseOrientation] = useState(null);
+  const [testMode, setTestMode] = useState(false);
+  const [testRotation, setTestRotation] = useState({ x: 0, y: 0 });
   
   useEffect(() => {
     // Request gyro permission on mount
@@ -43,7 +46,15 @@ const CalibrationScreen = ({ onComplete, setGyroPermission }) => {
         setTimeout(() => {
           setCalibrationStep(2);
           setTimeout(() => {
-            onComplete(baseOrientation || { x: 0, y: 0, z: 0 }, sensitivity);
+            // Apply smoothing preset to sensitivity
+            let finalSensitivity = sensitivity;
+            if (smoothing === 'high') {
+              finalSensitivity *= 0.7; // Reduce sensitivity for smoother movement
+            } else if (smoothing === 'low') {
+              finalSensitivity *= 1.3; // Increase for more responsive movement
+            }
+            
+            onComplete(baseOrientation || { x: 0, y: 0, z: 0 }, finalSensitivity);
           }, 1500);
         }, 2000);
       }
@@ -54,6 +65,30 @@ const CalibrationScreen = ({ onComplete, setGyroPermission }) => {
   
   const handleSensitivityChange = (e) => {
     setSensitivity(parseFloat(e.target.value));
+  };
+  
+  const handleSmoothingChange = (level) => {
+    setSmoothing(level);
+  };
+  
+  const startTestMode = () => {
+    setTestMode(true);
+    
+    const handleTestOrientation = (event) => {
+      if (event.beta !== null && event.gamma !== null) {
+        setTestRotation({
+          x: event.beta - 45,
+          y: event.gamma
+        });
+      }
+    };
+    
+    window.addEventListener('deviceorientation', handleTestOrientation);
+    
+    setTimeout(() => {
+      window.removeEventListener('deviceorientation', handleTestOrientation);
+      setTestMode(false);
+    }, 5000);
   };
   
   const skipCalibration = () => {
@@ -68,44 +103,90 @@ const CalibrationScreen = ({ onComplete, setGyroPermission }) => {
             <h1 className="calibration-title">📱 Setup Controls</h1>
             
             <div className="sensitivity-control">
-              <label>Gyroscope Sensitivity</label>
+              <label>Movement Speed</label>
               <div className="slider-container">
-                <span>Slow</span>
+                <span>🐌</span>
                 <input 
                   type="range" 
                   min="0.5" 
-                  max="3" 
+                  max="2.5" 
                   step="0.1" 
                   value={sensitivity}
                   onChange={handleSensitivityChange}
                   className="sensitivity-slider"
                 />
-                <span>Fast</span>
+                <span>🚀</span>
               </div>
               <div className="sensitivity-value">
                 {sensitivity.toFixed(1)}x
               </div>
             </div>
             
-            <div className="calibration-instructions">
-              <h3>How to hold your phone:</h3>
-              <div className="instruction-item">
-                📱 Hold your phone upright (portrait mode)
-              </div>
-              <div className="instruction-item">
-                👀 Like looking through a window
-              </div>
-              <div className="instruction-item">
-                🎯 Move phone to look around
+            <div className="smoothing-control">
+              <label>Motion Smoothing</label>
+              <div className="smoothing-buttons">
+                <button 
+                  className={`smoothing-btn ${smoothing === 'low' ? 'active' : ''}`}
+                  onClick={() => handleSmoothingChange('low')}
+                >
+                  Low
+                  <span>Responsive</span>
+                </button>
+                <button 
+                  className={`smoothing-btn ${smoothing === 'medium' ? 'active' : ''}`}
+                  onClick={() => handleSmoothingChange('medium')}
+                >
+                  Medium
+                  <span>Balanced</span>
+                </button>
+                <button 
+                  className={`smoothing-btn ${smoothing === 'high' ? 'active' : ''}`}
+                  onClick={() => handleSmoothingChange('high')}
+                >
+                  High
+                  <span>Very Smooth</span>
+                </button>
               </div>
             </div>
             
-            <button className="calibrate-button" onClick={startCalibration}>
-              Start Calibration 🎯
-            </button>
+            {testMode && (
+              <div className="test-indicator">
+                <div className="test-box">
+                  <div 
+                    className="test-dot"
+                    style={{
+                      transform: `translate(${testRotation.y * 2}px, ${testRotation.x}px)`
+                    }}
+                  />
+                </div>
+                <p>Testing gyroscope...</p>
+              </div>
+            )}
+            
+            <div className="calibration-instructions">
+              <h3>Tips for best experience:</h3>
+              <div className="instruction-item">
+                📱 Hold phone upright comfortably
+              </div>
+              <div className="instruction-item">
+                🎯 Start with Medium smoothing
+              </div>
+              <div className="instruction-item">
+                ⚡ Reduce speed if movement feels too fast
+              </div>
+            </div>
+            
+            <div className="button-group">
+              <button className="test-button" onClick={startTestMode} disabled={testMode}>
+                {testMode ? 'Testing...' : 'Test Gyro 🔄'}
+              </button>
+              <button className="calibrate-button" onClick={startCalibration}>
+                Start Game 🎮
+              </button>
+            </div>
             
             <button className="skip-button" onClick={skipCalibration}>
-              Skip & Use Defaults →
+              Quick Start (Use Defaults) →
             </button>
           </>
         ) : (
@@ -123,8 +204,8 @@ const CalibrationScreen = ({ onComplete, setGyroPermission }) => {
             {calibrationStep === 2 && (
               <>
                 <div className="calibration-icon">✅</div>
-                <h2>Calibration Complete!</h2>
-                <p>Starting game...</p>
+                <h2>Ready to Play!</h2>
+                <p>Starting game with {smoothing} smoothing...</p>
               </>
             )}
           </div>
