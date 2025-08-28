@@ -1,7 +1,7 @@
 {
-  "name": "robot-arm-game",
+  "name": "ar-catcher-game",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -28,5 +28,9 @@
     "eslint-plugin-react-refresh": "^0.4.16",
     "globals": "^15.14.0",
     "vite": "^6.0.7"
-  }
+  },
+  "description": "AR-style catching game using phone gyroscope",
+  "keywords": ["game", "ar", "gyroscope", "3d", "react", "threejs"],
+  "author": "",
+  "license": "MIT"
 }
