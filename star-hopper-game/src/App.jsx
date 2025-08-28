@@ -1,29 +1,31 @@
 import { useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, Sky, Stars } from '@react-three/drei';
 import { Howl } from 'howler';
 import './App.css';
-import RobotArm from './components/RobotArm';
-import Prize from './components/Prize';
+import FlyingObject from './components/FlyingObject';
+import Catcher from './components/Catcher';
 import GameUI from './components/GameUI';
-import GyroControls from './components/GyroControls';
+import GyroCamera from './components/GyroCamera';
 import GameOver from './components/GameOver';
+import StartScreen from './components/StartScreen';
+import ARBackground from './components/ARBackground';
 
 // Initialize sounds
 const sounds = {
-  grab: new Howl({ 
-    src: ['data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE'], 
-    volume: 0.4 
-  }),
-  collect: new Howl({ 
+  catch: new Howl({ 
     src: ['data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE'], 
     volume: 0.5,
     rate: 2
   }),
-  move: new Howl({ 
+  miss: new Howl({ 
+    src: ['data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE'], 
+    volume: 0.3,
+    rate: 0.5
+  }),
+  whoosh: new Howl({ 
     src: ['data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE'], 
     volume: 0.2,
-    rate: 0.5
+    rate: 0.8
   })
 };
 
@@ -32,38 +34,55 @@ function App() {
   const [timeLeft, setTimeLeft] = useState(60);
   const [gameStarted, setGameStarted] = useState(false);
   const [gameOver, setGameOver] = useState(false);
-  const [isGrabbing, setIsGrabbing] = useState(false);
-  const [armRotation, setArmRotation] = useState({ x: 0, y: 0, z: 0 });
-  const [clawOpen, setClawOpen] = useState(true);
-  const [prizes, setPrizes] = useState([]);
-  const [showCollected, setShowCollected] = useState(false);
-  const [collectedPrize, setCollectedPrize] = useState(null);
+  const [flyingObjects, setFlyingObjects] = useState([]);
+  const [combo, setCombo] = useState(0);
+  const [showCombo, setShowCombo] = useState(false);
+  const [cameraRotation, setCameraRotation] = useState({ x: 0, y: 0, z: 0 });
   const [gyroPermission, setGyroPermission] = useState(false);
-  const [gyroSupported, setGyroSupported] = useState(false);
   const [showInstructions, setShowInstructions] = useState(true);
+  const [catcherGlow, setCatcherGlow] = useState(false);
   
-  const armRef = useRef();
+  const nextObjectId = useRef(0);
+  const spawnTimer = useRef(null);
 
-  // Initialize prizes
+  // Spawn flying objects
   useEffect(() => {
-    const initialPrizes = [];
-    const prizeTypes = ['🎁', '🧸', '🎮', '🏀', '⚽', '🎨', '🎯', '🎪', '🎭', '🎸'];
-    
-    for (let i = 0; i < 10; i++) {
-      initialPrizes.push({
-        id: i,
-        position: [
-          (Math.random() - 0.5) * 8,
-          0.5,
-          (Math.random() - 0.5) * 8
-        ],
-        type: prizeTypes[i],
-        collected: false,
-        points: Math.floor(Math.random() * 3 + 1) * 10
-      });
+    if (gameStarted && !gameOver) {
+      const spawnObject = () => {
+        const types = ['⭐', '🎈', '🎁', '💎', '🍎', '🍊', '🍓', '🌟', '🏀', '⚽'];
+        const colors = ['#FFD700', '#FF69B4', '#00CED1', '#FF6347', '#32CD32', '#FF8C00', '#9370DB', '#FF1493', '#4169E1', '#FFB6C1'];
+        
+        // Spawn from random positions around the player
+        const angle = Math.random() * Math.PI * 2;
+        const distance = 15 + Math.random() * 10;
+        const height = Math.random() * 10 - 5;
+        
+        const newObject = {
+          id: nextObjectId.current++,
+          position: [
+            Math.cos(angle) * distance,
+            height,
+            Math.sin(angle) * distance
+          ],
+          type: types[Math.floor(Math.random() * types.length)],
+          color: colors[Math.floor(Math.random() * colors.length)],
+          points: Math.floor(Math.random() * 3 + 1) * 10,
+          speed: 3 + Math.random() * 2,
+          caught: false
+        };
+        
+        setFlyingObjects(prev => [...prev, newObject]);
+        sounds.whoosh.play();
+      };
+      
+      // Spawn objects at intervals
+      spawnTimer.current = setInterval(spawnObject, 2000);
+      
+      return () => {
+        if (spawnTimer.current) clearInterval(spawnTimer.current);
+      };
     }
-    setPrizes(initialPrizes);
-  }, []);
+  }, [gameStarted, gameOver]);
 
   // Game timer
   useEffect(() => {
@@ -77,88 +96,62 @@ function App() {
     }
   }, [timeLeft, gameStarted, gameOver]);
 
-  // Hide instructions after a few seconds
+  // Hide instructions
   useEffect(() => {
-    if (gameStarted) {
+    if (gameStarted && showInstructions) {
       setTimeout(() => setShowInstructions(false), 5000);
     }
-  }, [gameStarted]);
+  }, [gameStarted, showInstructions]);
 
   const handleStartGame = () => {
     setGameStarted(true);
     setScore(0);
     setTimeLeft(60);
     setGameOver(false);
+    setFlyingObjects([]);
+    setCombo(0);
     setShowInstructions(true);
   };
 
-  const handleGrab = () => {
-    if (!isGrabbing) {
-      setIsGrabbing(true);
-      setClawOpen(false);
-      sounds.grab.play();
+  const handleCatch = (objectId) => {
+    const object = flyingObjects.find(o => o.id === objectId);
+    if (object && !object.caught) {
+      // Mark as caught
+      setFlyingObjects(prev => prev.map(o => 
+        o.id === objectId ? { ...o, caught: true } : o
+      ));
       
-      // Check for prize collection
-      if (armRef.current) {
-        const armPos = armRef.current.getClawPosition();
-        prizes.forEach(prize => {
-          if (!prize.collected) {
-            const distance = Math.sqrt(
-              Math.pow(armPos[0] - prize.position[0], 2) +
-              Math.pow(armPos[2] - prize.position[2], 2)
-            );
-            
-            if (distance < 1.5) {
-              // Collect the prize
-              setPrizes(prev => prev.map(p => 
-                p.id === prize.id ? { ...p, collected: true } : p
-              ));
-              setScore(prev => prev + prize.points);
-              setCollectedPrize(prize);
-              setShowCollected(true);
-              sounds.collect.play();
-              
-              setTimeout(() => {
-                setShowCollected(false);
-                setCollectedPrize(null);
-              }, 1000);
-            }
-          }
-        });
-      }
+      // Update score with combo multiplier
+      const comboMultiplier = Math.min(combo + 1, 5);
+      const points = object.points * comboMultiplier;
+      setScore(prev => prev + points);
       
-      // Release after 1 second
-      setTimeout(() => {
-        setIsGrabbing(false);
-        setClawOpen(true);
-      }, 1000);
+      // Update combo
+      setCombo(prev => prev + 1);
+      setShowCombo(true);
+      setTimeout(() => setShowCombo(false), 1000);
+      
+      // Visual feedback
+      setCatcherGlow(true);
+      setTimeout(() => setCatcherGlow(false), 300);
+      
+      sounds.catch.play();
     }
+  };
+
+  const handleMiss = (objectId) => {
+    // Reset combo on miss
+    if (combo > 0) {
+      setCombo(0);
+      sounds.miss.play();
+    }
+    
+    // Remove missed object
+    setFlyingObjects(prev => prev.filter(o => o.id !== objectId));
   };
 
   const handleGyroUpdate = (rotation) => {
-    setArmRotation(rotation);
-    if (Math.abs(rotation.x) > 5 || Math.abs(rotation.y) > 5) {
-      sounds.move.play();
-    }
-  };
-
-  const handleManualControl = (direction) => {
-    const speed = 15;
-    switch(direction) {
-      case 'up':
-        setArmRotation(prev => ({ ...prev, x: Math.min(prev.x + speed, 45) }));
-        break;
-      case 'down':
-        setArmRotation(prev => ({ ...prev, x: Math.max(prev.x - speed, -45) }));
-        break;
-      case 'left':
-        setArmRotation(prev => ({ ...prev, y: Math.min(prev.y + speed, 45) }));
-        break;
-      case 'right':
-        setArmRotation(prev => ({ ...prev, y: Math.max(prev.y - speed, -45) }));
-        break;
-    }
-    sounds.move.play();
+    setCameraRotation(rotation);
   };
 
   const handlePlayAgain = () => {
@@ -166,42 +159,33 @@ function App() {
     setGameOver(false);
     setScore(0);
     setTimeLeft(60);
-    
-    // Reset prizes
-    setPrizes(prev => prev.map(p => ({ ...p, collected: false })));
+    setFlyingObjects([]);
+    setCombo(0);
   };
 
   return (
-    <div className="game-container">
+    <div className="game-container ar-mode">
       {!gameStarted ? (
-        <div className="permission-modal">
-          <div className="permission-content">
-            <h1 className="permission-title">🤖 Robot Arm Claw Game 🎮</h1>
-            <p className="permission-text">
-              Control the robot arm to grab prizes!<br/>
-              Use your phone's gyroscope or on-screen controls.
-            </p>
-            <button className="permission-button" onClick={handleStartGame}>
-              Start Game!
-            </button>
-          </div>
-        </div>
+        <StartScreen 
+          onStart={handleStartGame}
+          gyroPermission={gyroPermission}
+          setGyroPermission={setGyroPermission}
+        />
       ) : (
         <>
-          <GameUI score={score} timeLeft={timeLeft} />
+          <GameUI 
+            score={score} 
+            timeLeft={timeLeft} 
+            combo={combo}
+            showCombo={showCombo}
+          />
           
           {showInstructions && (
-            <div className="instructions">
-              <h3>How to Play</h3>
-              <p>📱 Tilt your phone to move the arm<br/>
-              🎯 Press GRAB to catch prizes<br/>
-              ⏰ Collect as many as you can!</p>
-            </div>
-          )}
-          
-          {showCollected && collectedPrize && (
-            <div className="prize-collected">
-              +{collectedPrize.points} {collectedPrize.type}
+            <div className="instructions ar-instructions">
+              <h3>🎯 Catch 'Em All!</h3>
+              <p>📱 Move your phone to look around<br/>
+              🎯 Align objects with the circle to catch<br/>
+              🔥 Build combos for more points!</p>
             </div>
           )}
           
@@ -210,87 +194,36 @@ function App() {
           )}
           
           <Canvas 
-            camera={{ position: [0, 8, 12], fov: 60 }}
-            shadows
+            camera={{ position: [0, 0, 0], fov: 75 }}
+            className="ar-canvas"
           >
-            <Sky sunPosition={[100, 20, 100]} />
-            <Stars radius={100} depth={50} count={1000} factor={4} saturation={0} fade />
+            <ARBackground />
             
-            <ambientLight intensity={0.4} />
-            <directionalLight 
-              position={[10, 10, 5]} 
-              intensity={1} 
-              castShadow
-              shadow-mapSize={[2048, 2048]}
-            />
-            <pointLight position={[-10, 10, -10]} intensity={0.5} />
-            <spotLight
-              position={[0, 10, 0]}
-              angle={0.5}
-              penumbra={0.5}
-              intensity={0.5}
-              castShadow
+            <ambientLight intensity={0.6} />
+            <directionalLight position={[10, 10, 5]} intensity={0.5} />
+            <pointLight position={[0, 0, 0]} intensity={0.5} />
+            
+            <GyroCamera 
+              onGyroUpdate={handleGyroUpdate}
+              gyroPermission={gyroPermission}
+              setGyroPermission={setGyroPermission}
             />
             
-            <RobotArm 
-              ref={armRef}
-              rotation={armRotation}
-              clawOpen={clawOpen}
-              isGrabbing={isGrabbing}
+            <Catcher 
+              glowing={catcherGlow}
+              combo={combo}
             />
             
-            {/* Prizes */}
-            {prizes.map(prize => (
-              <Prize
-                key={prize.id}
-                position={prize.position}
-                type={prize.type}
-                collected={prize.collected}
-                points={prize.points}
+            {flyingObjects.map(object => (
+              <FlyingObject
+                key={object.id}
+                {...object}
+                onCatch={() => handleCatch(object.id)}
+                onMiss={() => handleMiss(object.id)}
+                cameraRotation={cameraRotation}
               />
             ))}
-            
-            {/* Ground */}
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
-              <planeGeometry args={[20, 20]} />
-              <meshStandardMaterial color="#8B4513" />
-            </mesh>
-            
-            {/* Game area boundaries */}
-            <mesh position={[0, 0.5, -10]} castShadow>
-              <boxGeometry args={[20, 2, 0.5]} />
-              <meshStandardMaterial color="#654321" />
-            </mesh>
-            <mesh position={[0, 0.5, 10]} castShadow>
-              <boxGeometry args={[20, 2, 0.5]} />
-              <meshStandardMaterial color="#654321" />
-            </mesh>
-            <mesh position={[-10, 0.5, 0]} castShadow>
-              <boxGeometry args={[0.5, 2, 20]} />
-              <meshStandardMaterial color="#654321" />
-            </mesh>
-            <mesh position={[10, 0.5, 0]} castShadow>
-              <boxGeometry args={[0.5, 2, 20]} />
-              <meshStandardMaterial color="#654321" />
-            </mesh>
-            
-            <OrbitControls 
-              enablePan={false}
-              enableZoom={false}
-              enableRotate={false}
-            />
           </Canvas>
-          
-          <GyroControls 
-            onGyroUpdate={handleGyroUpdate}
-            onManualControl={handleManualControl}
-            onGrab={handleGrab}
-            isGrabbing={isGrabbing}
-            gyroPermission={gyroPermission}
-            setGyroPermission={setGyroPermission}
-            gyroSupported={gyroSupported}
-            setGyroSupported={setGyroSupported}
-          />
         </>
       )}
     </div>
