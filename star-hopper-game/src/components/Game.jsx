@@ -168,8 +168,6 @@ const Game = forwardRef(({ level, onCollectStar, onSolvePuzzle, isMovingLeft, is
   
   // Physics and collision detection
   useFrame((state, delta) => {
-    if (!playerRef.current) return;
-    
     const speed = 5;
     const gravity = -20;
     const maxVelocity = 10;
