@@ -445,6 +445,117 @@ body {
   margin-top: 10px;
 }
 
+.smoothing-control {
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+}
+
+.smoothing-control label {
+  display: block;
+  font-size: clamp(16px, 3vw, 20px);
+  margin-bottom: 15px;
+  font-weight: bold;
+}
+
+.smoothing-buttons {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+}
+
+.smoothing-btn {
+  flex: 1;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid transparent;
+  border-radius: 10px;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: clamp(14px, 2.5vw, 16px);
+  font-weight: bold;
+}
+
+.smoothing-btn span {
+  font-size: clamp(10px, 2vw, 12px);
+  opacity: 0.8;
+  margin-top: 4px;
+  font-weight: normal;
+}
+
+.smoothing-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.smoothing-btn.active {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  border-color: #00f2fe;
+  transform: scale(1.05);
+}
+
+.test-indicator {
+  margin: 20px 0;
+  padding: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+}
+
+.test-box {
+  width: 100px;
+  height: 100px;
+  margin: 0 auto 10px;
+  background: rgba(255, 255, 255, 0.2);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.test-dot {
+  width: 20px;
+  height: 20px;
+  background: #FFD700;
+  border-radius: 50%;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: -10px 0 0 -10px;
+  transition: transform 0.1s ease-out;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+.button-group {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.test-button {
+  padding: 12px 25px;
+  font-size: clamp(14px, 3vw, 18px);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.test-button:hover:not(:disabled) {
+  transform: scale(1.05);
+}
+
+.test-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .calibration-instructions {
   margin: 30px 0;
   text-align: left;
