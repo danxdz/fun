@@ -11,16 +11,18 @@ const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
   const gripperRightRef = useRef();
   const endEffectorRef = useRef();
   
-  // Arm segment lengths (matching your original code style)
-  const L1 = 3; // First segment length
-  const L2 = 2.5; // Second segment length
-  const BASE_HEIGHT = 1; // Height of base
+  // Longer arm segments for better reach
+  const L1 = 4.5; // First segment length (increased)
+  const L2 = 4; // Second segment length (increased)
+  const L3 = 2; // Wrist segment (added for more flexibility)
+  const BASE_HEIGHT = 2; // Taller base for height advantage
   
   // Current joint angles (smoothed)
   const currentAngles = useRef({
     base: 0,
-    shoulder: Math.PI / 4,
-    elbow: -Math.PI / 4,
+    shoulder: Math.PI / 6, // Start more horizontal
+    elbow: -Math.PI / 3,
+    wrist: 0,
     gripperRotation: 0
   });
   
@@ -48,37 +50,53 @@ const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
       targetPosition.z * targetPosition.z
     );
     
-    // Height from base to target
+    // Height from base to target (adjust for taller base)
     const heightDiff = targetPosition.y - BASE_HEIGHT;
     
     // Calculate required reach
     const reach = Math.sqrt(distanceXZ * distanceXZ + heightDiff * heightDiff);
     
-    // Clamp reach to arm's maximum
-    const maxReach = L1 + L2;
-    const clampedReach = Math.min(reach, maxReach * 0.95); // Leave some margin
+    // Clamp reach to arm's maximum (with all segments)
+    const maxReach = L1 + L2 + L3;
+    const clampedReach = Math.min(reach, maxReach * 0.98);
     
-    // Calculate joint angles using 2-DOF IK
-    let shoulderAngle, elbowAngle;
+    // Calculate joint angles using improved IK
+    let shoulderAngle, elbowAngle, wristAngle;
     
-    if (clampedReach < maxReach && clampedReach > Math.abs(L1 - L2)) {
+    if (clampedReach < (L1 + L2) && clampedReach > Math.abs(L1 - L2)) {
       // Use law of cosines for elbow angle
-      const cosElbow = (L1 * L1 + L2 * L2 - clampedReach * clampedReach) / (2 * L1 * L2);
+      const reachForTwoSegments = Math.min(clampedReach, L1 + L2);
+      const cosElbow = (L1 * L1 + L2 * L2 - reachForTwoSegments * reachForTwoSegments) / (2 * L1 * L2);
       elbowAngle = Math.acos(Math.max(-1, Math.min(1, cosElbow)));
       
-      // Calculate shoulder angle
+      // Calculate shoulder angle with better vertical reach
       const alpha = Math.atan2(heightDiff, distanceXZ);
-      const cosBeta = (clampedReach * clampedReach + L1 * L1 - L2 * L2) / (2 * clampedReach * L1);
+      const cosBeta = (reachForTwoSegments * reachForTwoSegments + L1 * L1 - L2 * L2) / (2 * reachForTwoSegments * L1);
       const beta = Math.acos(Math.max(-1, Math.min(1, cosBeta)));
-      shoulderAngle = alpha + beta;
+      
+      // Adjust shoulder angle for better overhead reach
+      if (heightDiff > 2) {
+        // Reaching high - lift shoulder more
+        shoulderAngle = alpha + beta * 0.7;
+      } else if (heightDiff < -1) {
+        // Reaching low - lower shoulder
+        shoulderAngle = alpha + beta * 1.2;
+      } else {
+        // Normal reach
+        shoulderAngle = alpha + beta;
+      }
+      
+      // Wrist angle to keep gripper oriented properly
+      wristAngle = -(shoulderAngle + elbowAngle) * 0.5;
     } else {
       // Extend arm fully toward target
       shoulderAngle = Math.atan2(heightDiff, distanceXZ);
       elbowAngle = 0;
+      wristAngle = -shoulderAngle * 0.5;
     }
     
-    // Smooth interpolation
-    const lerpSpeed = 0.1;
+    // Smooth interpolation with faster response
+    const lerpSpeed = 0.15; // Increased for more responsive movement
     currentAngles.current.base = THREE.MathUtils.lerp(
       currentAngles.current.base,
       targetBaseAngle,
@@ -91,7 +109,12 @@ const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
     );
     currentAngles.current.elbow = THREE.MathUtils.lerp(
       currentAngles.current.elbow,
-      -elbowAngle, // Negative for proper bending
+      -elbowAngle,
+      lerpSpeed
+    );
+    currentAngles.current.wrist = THREE.MathUtils.lerp(
+      currentAngles.current.wrist,
+      wristAngle,
       lerpSpeed
     );
     
@@ -101,6 +124,7 @@ const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
     }
     
     if (shoulder.current) {
+      // Adjust shoulder for better range of motion
       shoulder.current.rotation.z = currentAngles.current.shoulder - Math.PI / 2;
     }
     
@@ -109,107 +133,112 @@ const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
     }
     
     if (wrist.current) {
-      // Keep wrist level
-      wrist.current.rotation.z = -(currentAngles.current.shoulder - Math.PI / 2 + currentAngles.current.elbow);
+      wrist.current.rotation.z = currentAngles.current.wrist;
     }
     
     // Animate gripper
     if (gripperLeftRef.current && gripperRightRef.current) {
-      const gripAngle = clawOpen ? 0.4 : -0.05;
+      const gripAngle = clawOpen ? 0.5 : -0.05;
       gripperLeftRef.current.rotation.y = THREE.MathUtils.lerp(
         gripperLeftRef.current.rotation.y,
         gripAngle,
-        0.2
+        0.25
       );
       gripperRightRef.current.rotation.y = THREE.MathUtils.lerp(
         gripperRightRef.current.rotation.y,
         -gripAngle,
-        0.2
+        0.25
       );
-    }
-    
-    // Rotate gripper continuously for visual effect
-    currentAngles.current.gripperRotation += 0.01;
-    if (endEffectorRef.current) {
-      endEffectorRef.current.rotation.x = currentAngles.current.gripperRotation;
     }
   });
   
   return (
     <group position={[0, 0, 0]}>
-      {/* Fixed Base */}
-      <mesh position={[0, 0.25, 0]} castShadow>
-        <cylinderGeometry args={[1.2, 1.5, 0.5, 32]} />
+      {/* Taller fixed base */}
+      <mesh position={[0, 0.5, 0]} castShadow>
+        <cylinderGeometry args={[1.5, 2, 1, 32]} />
         <meshStandardMaterial color="#2c3e50" metalness={0.7} roughness={0.3} />
+      </mesh>
+      
+      {/* Support column */}
+      <mesh position={[0, 1.25, 0]} castShadow>
+        <cylinderGeometry args={[0.6, 0.8, 0.5, 16]} />
+        <meshStandardMaterial color="#34495e" metalness={0.6} roughness={0.4} />
       </mesh>
       
       {/* Rotating base */}
       <group ref={baseRef}>
-        <mesh position={[0, 0.6, 0]} castShadow>
-          <cylinderGeometry args={[0.8, 0.8, 0.4, 32]} />
+        <mesh position={[0, 1.75, 0]} castShadow>
+          <cylinderGeometry args={[0.8, 0.8, 0.5, 32]} />
           <meshStandardMaterial color="#34495e" metalness={0.6} roughness={0.4} />
         </mesh>
         
-        {/* Shoulder joint */}
+        {/* Shoulder joint - positioned higher */}
         <group position={[0, BASE_HEIGHT, 0]}>
           <mesh castShadow>
-            <sphereGeometry args={[0.3, 16, 16]} />
+            <sphereGeometry args={[0.35, 16, 16]} />
             <meshStandardMaterial color="#e74c3c" metalness={0.5} roughness={0.5} />
           </mesh>
           
-          {/* First arm segment */}
+          {/* First arm segment (longer) */}
           <group ref={shoulder}>
             <mesh position={[L1/2, 0, 0]} castShadow>
-              <boxGeometry args={[L1, 0.4, 0.4]} />
+              <boxGeometry args={[L1, 0.5, 0.5]} />
               <meshStandardMaterial color="#95a5a6" metalness={0.4} roughness={0.5} />
             </mesh>
             
-            {/* Decorative details on arm */}
-            <mesh position={[L1/2, 0, 0.25]} castShadow>
-              <boxGeometry args={[L1 * 0.8, 0.3, 0.05]} />
+            {/* Support structure */}
+            <mesh position={[L1/3, 0, 0.3]} castShadow>
+              <boxGeometry args={[L1 * 0.6, 0.3, 0.05]} />
               <meshStandardMaterial color="#7f8c8d" metalness={0.5} roughness={0.4} />
             </mesh>
             
             {/* Elbow joint */}
             <group position={[L1, 0, 0]}>
               <mesh castShadow>
-                <sphereGeometry args={[0.25, 16, 16]} />
+                <sphereGeometry args={[0.3, 16, 16]} />
                 <meshStandardMaterial color="#e74c3c" metalness={0.5} roughness={0.5} />
               </mesh>
               
-              {/* Second arm segment */}
+              {/* Second arm segment (longer) */}
               <group ref={elbow}>
                 <mesh position={[L2/2, 0, 0]} castShadow>
-                  <boxGeometry args={[L2, 0.35, 0.35]} />
+                  <boxGeometry args={[L2, 0.45, 0.45]} />
                   <meshStandardMaterial color="#95a5a6" metalness={0.4} roughness={0.5} />
                 </mesh>
                 
-                {/* Decorative details */}
-                <mesh position={[L2/2, 0, 0.2]} castShadow>
-                  <boxGeometry args={[L2 * 0.8, 0.25, 0.05]} />
+                {/* Support structure */}
+                <mesh position={[L2/3, 0, 0.25]} castShadow>
+                  <boxGeometry args={[L2 * 0.6, 0.25, 0.05]} />
                   <meshStandardMaterial color="#7f8c8d" metalness={0.5} roughness={0.4} />
                 </mesh>
                 
                 {/* Wrist joint */}
                 <group position={[L2, 0, 0]}>
                   <mesh castShadow>
-                    <sphereGeometry args={[0.2, 16, 16]} />
+                    <sphereGeometry args={[0.25, 16, 16]} />
                     <meshStandardMaterial color="#e74c3c" metalness={0.5} roughness={0.5} />
                   </mesh>
                   
-                  {/* End effector / Gripper assembly */}
+                  {/* Third segment with gripper */}
                   <group ref={wrist}>
-                    <group ref={endEffectorRef}>
+                    <mesh position={[L3/2, 0, 0]} castShadow>
+                      <boxGeometry args={[L3, 0.35, 0.35]} />
+                      <meshStandardMaterial color="#95a5a6" metalness={0.4} roughness={0.5} />
+                    </mesh>
+                    
+                    {/* End effector / Gripper assembly */}
+                    <group position={[L3, 0, 0]} ref={endEffectorRef}>
                       {/* Gripper base */}
-                      <mesh position={[0.3, 0, 0]} castShadow>
-                        <boxGeometry args={[0.4, 0.3, 0.3]} />
+                      <mesh position={[0.2, 0, 0]} castShadow>
+                        <boxGeometry args={[0.4, 0.4, 0.4]} />
                         <meshStandardMaterial color="#34495e" metalness={0.6} roughness={0.4} />
                       </mesh>
                       
                       {/* Left gripper finger */}
-                      <group ref={gripperLeftRef} position={[0.5, 0, 0]}>
-                        <mesh position={[0.15, 0, 0.1]} castShadow>
-                          <boxGeometry args={[0.3, 0.05, 0.15]} />
+                      <group ref={gripperLeftRef} position={[0.4, 0, 0]}>
+                        <mesh position={[0.2, 0, 0.15]} castShadow>
+                          <boxGeometry args={[0.4, 0.06, 0.2]} />
                           <meshStandardMaterial 
                             color={hasBlock ? "#f39c12" : "#e74c3c"}
                             metalness={0.7}
@@ -219,16 +248,16 @@ const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
                           />
                         </mesh>
                         {/* Gripper tip */}
-                        <mesh position={[0.3, 0, 0.1]} castShadow>
-                          <boxGeometry args={[0.05, 0.05, 0.1]} />
+                        <mesh position={[0.4, 0, 0.15]} castShadow>
+                          <boxGeometry args={[0.06, 0.06, 0.15]} />
                           <meshStandardMaterial color="#2c3e50" metalness={0.8} roughness={0.2} />
                         </mesh>
                       </group>
                       
                       {/* Right gripper finger */}
-                      <group ref={gripperRightRef} position={[0.5, 0, 0]}>
-                        <mesh position={[0.15, 0, -0.1]} castShadow>
-                          <boxGeometry args={[0.3, 0.05, 0.15]} />
+                      <group ref={gripperRightRef} position={[0.4, 0, 0]}>
+                        <mesh position={[0.2, 0, -0.15]} castShadow>
+                          <boxGeometry args={[0.4, 0.06, 0.2]} />
                           <meshStandardMaterial 
                             color={hasBlock ? "#f39c12" : "#e74c3c"}
                             metalness={0.7}
@@ -238,15 +267,15 @@ const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
                           />
                         </mesh>
                         {/* Gripper tip */}
-                        <mesh position={[0.3, 0, -0.1]} castShadow>
-                          <boxGeometry args={[0.05, 0.05, 0.1]} />
+                        <mesh position={[0.4, 0, -0.15]} castShadow>
+                          <boxGeometry args={[0.06, 0.06, 0.15]} />
                           <meshStandardMaterial color="#2c3e50" metalness={0.8} roughness={0.2} />
                         </mesh>
                       </group>
                       
                       {/* Status LED */}
-                      <mesh position={[0.3, 0.2, 0]}>
-                        <sphereGeometry args={[0.06, 8, 8]} />
+                      <mesh position={[0.2, 0.25, 0]}>
+                        <sphereGeometry args={[0.08, 8, 8]} />
                         <meshBasicMaterial 
                           color={hasBlock ? "#00ff00" : clawOpen ? "#ffff00" : "#ff0000"}
                         />
@@ -262,12 +291,9 @@ const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
       
       {/* Base ring decoration */}
       <mesh position={[0, 0.05, 0]} rotation={[-Math.PI/2, 0, 0]}>
-        <ringGeometry args={[1.3, 1.5, 32]} />
+        <ringGeometry args={[1.6, 2, 32]} />
         <meshStandardMaterial color="#1a1a1a" metalness={0.8} roughness={0.2} />
       </mesh>
-      
-      {/* Visual guides for debugging */}
-      {/* <axesHelper args={[5]} /> */}
     </group>
   );
 });

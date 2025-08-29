@@ -96,7 +96,7 @@ function App() {
   const [timeLeft, setTimeLeft] = useState(60);
   const [blocks, setBlocks] = useState([]);
   const [grabbedBlock, setGrabbedBlock] = useState(null);
-  const [armTargetPosition, setArmTargetPosition] = useState({ x: 0, y: 3, z: 4 });
+  const [armTargetPosition, setArmTargetPosition] = useState({ x: 0, y: 5, z: 5 });
   const [clawOpen, setClawOpen] = useState(true);
   const [placedBlocks, setPlacedBlocks] = useState([]);
   const [levelComplete, setLevelComplete] = useState(false);
@@ -177,13 +177,13 @@ function App() {
       const newPos = { ...prev };
       switch(direction) {
         case 'x':
-          newPos.x = Math.max(-8, Math.min(8, prev.x + value));
+          newPos.x = Math.max(-10, Math.min(10, prev.x + value));
           break;
         case 'y':
-          newPos.y = Math.max(1, Math.min(8, prev.y + value));
+          newPos.y = Math.max(0.5, Math.min(12, prev.y + value));
           break;
         case 'z':
-          newPos.z = Math.max(0.5, Math.min(8, prev.z + value));
+          newPos.z = Math.max(0.5, Math.min(10, prev.z + value));
           break;
       }
       return newPos;
@@ -338,7 +338,7 @@ function App() {
           )}
           
           <Canvas 
-            camera={{ position: [15, 10, 15], fov: 50 }}
+            camera={{ position: [15, 12, 15], fov: 50 }}
             shadows
           >
             <Sky sunPosition={[100, 20, 100]} />
