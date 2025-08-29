@@ -1,248 +1,401 @@
 import { useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
+import { Physics } from '@react-three/cannon';
+import { OrbitControls, Sky, Stars } from '@react-three/drei';
 import { Howl } from 'howler';
 import './App.css';
-import FlyingObject from './components/FlyingObject';
-import Catcher from './components/Catcher';
+import RobotArm from './components/RobotArm';
+import Block from './components/Block';
+import BuildingArea from './components/BuildingArea';
 import GameUI from './components/GameUI';
-import GyroCamera from './components/GyroCamera';
-import GameOver from './components/GameOver';
 import StartScreen from './components/StartScreen';
-import ARBackground from './components/ARBackground';
-import CalibrationScreen from './components/CalibrationScreen';
+import LevelComplete from './components/LevelComplete';
+import TouchControls from './components/TouchControls';
 
 // Initialize sounds
 const sounds = {
-  catch: new Howl({ 
+  grab: new Howl({ 
+    src: ['data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE'], 
+    volume: 0.4 
+  }),
+  place: new Howl({ 
     src: ['data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE'], 
     volume: 0.5,
+    rate: 1.5
+  }),
+  success: new Howl({ 
+    src: ['data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE'], 
+    volume: 0.6,
     rate: 2
   }),
-  miss: new Howl({ 
+  crash: new Howl({ 
     src: ['data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE'], 
-    volume: 0.3,
+    volume: 0.4,
     rate: 0.5
-  }),
-  whoosh: new Howl({ 
-    src: ['data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBTGH0fPTgjMGHm7A7+OZURE'], 
-    volume: 0.2,
-    rate: 0.8
   })
 };
 
+// Level configurations
+const LEVELS = [
+  {
+    id: 1,
+    name: "Stack Tower",
+    description: "Stack 5 blocks as high as you can!",
+    targetHeight: 5,
+    blockCount: 8,
+    timeLimit: 60,
+    blueprint: "tower",
+    difficulty: "easy"
+  },
+  {
+    id: 2,
+    name: "Build a Bridge",
+    description: "Connect the two platforms",
+    targetHeight: 3,
+    blockCount: 10,
+    timeLimit: 90,
+    blueprint: "bridge",
+    difficulty: "medium"
+  },
+  {
+    id: 3,
+    name: "Pyramid Challenge",
+    description: "Build a pyramid with 3 levels",
+    targetHeight: 3,
+    blockCount: 12,
+    timeLimit: 120,
+    blueprint: "pyramid",
+    difficulty: "hard"
+  },
+  {
+    id: 4,
+    name: "Castle Wall",
+    description: "Build a defensive wall",
+    targetHeight: 4,
+    blockCount: 15,
+    timeLimit: 150,
+    blueprint: "wall",
+    difficulty: "hard"
+  },
+  {
+    id: 5,
+    name: "Free Build",
+    description: "Build anything you want!",
+    targetHeight: 0,
+    blockCount: 20,
+    timeLimit: 180,
+    blueprint: "free",
+    difficulty: "creative"
+  }
+];
+
 function App() {
+  const [gameStarted, setGameStarted] = useState(false);
+  const [currentLevel, setCurrentLevel] = useState(0);
   const [score, setScore] = useState(0);
   const [timeLeft, setTimeLeft] = useState(60);
-  const [gameStarted, setGameStarted] = useState(false);
-  const [gameOver, setGameOver] = useState(false);
-  const [showCalibration, setShowCalibration] = useState(false);
-  const [flyingObjects, setFlyingObjects] = useState([]);
-  const [combo, setCombo] = useState(0);
-  const [showCombo, setShowCombo] = useState(false);
-  const [cameraRotation, setCameraRotation] = useState({ x: 0, y: 0, z: 0 });
-  const [gyroPermission, setGyroPermission] = useState(false);
-  const [gyroSensitivity, setGyroSensitivity] = useState(1.5); // Default higher sensitivity
+  const [blocks, setBlocks] = useState([]);
+  const [grabbedBlock, setGrabbedBlock] = useState(null);
+  const [armPosition, setArmPosition] = useState({ x: 0, y: 5, z: 0, rotation: 0 });
+  const [clawOpen, setClawOpen] = useState(true);
+  const [placedBlocks, setPlacedBlocks] = useState([]);
+  const [levelComplete, setLevelComplete] = useState(false);
+  const [totalScore, setTotalScore] = useState(0);
   const [showInstructions, setShowInstructions] = useState(true);
-  const [catcherGlow, setCatcherGlow] = useState(false);
-  const [calibrationOffset, setCalibrationOffset] = useState({ x: 0, y: 0, z: 0 });
+  const [structureHeight, setStructureHeight] = useState(0);
+  const [stabilityBonus, setStabilityBonus] = useState(0);
   
-  const nextObjectId = useRef(0);
-  const spawnTimer = useRef(null);
+  const armRef = useRef();
+  const physicsRef = useRef();
 
-  // Spawn flying objects
+  // Initialize level
   useEffect(() => {
-    if (gameStarted && !gameOver) {
-      const spawnObject = () => {
-        const types = ['⭐', '🎈', '🎁', '💎', '🍎', '🍊', '🍓', '🌟', '🏀', '⚽', '🎯', '🎪', '🎭', '🎸', '🎨'];
-        const colors = ['#FFD700', '#FF69B4', '#00CED1', '#FF6347', '#32CD32', '#FF8C00', '#9370DB', '#FF1493', '#4169E1', '#FFB6C1'];
-        
-        // Spawn from random positions around the player
-        const angle = Math.random() * Math.PI * 2;
-        const distance = 15 + Math.random() * 10;
-        const height = (Math.random() - 0.5) * 15; // More vertical spread
-        
-        const newObject = {
-          id: nextObjectId.current++,
+    if (gameStarted && !levelComplete) {
+      const level = LEVELS[currentLevel];
+      setTimeLeft(level.timeLimit);
+      
+      // Generate blocks for the level
+      const newBlocks = [];
+      const colors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD', '#98D8C8'];
+      
+      for (let i = 0; i < level.blockCount; i++) {
+        newBlocks.push({
+          id: `block-${i}`,
           position: [
-            Math.cos(angle) * distance,
-            height,
-            Math.sin(angle) * distance
+            -8 + (i % 4) * 2,
+            0.5,
+            -4 + Math.floor(i / 4) * 2
           ],
-          type: types[Math.floor(Math.random() * types.length)],
-          color: colors[Math.floor(Math.random() * colors.length)],
-          points: Math.floor(Math.random() * 3 + 1) * 10,
-          speed: 3 + Math.random() * 2 + Math.min(score / 100, 3), // Speed increases with score
-          caught: false
-        };
-        
-        setFlyingObjects(prev => [...prev, newObject]);
-        sounds.whoosh.play();
-      };
-      
-      // Spawn objects at intervals (faster as game progresses)
-      const spawnInterval = Math.max(1000, 2000 - score * 5);
-      spawnTimer.current = setInterval(spawnObject, spawnInterval);
-      
-      return () => {
-        if (spawnTimer.current) clearInterval(spawnTimer.current);
-      };
+          color: colors[i % colors.length],
+          size: [1, 1, 1],
+          grabbed: false,
+          placed: false
+        });
+      }
+      setBlocks(newBlocks);
+      setPlacedBlocks([]);
+      setShowInstructions(true);
+      setTimeout(() => setShowInstructions(false), 5000);
     }
-  }, [gameStarted, gameOver, score]);
+  }, [gameStarted, currentLevel, levelComplete]);
 
   // Game timer
   useEffect(() => {
-    if (gameStarted && !gameOver && timeLeft > 0) {
+    if (gameStarted && !levelComplete && timeLeft > 0) {
       const timer = setTimeout(() => {
         setTimeLeft(timeLeft - 1);
       }, 1000);
       return () => clearTimeout(timer);
-    } else if (timeLeft === 0 && !gameOver) {
-      setGameOver(true);
+    } else if (timeLeft === 0 && !levelComplete) {
+      handleLevelEnd();
     }
-  }, [timeLeft, gameStarted, gameOver]);
+  }, [timeLeft, gameStarted, levelComplete]);
 
-  // Hide instructions
+  // Check structure height
   useEffect(() => {
-    if (gameStarted && showInstructions) {
-      setTimeout(() => setShowInstructions(false), 5000);
+    if (placedBlocks.length > 0) {
+      const maxHeight = Math.max(...placedBlocks.map(b => b.position[1]));
+      setStructureHeight(Math.ceil(maxHeight));
+      
+      // Check if level complete
+      const level = LEVELS[currentLevel];
+      if (level.targetHeight > 0 && structureHeight >= level.targetHeight) {
+        handleLevelComplete();
+      }
     }
-  }, [gameStarted, showInstructions]);
+  }, [placedBlocks, structureHeight, currentLevel]);
 
   const handleStartGame = () => {
-    setShowCalibration(true);
-  };
-
-  const handleCalibrationComplete = (offset, sensitivity) => {
-    setCalibrationOffset(offset);
-    setGyroSensitivity(sensitivity);
-    setShowCalibration(false);
     setGameStarted(true);
+    setCurrentLevel(0);
     setScore(0);
-    setTimeLeft(60);
-    setGameOver(false);
-    setFlyingObjects([]);
-    setCombo(0);
-    setShowInstructions(true);
+    setTotalScore(0);
   };
 
-  const handleCatch = (objectId) => {
-    const object = flyingObjects.find(o => o.id === objectId);
-    if (object && !object.caught) {
-      // Mark as caught
-      setFlyingObjects(prev => prev.map(o => 
-        o.id === objectId ? { ...o, caught: true } : o
-      ));
+  const handleArmMove = (direction, value) => {
+    setArmPosition(prev => {
+      const newPos = { ...prev };
+      switch(direction) {
+        case 'x':
+          newPos.x = Math.max(-10, Math.min(10, prev.x + value));
+          break;
+        case 'y':
+          newPos.y = Math.max(1, Math.min(10, prev.y + value));
+          break;
+        case 'z':
+          newPos.z = Math.max(-5, Math.min(5, prev.z + value));
+          break;
+        case 'rotation':
+          newPos.rotation = prev.rotation + value;
+          break;
+      }
+      return newPos;
+    });
+  };
+
+  const handleGrab = () => {
+    if (clawOpen) {
+      // Try to grab a block
+      const nearbyBlock = blocks.find(block => {
+        if (block.grabbed || block.placed) return false;
+        const distance = Math.sqrt(
+          Math.pow(block.position[0] - armPosition.x, 2) +
+          Math.pow(block.position[1] - armPosition.y, 2) +
+          Math.pow(block.position[2] - armPosition.z, 2)
+        );
+        return distance < 2;
+      });
       
-      // Update score with combo multiplier
-      const comboMultiplier = Math.min(combo + 1, 5);
-      const points = object.points * comboMultiplier;
-      setScore(prev => prev + points);
-      
-      // Update combo
-      setCombo(prev => prev + 1);
-      setShowCombo(true);
-      setTimeout(() => setShowCombo(false), 1000);
-      
-      // Visual feedback
-      setCatcherGlow(true);
-      setTimeout(() => setCatcherGlow(false), 300);
-      
-      sounds.catch.play();
+      if (nearbyBlock) {
+        setGrabbedBlock(nearbyBlock.id);
+        setBlocks(prev => prev.map(b => 
+          b.id === nearbyBlock.id ? { ...b, grabbed: true } : b
+        ));
+        setClawOpen(false);
+        sounds.grab.play();
+      }
+    } else {
+      // Release the block
+      if (grabbedBlock) {
+        const block = blocks.find(b => b.id === grabbedBlock);
+        if (block) {
+          // Place the block at current arm position
+          const placedBlock = {
+            ...block,
+            position: [armPosition.x, armPosition.y - 1, armPosition.z],
+            placed: true,
+            grabbed: false
+          };
+          
+          setPlacedBlocks(prev => [...prev, placedBlock]);
+          setBlocks(prev => prev.map(b => 
+            b.id === grabbedBlock ? placedBlock : b
+          ));
+          
+          // Calculate score based on placement precision
+          const placementScore = calculatePlacementScore(placedBlock);
+          setScore(prev => prev + placementScore);
+          
+          sounds.place.play();
+        }
+        setGrabbedBlock(null);
+        setClawOpen(true);
+      }
     }
   };
 
-  const handleMiss = (objectId) => {
-    // Reset combo on miss
-    if (combo > 0) {
-      setCombo(0);
-      sounds.miss.play();
-    }
+  const calculatePlacementScore = (block) => {
+    let score = 10; // Base score for placing a block
     
-    // Remove missed object
-    setFlyingObjects(prev => prev.filter(o => o.id !== objectId));
+    // Bonus for height
+    score += Math.floor(block.position[1]) * 5;
+    
+    // Bonus for stability (blocks placed near other blocks)
+    const nearbyBlocks = placedBlocks.filter(b => {
+      const distance = Math.sqrt(
+        Math.pow(b.position[0] - block.position[0], 2) +
+        Math.pow(b.position[2] - block.position[2], 2)
+      );
+      return distance < 2;
+    });
+    score += nearbyBlocks.length * 10;
+    
+    return score;
   };
 
-  const handleGyroUpdate = (rotation) => {
-    setCameraRotation(rotation);
+  const handleLevelComplete = () => {
+    setLevelComplete(true);
+    
+    // Calculate bonuses
+    const timeBonus = timeLeft * 2;
+    const heightBonus = structureHeight * 20;
+    const stabilityScore = placedBlocks.length * 10;
+    
+    const levelScore = score + timeBonus + heightBonus + stabilityScore;
+    setTotalScore(prev => prev + levelScore);
+    
+    sounds.success.play();
   };
 
-  const handlePlayAgain = () => {
-    setGameStarted(false);
-    setGameOver(false);
-    setScore(0);
-    setTimeLeft(60);
-    setFlyingObjects([]);
-    setCombo(0);
+  const handleLevelEnd = () => {
+    if (structureHeight < LEVELS[currentLevel].targetHeight) {
+      // Level failed
+      setLevelComplete(true);
+    } else {
+      handleLevelComplete();
+    }
+  };
+
+  const handleNextLevel = () => {
+    if (currentLevel < LEVELS.length - 1) {
+      setCurrentLevel(prev => prev + 1);
+      setLevelComplete(false);
+      setScore(0);
+      setStructureHeight(0);
+    } else {
+      // Game complete
+      setGameStarted(false);
+    }
+  };
+
+  const handleBlockFall = (blockId) => {
+    // Handle physics when blocks fall
+    sounds.crash.play();
+    setScore(prev => Math.max(0, prev - 5)); // Penalty for unstable structure
   };
 
   return (
-    <div className="game-container ar-mode">
-      {!gameStarted && !showCalibration ? (
+    <div className="game-container">
+      {!gameStarted ? (
         <StartScreen 
           onStart={handleStartGame}
-          gyroPermission={gyroPermission}
-          setGyroPermission={setGyroPermission}
-        />
-      ) : showCalibration ? (
-        <CalibrationScreen 
-          onComplete={handleCalibrationComplete}
-          setGyroPermission={setGyroPermission}
+          totalScore={totalScore}
         />
       ) : (
         <>
           <GameUI 
-            score={score} 
-            timeLeft={timeLeft} 
-            combo={combo}
-            showCombo={showCombo}
+            level={LEVELS[currentLevel]}
+            score={score}
+            timeLeft={timeLeft}
+            structureHeight={structureHeight}
+            blocksUsed={placedBlocks.length}
           />
           
           {showInstructions && (
-            <div className="instructions ar-instructions">
-              <h3>🎯 Catch 'Em All!</h3>
-              <p>📱 Move your phone to look around<br/>
-              🎯 Align objects with the circle to catch<br/>
-              🔥 Build combos for more points!</p>
+            <div className="instructions building-instructions">
+              <h3>{LEVELS[currentLevel].name}</h3>
+              <p>{LEVELS[currentLevel].description}</p>
+              <p>🎯 Target Height: {LEVELS[currentLevel].targetHeight} blocks</p>
             </div>
           )}
           
-          {gameOver && (
-            <GameOver score={score} onPlayAgain={handlePlayAgain} />
+          {levelComplete && (
+            <LevelComplete
+              level={LEVELS[currentLevel]}
+              score={score}
+              timeBonus={timeLeft * 2}
+              heightBonus={structureHeight * 20}
+              onNextLevel={handleNextLevel}
+              isLastLevel={currentLevel === LEVELS.length - 1}
+            />
           )}
           
           <Canvas 
-            camera={{ position: [0, 0, 0], fov: 75 }}
-            className="ar-canvas"
+            camera={{ position: [15, 10, 15], fov: 50 }}
+            shadows
           >
-            <ARBackground />
+            <Sky sunPosition={[100, 20, 100]} />
+            <Stars radius={100} depth={50} count={1000} factor={4} saturation={0} fade />
             
-            <ambientLight intensity={0.6} />
-            <directionalLight position={[10, 10, 5]} intensity={0.5} />
-            <pointLight position={[0, 0, 0]} intensity={0.5} />
-            
-            <GyroCamera 
-              onGyroUpdate={handleGyroUpdate}
-              gyroPermission={gyroPermission}
-              setGyroPermission={setGyroPermission}
-              sensitivity={gyroSensitivity}
-              calibrationOffset={calibrationOffset}
+            <ambientLight intensity={0.5} />
+            <directionalLight 
+              position={[10, 15, 5]} 
+              intensity={1} 
+              castShadow
+              shadow-mapSize={[2048, 2048]}
             />
+            <pointLight position={[-10, 10, -10]} intensity={0.3} />
             
-            <Catcher 
-              glowing={catcherGlow}
-              combo={combo}
-            />
-            
-            {flyingObjects.map(object => (
-              <FlyingObject
-                key={object.id}
-                {...object}
-                onCatch={() => handleCatch(object.id)}
-                onMiss={() => handleMiss(object.id)}
-                cameraRotation={cameraRotation}
+            <Physics gravity={[0, -9.8, 0]} ref={physicsRef}>
+              <RobotArm 
+                ref={armRef}
+                position={armPosition}
+                clawOpen={clawOpen}
+                hasBlock={!!grabbedBlock}
               />
-            ))}
+              
+              {blocks.map(block => (
+                <Block
+                  key={block.id}
+                  {...block}
+                  isGrabbed={block.id === grabbedBlock}
+                  armPosition={armPosition}
+                  onFall={() => handleBlockFall(block.id)}
+                />
+              ))}
+              
+              <BuildingArea 
+                level={LEVELS[currentLevel]}
+                placedBlocks={placedBlocks}
+              />
+            </Physics>
+            
+            <OrbitControls 
+              enablePan={true}
+              enableZoom={true}
+              enableRotate={true}
+              minDistance={5}
+              maxDistance={30}
+              maxPolarAngle={Math.PI / 2}
+            />
           </Canvas>
+          
+          <TouchControls 
+            onMove={handleArmMove}
+            onGrab={handleGrab}
+            clawOpen={clawOpen}
+            armPosition={armPosition}
+          />
         </>
       )}
     </div>
