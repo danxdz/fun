@@ -96,7 +96,7 @@ function App() {
   const [timeLeft, setTimeLeft] = useState(60);
   const [blocks, setBlocks] = useState([]);
   const [grabbedBlock, setGrabbedBlock] = useState(null);
-  const [armTargetPosition, setArmTargetPosition] = useState({ x: 0, y: 5, z: 5 });
+  const [armTargetPosition, setArmTargetPosition] = useState({ x: 0, y: 6, z: 4 });
   const [clawOpen, setClawOpen] = useState(true);
   const [placedBlocks, setPlacedBlocks] = useState([]);
   const [levelComplete, setLevelComplete] = useState(false);
