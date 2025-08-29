@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Physics } from '@react-three/cannon';
-import { OrbitControls, Sky, Stars } from '@react-three/drei';
+import { Sky, Stars } from '@react-three/drei';
 import { Howl } from 'howler';
 import './App.css';
 import RobotArm from './components/RobotArm';
@@ -338,7 +338,7 @@ function App() {
           )}
           
           <Canvas 
-            camera={{ position: [15, 12, 15], fov: 50 }}
+            camera={{ position: [10, 8, 10], fov: 60 }}
             shadows
           >
             <Sky sunPosition={[100, 20, 100]} />
@@ -390,8 +390,7 @@ function App() {
           <TouchControls 
             onMove={handleArmMove}
             onGrab={handleGrab}
-            clawOpen={clawOpen}
-            armPosition={armTargetPosition}
+            armPosition={{ ...armTargetPosition, clawOpen }}
           />
         </>
       )}
