@@ -172,22 +172,30 @@ function App() {
     setTotalScore(0);
   };
 
-  const handleArmMove = (direction, value) => {
-    setArmTargetPosition(prev => {
-      const newPos = { ...prev };
-      switch(direction) {
-        case 'x':
-          newPos.x = Math.max(-10, Math.min(10, prev.x + value));
-          break;
-        case 'y':
-          newPos.y = Math.max(0.5, Math.min(12, prev.y + value));
-          break;
-        case 'z':
-          newPos.z = Math.max(0.5, Math.min(10, prev.z + value));
-          break;
-      }
-      return newPos;
-    });
+  const handleArmMove = (newPosition) => {
+    // If called with old format (direction, value), convert it
+    if (typeof newPosition === 'string') {
+      const direction = newPosition;
+      const value = arguments[1];
+      setArmTargetPosition(prev => {
+        const newPos = { ...prev };
+        switch(direction) {
+          case 'x':
+            newPos.x = Math.max(-10, Math.min(10, prev.x + value));
+            break;
+          case 'y':
+            newPos.y = Math.max(0.5, Math.min(12, prev.y + value));
+            break;
+          case 'z':
+            newPos.z = Math.max(0.5, Math.min(10, prev.z + value));
+            break;
+        }
+        return newPos;
+      });
+    } else {
+      // New format - direct position object
+      setArmTargetPosition(newPosition);
+    }
   };
 
   const handleGrab = () => {
