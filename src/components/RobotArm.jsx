@@ -4,13 +4,15 @@ import * as THREE from 'three';
 
 const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
   const armGroup = useRef();
+  const verticalPoleRef = useRef();
+  const horizontalArmRef = useRef();
+  const gripperGroupRef = useRef();
   const gripperLeftRef = useRef();
   const gripperRightRef = useRef();
   const endEffectorRef = useRef();
   
   // Current position (smoothed)
-  const currentPosition = useRef(new THREE.Vector3(0, 6, 4));
-  const currentGripperAngle = useRef(0);
+  const currentPosition = useRef({ x: 0, y: 6, z: 4 });
   
   // Expose methods to parent
   useImperativeHandle(ref, () => ({
@@ -25,9 +27,9 @@ const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
   }));
   
   useFrame(() => {
-    if (!targetPosition || !armGroup.current) return;
+    if (!targetPosition) return;
     
-    // Simple lerp to target position - direct X/Y/Z movement
+    // Smooth lerp to target position
     const lerpSpeed = 0.1;
     currentPosition.current.x = THREE.MathUtils.lerp(
       currentPosition.current.x,
@@ -45,24 +47,54 @@ const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
       lerpSpeed
     );
     
-    // Move the entire arm group to the target position
-    armGroup.current.position.set(
-      currentPosition.current.x,
-      currentPosition.current.y,
-      currentPosition.current.z
-    );
+    // Update vertical pole height
+    if (verticalPoleRef.current) {
+      const poleHeight = Math.max(0.5, currentPosition.current.y);
+      verticalPoleRef.current.scale.y = poleHeight / 4; // Adjust scale based on original height
+      verticalPoleRef.current.position.y = poleHeight / 2;
+    }
     
-    // Animate gripper
+    // Update horizontal arm position and extension
+    if (horizontalArmRef.current) {
+      horizontalArmRef.current.position.y = currentPosition.current.y;
+      
+      // Calculate horizontal distance
+      const horizontalDist = Math.sqrt(
+        currentPosition.current.x * currentPosition.current.x + 
+        currentPosition.current.z * currentPosition.current.z
+      );
+      
+      // Scale and position the horizontal arm
+      horizontalArmRef.current.scale.x = Math.max(0.5, horizontalDist / 2);
+      
+      // Rotate to face the target
+      const angle = Math.atan2(currentPosition.current.x, currentPosition.current.z);
+      horizontalArmRef.current.rotation.y = angle;
+    }
+    
+    // Update gripper position
+    if (gripperGroupRef.current) {
+      gripperGroupRef.current.position.set(
+        currentPosition.current.x,
+        currentPosition.current.y,
+        currentPosition.current.z
+      );
+    }
+    
+    // Animate gripper fingers
     if (gripperLeftRef.current && gripperRightRef.current) {
       const gripAngle = clawOpen ? 0.4 : -0.05;
-      currentGripperAngle.current = THREE.MathUtils.lerp(
-        currentGripperAngle.current,
+      
+      gripperLeftRef.current.rotation.y = THREE.MathUtils.lerp(
+        gripperLeftRef.current.rotation.y,
         gripAngle,
         0.25
       );
-      
-      gripperLeftRef.current.rotation.y = currentGripperAngle.current;
-      gripperRightRef.current.rotation.y = -currentGripperAngle.current;
+      gripperRightRef.current.rotation.y = THREE.MathUtils.lerp(
+        gripperRightRef.current.rotation.y,
+        -gripAngle,
+        0.25
+      );
     }
   });
   
@@ -81,40 +113,47 @@ const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
           <ringGeometry args={[2.2, 2.6, 32]} />
           <meshStandardMaterial color="#1a1a1a" metalness={0.8} roughness={0.2} />
         </mesh>
+        
+        {/* Center joint */}
+        <mesh position={[0, 1, 0]} castShadow>
+          <sphereGeometry args={[0.4, 16, 16]} />
+          <meshStandardMaterial color="#e74c3c" metalness={0.5} roughness={0.5} />
+        </mesh>
       </group>
       
-      {/* Simple telescopic arm that moves in X/Y/Z */}
-      <group ref={armGroup}>
-        {/* Vertical pole */}
-        <mesh position={[0, -currentPosition.current.y/2 + 1, 0]} castShadow>
-          <boxGeometry args={[0.3, currentPosition.current.y, 0.3]} />
-          <meshStandardMaterial color="#7f8c8d" metalness={0.5} roughness={0.4} />
-        </mesh>
-        
-        {/* Horizontal arm */}
-        <mesh position={[0, 0, 0]} castShadow>
-          <boxGeometry args={[0.8, 0.4, 0.4]} />
+      {/* Vertical telescopic pole */}
+      <mesh ref={verticalPoleRef} position={[0, 2, 0]} castShadow>
+        <boxGeometry args={[0.4, 4, 0.4]} />
+        <meshStandardMaterial color="#7f8c8d" metalness={0.5} roughness={0.4} />
+      </mesh>
+      
+      {/* Horizontal extending arm */}
+      <group ref={horizontalArmRef} position={[0, 6, 0]}>
+        <mesh position={[0, 0, 1]} castShadow>
+          <boxGeometry args={[0.3, 0.3, 2]} />
           <meshStandardMaterial color="#95a5a6" metalness={0.4} roughness={0.5} />
         </mesh>
         
-        {/* Joint decoration */}
-        <mesh position={[0, 0, 0]} castShadow>
-          <sphereGeometry args={[0.3, 16, 16]} />
+        {/* Joint at the end of horizontal arm */}
+        <mesh position={[0, 0, 2]} castShadow>
+          <sphereGeometry args={[0.25, 16, 16]} />
           <meshStandardMaterial color="#e74c3c" metalness={0.5} roughness={0.5} />
         </mesh>
-        
-        {/* End effector / Gripper assembly */}
+      </group>
+      
+      {/* Gripper assembly - moves to target position */}
+      <group ref={gripperGroupRef}>
         <group ref={endEffectorRef}>
           {/* Gripper base */}
-          <mesh position={[0, -0.4, 0]} castShadow>
-            <boxGeometry args={[0.5, 0.3, 0.5]} />
+          <mesh position={[0, -0.3, 0]} castShadow>
+            <boxGeometry args={[0.6, 0.3, 0.6]} />
             <meshStandardMaterial color="#34495e" metalness={0.6} roughness={0.4} />
           </mesh>
           
           {/* Left gripper finger */}
-          <group ref={gripperLeftRef} position={[0, -0.6, 0]}>
-            <mesh position={[0.15, -0.15, 0]} castShadow>
-              <boxGeometry args={[0.15, 0.3, 0.08]} />
+          <group ref={gripperLeftRef} position={[0, -0.5, 0]}>
+            <mesh position={[0.2, -0.15, 0]} castShadow>
+              <boxGeometry args={[0.15, 0.3, 0.1]} />
               <meshStandardMaterial 
                 color={hasBlock ? "#f39c12" : "#e74c3c"}
                 metalness={0.7}
@@ -123,16 +162,16 @@ const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
                 emissiveIntensity={hasBlock ? 0.3 : 0.1}
               />
             </mesh>
-            <mesh position={[0.15, -0.3, 0]} castShadow>
-              <boxGeometry args={[0.12, 0.08, 0.08]} />
+            <mesh position={[0.2, -0.3, 0]} castShadow>
+              <boxGeometry args={[0.12, 0.1, 0.1]} />
               <meshStandardMaterial color="#2c3e50" metalness={0.8} roughness={0.2} />
             </mesh>
           </group>
           
           {/* Right gripper finger */}
-          <group ref={gripperRightRef} position={[0, -0.6, 0]}>
-            <mesh position={[-0.15, -0.15, 0]} castShadow>
-              <boxGeometry args={[0.15, 0.3, 0.08]} />
+          <group ref={gripperRightRef} position={[0, -0.5, 0]}>
+            <mesh position={[-0.2, -0.15, 0]} castShadow>
+              <boxGeometry args={[0.15, 0.3, 0.1]} />
               <meshStandardMaterial 
                 color={hasBlock ? "#f39c12" : "#e74c3c"}
                 metalness={0.7}
@@ -141,14 +180,14 @@ const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
                 emissiveIntensity={hasBlock ? 0.3 : 0.1}
               />
             </mesh>
-            <mesh position={[-0.15, -0.3, 0]} castShadow>
-              <boxGeometry args={[0.12, 0.08, 0.08]} />
+            <mesh position={[-0.2, -0.3, 0]} castShadow>
+              <boxGeometry args={[0.12, 0.1, 0.1]} />
               <meshStandardMaterial color="#2c3e50" metalness={0.8} roughness={0.2} />
             </mesh>
           </group>
           
           {/* Status LED */}
-          <mesh position={[0, -0.4, 0.3]}>
+          <mesh position={[0, -0.3, 0.35]}>
             <sphereGeometry args={[0.08, 8, 8]} />
             <meshBasicMaterial 
               color={hasBlock ? "#00ff00" : clawOpen ? "#ffff00" : "#ff0000"}
@@ -156,22 +195,6 @@ const RobotArm = forwardRef(({ targetPosition, clawOpen, hasBlock }, ref) => {
           </mesh>
         </group>
       </group>
-      
-      {/* Visual connection line from base to arm */}
-      <line>
-        <bufferGeometry>
-          <bufferAttribute
-            attach="attributes-position"
-            count={2}
-            array={new Float32Array([
-              0, 1, 0,
-              currentPosition.current.x, currentPosition.current.y, currentPosition.current.z
-            ])}
-            itemSize={3}
-          />
-        </bufferGeometry>
-        <lineBasicMaterial color="#3498db" opacity={0.3} transparent />
-      </line>
     </>
   );
 });
