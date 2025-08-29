@@ -96,7 +96,7 @@ function App() {
   const [timeLeft, setTimeLeft] = useState(60);
   const [blocks, setBlocks] = useState([]);
   const [grabbedBlock, setGrabbedBlock] = useState(null);
-  const [armPosition, setArmPosition] = useState({ x: 0, y: 5, z: 0, rotation: 0 });
+  const [armTargetPosition, setArmTargetPosition] = useState({ x: 0, y: 5, z: 3 });
   const [clawOpen, setClawOpen] = useState(true);
   const [placedBlocks, setPlacedBlocks] = useState([]);
   const [levelComplete, setLevelComplete] = useState(false);
@@ -173,20 +173,17 @@ function App() {
   };
 
   const handleArmMove = (direction, value) => {
-    setArmPosition(prev => {
+    setArmTargetPosition(prev => {
       const newPos = { ...prev };
       switch(direction) {
         case 'x':
-          newPos.x = Math.max(-10, Math.min(10, prev.x + value));
+          newPos.x = Math.max(-8, Math.min(8, prev.x + value));
           break;
         case 'y':
-          newPos.y = Math.max(1, Math.min(10, prev.y + value));
+          newPos.y = Math.max(1, Math.min(8, prev.y + value));
           break;
         case 'z':
-          newPos.z = Math.max(-5, Math.min(5, prev.z + value));
-          break;
-        case 'rotation':
-          newPos.rotation = prev.rotation + value;
+          newPos.z = Math.max(0.5, Math.min(8, prev.z + value));
           break;
       }
       return newPos;
@@ -199,9 +196,9 @@ function App() {
       const nearbyBlock = blocks.find(block => {
         if (block.grabbed || block.placed) return false;
         const distance = Math.sqrt(
-          Math.pow(block.position[0] - armPosition.x, 2) +
-          Math.pow(block.position[1] - armPosition.y, 2) +
-          Math.pow(block.position[2] - armPosition.z, 2)
+          Math.pow(block.position[0] - armTargetPosition.x, 2) +
+          Math.pow(block.position[1] - armTargetPosition.y, 2) +
+          Math.pow(block.position[2] - armTargetPosition.z, 2)
         );
         return distance < 2;
       });
@@ -222,7 +219,7 @@ function App() {
           // Place the block at current arm position
           const placedBlock = {
             ...block,
-            position: [armPosition.x, armPosition.y - 1, armPosition.z],
+            position: [armTargetPosition.x, armTargetPosition.y - 1, armTargetPosition.z],
             placed: true,
             grabbed: false
           };
@@ -359,7 +356,7 @@ function App() {
             <Physics gravity={[0, -9.8, 0]} ref={physicsRef}>
               <RobotArm 
                 ref={armRef}
-                position={armPosition}
+                targetPosition={armTargetPosition}
                 clawOpen={clawOpen}
                 hasBlock={!!grabbedBlock}
               />
@@ -369,7 +366,7 @@ function App() {
                   key={block.id}
                   {...block}
                   isGrabbed={block.id === grabbedBlock}
-                  armPosition={armPosition}
+                  armPosition={armTargetPosition}
                   onFall={() => handleBlockFall(block.id)}
                 />
               ))}
@@ -394,7 +391,7 @@ function App() {
             onMove={handleArmMove}
             onGrab={handleGrab}
             clawOpen={clawOpen}
-            armPosition={armPosition}
+            armPosition={armTargetPosition}
           />
         </>
       )}
