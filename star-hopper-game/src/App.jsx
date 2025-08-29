@@ -376,15 +376,6 @@ function App() {
                 placedBlocks={placedBlocks}
               />
             </Physics>
-            
-            <OrbitControls 
-              enablePan={true}
-              enableZoom={true}
-              enableRotate={true}
-              minDistance={5}
-              maxDistance={30}
-              maxPolarAngle={Math.PI / 2}
-            />
           </Canvas>
           
           <TouchControls 
