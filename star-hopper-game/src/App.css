@@ -556,11 +556,36 @@ body {
   border-color: #3498db;
 }
 
-.gesture-hint {
+.gesture-hints {
   color: white;
-  font-size: 18px;
-  margin-bottom: 10px;
+  font-size: 14px;
   user-select: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 15px;
+}
+
+.hint-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gesture-icon {
+  font-size: 20px;
+}
+
+.active-gesture {
+  color: #3498db;
+  font-weight: bold;
+  margin-top: 10px;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
 }
 
 .position-indicator {
