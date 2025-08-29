@@ -115,27 +115,16 @@ const TouchControls = ({ onMove, onGrab, clawOpen, armPosition }) => {
         </button>
       </div>
       
-      {/* Rotation controls */}
-      <div className="rotation-controls">
+      {/* Precision controls */}
+      <div className="precision-controls">
+        <div className="precision-label">Precision</div>
         <button
-          className={`control-btn rotate-btn ${activeControl === 'rotateLeft' ? 'active' : ''}`}
-          onTouchStart={() => handleTouchStart('rotation', -0.05)}
-          onTouchEnd={handleTouchEnd}
-          onMouseDown={() => handleTouchStart('rotation', -0.05)}
-          onMouseUp={handleTouchEnd}
-          onMouseLeave={handleTouchEnd}
+          className="precision-btn"
+          onClick={() => {
+            // Toggle precision mode (slower movement)
+          }}
         >
-          ↻
-        </button>
-        <button
-          className={`control-btn rotate-btn ${activeControl === 'rotateRight' ? 'active' : ''}`}
-          onTouchStart={() => handleTouchStart('rotation', 0.05)}
-          onTouchEnd={handleTouchEnd}
-          onMouseDown={() => handleTouchStart('rotation', 0.05)}
-          onMouseUp={handleTouchEnd}
-          onMouseLeave={handleTouchEnd}
-        >
-          ↺
+          🎯
         </button>
       </div>
       
