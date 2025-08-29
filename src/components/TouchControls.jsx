@@ -9,9 +9,10 @@ const TouchControls = ({ onMove, onGrab, clawOpen, armPosition }) => {
     setActiveControl(direction);
     touchStartRef.current = { x: 0, y: 0 };
     
-    // Start continuous movement
+    // Start continuous movement with appropriate speed
+    const moveSpeed = direction === 'y' ? value : value;
     intervalRef.current = setInterval(() => {
-      onMove(direction, value);
+      onMove(direction, moveSpeed);
     }, 50);
   };
   
@@ -41,9 +42,9 @@ const TouchControls = ({ onMove, onGrab, clawOpen, armPosition }) => {
     const x = (touch.clientX - rect.left - rect.width / 2) / (rect.width / 2);
     const y = (touch.clientY - rect.top - rect.height / 2) / (rect.height / 2);
     
-    // Move arm based on joystick position
-    onMove('x', x * 0.3);
-    onMove('z', y * 0.3);
+    // Move arm based on joystick position with dead zone
+    if (Math.abs(x) > 0.1) onMove('x', x * 0.4);
+    if (Math.abs(y) > 0.1) onMove('z', -y * 0.4); // Negative for intuitive movement
   };
   
   const handleJoystickEnd = () => {
@@ -79,8 +80,8 @@ const TouchControls = ({ onMove, onGrab, clawOpen, armPosition }) => {
             const rect = e.currentTarget.getBoundingClientRect();
             const x = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
             const y = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-            onMove('x', x * 0.3);
-            onMove('z', y * 0.3);
+            if (Math.abs(x) > 0.1) onMove('x', x * 0.4);
+            if (Math.abs(y) > 0.1) onMove('z', -y * 0.4);
           }}
           onMouseUp={handleJoystickEnd}
           onMouseLeave={handleJoystickEnd}
@@ -94,9 +95,9 @@ const TouchControls = ({ onMove, onGrab, clawOpen, armPosition }) => {
       <div className="height-controls">
         <button
           className={`control-btn height-btn ${activeControl === 'up' ? 'active' : ''}`}
-          onTouchStart={() => handleTouchStart('y', 0.2)}
+          onTouchStart={() => handleTouchStart('y', 0.3)}
           onTouchEnd={handleTouchEnd}
-          onMouseDown={() => handleTouchStart('y', 0.2)}
+          onMouseDown={() => handleTouchStart('y', 0.3)}
           onMouseUp={handleTouchEnd}
           onMouseLeave={handleTouchEnd}
         >
@@ -105,9 +106,9 @@ const TouchControls = ({ onMove, onGrab, clawOpen, armPosition }) => {
         <div className="height-label">Height</div>
         <button
           className={`control-btn height-btn ${activeControl === 'down' ? 'active' : ''}`}
-          onTouchStart={() => handleTouchStart('y', -0.2)}
+          onTouchStart={() => handleTouchStart('y', -0.3)}
           onTouchEnd={handleTouchEnd}
-          onMouseDown={() => handleTouchStart('y', -0.2)}
+          onMouseDown={() => handleTouchStart('y', -0.3)}
           onMouseUp={handleTouchEnd}
           onMouseLeave={handleTouchEnd}
         >
