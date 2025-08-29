@@ -1,142 +1,132 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
-const TouchControls = ({ onMove, onGrab, clawOpen, armPosition }) => {
-  const [activeControl, setActiveControl] = useState(null);
-  const touchStartRef = useRef({ x: 0, y: 0 });
-  const intervalRef = useRef(null);
+const TouchControls = ({ onMove, onGrab, armPosition }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const [startPos, setStartPos] = useState({ x: 0, y: 0 });
+  const [currentPos, setCurrentPos] = useState({ x: armPosition.x, y: armPosition.y, z: armPosition.z });
+  const containerRef = useRef();
+  const lastTouchRef = useRef({ x: 0, y: 0 });
   
-  const handleTouchStart = (direction, value) => {
-    setActiveControl(direction);
-    touchStartRef.current = { x: 0, y: 0 };
+  // Handle touch/mouse start for gesture control
+  const handleStart = (clientX, clientY) => {
+    setIsDragging(true);
+    setStartPos({ x: clientX, y: clientY });
+    lastTouchRef.current = { x: clientX, y: clientY };
+  };
+  
+  // Handle touch/mouse move for gesture control
+  const handleMove = (clientX, clientY) => {
+    if (!isDragging) return;
     
-    // Start continuous movement with appropriate speed
-    const moveSpeed = direction === 'y' ? value : value;
-    intervalRef.current = setInterval(() => {
-      onMove(direction, moveSpeed);
-    }, 50);
-  };
-  
-  const handleTouchEnd = () => {
-    setActiveControl(null);
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
-    }
-  };
-  
-  const handleJoystickStart = (e) => {
-    const touch = e.touches[0];
-    const rect = e.currentTarget.getBoundingClientRect();
-    touchStartRef.current = {
-      x: touch.clientX - rect.left - rect.width / 2,
-      y: touch.clientY - rect.top - rect.height / 2
+    const deltaX = (clientX - lastTouchRef.current.x) * 0.05;
+    const deltaY = -(clientY - lastTouchRef.current.y) * 0.05;
+    
+    // Update arm position based on gesture
+    const newPos = {
+      x: currentPos.x + deltaX,
+      y: currentPos.y + deltaY,
+      z: currentPos.z
     };
-    setActiveControl('joystick');
+    
+    // Clamp to valid range
+    newPos.x = Math.max(-10, Math.min(10, newPos.x));
+    newPos.y = Math.max(0.5, Math.min(12, newPos.y));
+    
+    setCurrentPos(newPos);
+    onMove(newPos);
+    
+    lastTouchRef.current = { x: clientX, y: clientY };
   };
   
-  const handleJoystickMove = (e) => {
-    if (activeControl !== 'joystick') return;
-    
-    const touch = e.touches[0];
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (touch.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-    const y = (touch.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-    
-    // Move arm based on joystick position with dead zone
-    if (Math.abs(x) > 0.1) onMove('x', x * 0.4);
-    if (Math.abs(y) > 0.1) onMove('z', -y * 0.4); // Negative for intuitive movement
+  // Handle touch/mouse end
+  const handleEnd = () => {
+    setIsDragging(false);
   };
   
-  const handleJoystickEnd = () => {
-    setActiveControl(null);
+  // Handle Z-axis movement (forward/backward)
+  const handleZMove = (direction) => {
+    const newPos = {
+      ...currentPos,
+      z: Math.max(0.5, Math.min(10, currentPos.z + direction * 0.5))
+    };
+    setCurrentPos(newPos);
+    onMove(newPos);
   };
+  
+  // Sync with external position changes
+  useEffect(() => {
+    setCurrentPos({ x: armPosition.x, y: armPosition.y, z: armPosition.z });
+  }, [armPosition]);
   
   return (
     <div className="touch-controls">
-      {/* Position display */}
-      <div className="arm-position-display">
-        <div>X: {armPosition.x.toFixed(1)}</div>
-        <div>Y: {armPosition.y.toFixed(1)}</div>
-        <div>Z: {armPosition.z.toFixed(1)}</div>
-      </div>
-      
-      {/* Joystick for X/Z movement */}
-      <div className="joystick-container">
-        <div 
-          className="joystick"
-          onTouchStart={handleJoystickStart}
-          onTouchMove={handleJoystickMove}
-          onTouchEnd={handleJoystickEnd}
-          onMouseDown={(e) => {
-            const rect = e.currentTarget.getBoundingClientRect();
-            touchStartRef.current = {
-              x: e.clientX - rect.left - rect.width / 2,
-              y: e.clientY - rect.top - rect.height / 2
-            };
-            setActiveControl('joystick');
-          }}
-          onMouseMove={(e) => {
-            if (activeControl !== 'joystick') return;
-            const rect = e.currentTarget.getBoundingClientRect();
-            const x = (e.clientX - rect.left - rect.width / 2) / (rect.width / 2);
-            const y = (e.clientY - rect.top - rect.height / 2) / (rect.height / 2);
-            if (Math.abs(x) > 0.1) onMove('x', x * 0.4);
-            if (Math.abs(y) > 0.1) onMove('z', -y * 0.4);
-          }}
-          onMouseUp={handleJoystickEnd}
-          onMouseLeave={handleJoystickEnd}
-        >
-          <div className="joystick-knob" />
-          <div className="joystick-label">Move</div>
+      {/* Main gesture area for X/Y movement */}
+      <div 
+        ref={containerRef}
+        className="gesture-area"
+        onMouseDown={(e) => handleStart(e.clientX, e.clientY)}
+        onMouseMove={(e) => handleMove(e.clientX, e.clientY)}
+        onMouseUp={handleEnd}
+        onMouseLeave={handleEnd}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          const touch = e.touches[0];
+          handleStart(touch.clientX, touch.clientY);
+        }}
+        onTouchMove={(e) => {
+          e.preventDefault();
+          const touch = e.touches[0];
+          handleMove(touch.clientX, touch.clientY);
+        }}
+        onTouchEnd={(e) => {
+          e.preventDefault();
+          handleEnd();
+        }}
+      >
+        <div className="gesture-hint">
+          {isDragging ? '✋ Moving...' : '👆 Swipe to move arm X/Y'}
+        </div>
+        
+        {/* Position indicator */}
+        <div className="position-indicator">
+          X: {currentPos.x.toFixed(1)} | Y: {currentPos.y.toFixed(1)} | Z: {currentPos.z.toFixed(1)}
         </div>
       </div>
       
-      {/* Height controls */}
-      <div className="height-controls">
-        <button
-          className={`control-btn height-btn ${activeControl === 'up' ? 'active' : ''}`}
-          onTouchStart={() => handleTouchStart('y', 0.3)}
-          onTouchEnd={handleTouchEnd}
-          onMouseDown={() => handleTouchStart('y', 0.3)}
-          onMouseUp={handleTouchEnd}
-          onMouseLeave={handleTouchEnd}
-        >
-          ↑
-        </button>
-        <div className="height-label">Height</div>
-        <button
-          className={`control-btn height-btn ${activeControl === 'down' ? 'active' : ''}`}
-          onTouchStart={() => handleTouchStart('y', -0.3)}
-          onTouchEnd={handleTouchEnd}
-          onMouseDown={() => handleTouchStart('y', -0.3)}
-          onMouseUp={handleTouchEnd}
-          onMouseLeave={handleTouchEnd}
-        >
-          ↓
-        </button>
-      </div>
-      
-      {/* Precision controls */}
-      <div className="precision-controls">
-        <div className="precision-label">Precision</div>
-        <button
-          className="precision-btn"
-          onClick={() => {
-            // Toggle precision mode (slower movement)
+      {/* Z-axis controls (forward/backward) */}
+      <div className="z-controls">
+        <button 
+          className="control-btn z-forward"
+          onClick={() => handleZMove(1)}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            handleZMove(1);
           }}
         >
-          🎯
+          ↑ Forward
+        </button>
+        <button 
+          className="control-btn z-backward"
+          onClick={() => handleZMove(-1)}
+          onTouchStart={(e) => {
+            e.preventDefault();
+            handleZMove(-1);
+          }}
+        >
+          ↓ Back
         </button>
       </div>
       
-      {/* Grab button */}
-      <button
-        className={`grab-button ${!clawOpen ? 'grabbing' : ''}`}
+      {/* Grab/Release button */}
+      <button 
+        className="grab-button"
         onClick={onGrab}
-        onTouchStart={(e) => { e.preventDefault(); onGrab(); }}
+        onTouchStart={(e) => {
+          e.preventDefault();
+          onGrab();
+        }}
       >
-        {clawOpen ? '✋' : '✊'}
-        <span>{clawOpen ? 'GRAB' : 'RELEASE'}</span>
+        {armPosition.clawOpen ? '✊ Grab' : '✋ Release'}
       </button>
     </div>
   );
