@@ -1,0 +1,328 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Comic Sans MS', 'Arial', sans-serif;
+  overflow: hidden;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#root {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+.game-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.ui-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.score-display {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: clamp(16px, 3vw, 24px);
+  font-weight: bold;
+  color: #333;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.timer-display {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px 20px;
+  border-radius: 20px;
+  font-size: clamp(16px, 3vw, 24px);
+  font-weight: bold;
+  color: #333;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.controls-panel {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 100;
+}
+
+.grab-button {
+  width: clamp(80px, 15vw, 120px);
+  height: clamp(80px, 15vw, 120px);
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  font-size: clamp(20px, 4vw, 30px);
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.1s, box-shadow 0.1s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.grab-button:active {
+  transform: scale(0.95);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.grab-button.grabbing {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  animation: pulse 0.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.gyro-indicator {
+  background: rgba(255, 255, 255, 0.9);
+  padding: 10px;
+  border-radius: 15px;
+  font-size: clamp(12px, 2vw, 16px);
+  color: #333;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 150px;
+}
+
+.gyro-value {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.gyro-bar {
+  width: 60px;
+  height: 8px;
+  background: #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  position: relative;
+}
+
+.gyro-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  transition: width 0.1s;
+}
+
+.permission-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.permission-content {
+  background: white;
+  padding: 30px;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 90%;
+  max-height: 90%;
+  overflow: auto;
+}
+
+.permission-title {
+  font-size: clamp(20px, 4vw, 30px);
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.permission-text {
+  font-size: clamp(14px, 3vw, 18px);
+  color: #666;
+  margin-bottom: 30px;
+  line-height: 1.5;
+}
+
+.permission-button {
+  padding: 15px 40px;
+  font-size: clamp(16px, 3vw, 20px);
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.2s;
+}
+
+.permission-button:hover {
+  transform: scale(1.05);
+}
+
+.fallback-controls {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.control-btn {
+  width: clamp(50px, 10vw, 70px);
+  height: clamp(50px, 10vw, 70px);
+  border-radius: 10px;
+  border: none;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: clamp(20px, 4vw, 30px);
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s, background 0.1s;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.control-btn:active {
+  transform: scale(0.95);
+  background: rgba(255, 220, 100, 0.9);
+}
+
+.prize-collected {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(30px, 6vw, 60px);
+  font-weight: bold;
+  color: #FFD700;
+  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.5);
+  animation: collectAnimation 1s ease-out;
+  pointer-events: none;
+  z-index: 200;
+}
+
+@keyframes collectAnimation {
+  0% {
+    transform: translate(-50%, -50%) scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    transform: translate(-50%, -50%) scale(1.2);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -100%) scale(1);
+    opacity: 0;
+  }
+}
+
+.game-over-screen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 500;
+  color: white;
+  text-align: center;
+}
+
+.game-over-title {
+  font-size: clamp(30px, 6vw, 50px);
+  margin-bottom: 20px;
+  color: #FFD700;
+}
+
+.final-score {
+  font-size: clamp(24px, 5vw, 40px);
+  margin-bottom: 30px;
+}
+
+.play-again-btn {
+  padding: 15px 40px;
+  font-size: clamp(18px, 4vw, 24px);
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  color: white;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: transform 0.2s;
+}
+
+.play-again-btn:hover {
+  transform: scale(1.1);
+}
+
+.instructions {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  border-radius: 15px;
+  text-align: center;
+  max-width: 80%;
+  z-index: 90;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+}
+
+.instructions h3 {
+  font-size: clamp(18px, 4vw, 24px);
+  color: #333;
+  margin-bottom: 15px;
+}
+
+.instructions p {
+  font-size: clamp(14px, 3vw, 18px);
+  color: #666;
+  line-height: 1.5;
+}
+
+/* Responsive adjustments */
+@media (orientation: landscape) and (max-height: 500px) {
+  .controls-panel {
+    bottom: 10px;
+  }
+  
+  .grab-button {
+    width: clamp(60px, 12vw, 90px);
+    height: clamp(60px, 12vw, 90px);
+  }
+}
