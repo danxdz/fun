@@ -11,19 +11,19 @@
 ## 🚀 Quick Deploy
 
 ### Deploy to Railway
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new?template=https://github.com/yourusername/autobot-manager)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new?template=https://github.com/danxdz/fun)
 
 ### Deploy to Render
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy/schema-new?template=https://github.com/yourusername/autobot-manager)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy/schema-new?template=https://github.com/danxdz/fun)
 
 ### Deploy to Heroku
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/yourusername/autobot-manager)
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/danxdz/fun)
 
 ### Deploy to Vercel
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/autobot-manager)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/danxdz/fun)
 
 ### Deploy to DigitalOcean App Platform
-[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/yourusername/autobot-manager)
+[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/danxdz/fun)
 
 ## ✨ Features
 
@@ -62,8 +62,8 @@
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/autobot-manager.git
-cd autobot-manager
+git clone https://github.com/danxdz/fun.git
+cd fun
 ```
 
 2. **Install dependencies**
@@ -247,33 +247,38 @@ npm run db:migrate:undo
 
 ### Railway Deployment
 1. Click the "Deploy on Railway" button above
-2. Connect your GitHub repository
-3. Add environment variables
-4. Deploy!
+2. Sign in with GitHub (if not already signed in)
+3. Railway will automatically detect the repository
+4. Add environment variables
+5. Deploy!
 
 ### Render Deployment
 1. Click the "Deploy to Render" button above
-2. Connect your GitHub repository
-3. Configure build settings
-4. Deploy!
+2. Sign in with GitHub (if not already signed in)
+3. Render will automatically detect the repository
+4. Configure build settings
+5. Deploy!
 
 ### Heroku Deployment
 1. Click the "Deploy to Heroku" button above
-2. Connect your GitHub repository
-3. Add PostgreSQL addon
-4. Deploy!
+2. Sign in with GitHub (if not already signed in)
+3. Heroku will automatically detect the repository
+4. Add PostgreSQL addon
+5. Deploy!
 
 ### Vercel Deployment
 1. Click the "Deploy with Vercel" button above
-2. Import your GitHub repository
-3. Configure environment variables
-4. Deploy!
+2. Sign in with GitHub (if not already signed in)
+3. Vercel will automatically detect the repository
+4. Configure environment variables
+5. Deploy!
 
 ### DigitalOcean App Platform
 1. Click the "Deploy to DigitalOcean" button above
-2. Connect your GitHub repository
-3. Configure app settings
-4. Deploy!
+2. Sign in with GitHub (if not already signed in)
+3. DigitalOcean will automatically detect the repository
+4. Configure app settings
+5. Deploy!
 
 ## 🔧 Environment Variables for Production
 
@@ -302,10 +307,10 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support
 
 ### Getting Help
-- 📖 [Documentation](https://github.com/yourusername/autobot-manager/wiki)
-- 🐛 [Report a Bug](https://github.com/yourusername/autobot-manager/issues)
-- 💡 [Request a Feature](https://github.com/yourusername/autobot-manager/issues)
-- 💬 [Discussions](https://github.com/yourusername/autobot-manager/discussions)
+- 📖 [Documentation](https://github.com/danxdz/fun/wiki)
+- 🐛 [Report a Bug](https://github.com/danxdz/fun/issues)
+- 💡 [Request a Feature](https://github.com/danxdz/fun/issues)
+- 💬 [Discussions](https://github.com/danxdz/fun/discussions)
 
 ### Community
 - [Discord Server](https://discord.gg/autobot-manager)
@@ -324,9 +329,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **AutoBot Manager** - Automating your development workflow with intelligent bots 🤖
 
-[![GitHub stars](https://img.shields.io/github/stars/yourusername/autobot-manager?style=social)](https://github.com/yourusername/autobot-manager)
-[![GitHub forks](https://img.shields.io/github/forks/yourusername/autobot-manager?style=social)](https://github.com/yourusername/autobot-manager)
-[![GitHub issues](https://img.shields.io/github/issues/yourusername/autobot-manager)](https://github.com/yourusername/autobot-manager/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/yourusername/autobot-manager)](https://github.com/yourusername/autobot-manager/pulls)
+[![GitHub stars](https://img.shields.io/github/stars/danxdz/fun?style=social)](https://github.com/danxdz/fun)
+[![GitHub forks](https://img.shields.io/github/forks/danxdz/fun?style=social)](https://github.com/danxdz/fun)
+[![GitHub issues](https://img.shields.io/github/issues/danxdz/fun)](https://github.com/danxdz/fun/issues)
+[![GitHub pull requests](https://img.shields.io/github/issues-pr/danxdz/fun)](https://github.com/danxdz/fun/pulls)
 
 </div>

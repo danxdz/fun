@@ -1,8 +1,8 @@
 {
   "name": "autobot-manager",
   "description": "A complete SaaS platform for automated git repository management and code updates",
-  "repository": "https://github.com/yourusername/autobot-manager",
-  "logo": "https://raw.githubusercontent.com/yourusername/autobot-manager/main/public/logo.png",
+  "repository": "https://github.com/danxdz/fun",
+  "logo": "https://raw.githubusercontent.com/danxdz/fun/main/public/logo.svg",
   "keywords": ["node", "express", "react", "saas", "automation", "git", "bots"],
   "env": {
     "NODE_ENV": {
