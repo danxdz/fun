@@ -1,28 +1,67 @@
-import { useState } from 'react'
-import './App.css'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from 'react-query';
+import { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
+import { SocketProvider } from './contexts/SocketContext.jsx';
+import Layout from './components/Layout/Layout.jsx';
+import Login from './pages/Login.jsx';
+import Register from './pages/Register.jsx';
+import Dashboard from './pages/Dashboard.jsx';
+import Projects from './pages/Projects.jsx';
+import Bots from './pages/Bots.jsx';
+import ProjectDetail from './pages/ProjectDetail.jsx';
+import BotDetail from './pages/BotDetail.jsx';
+import Profile from './pages/Profile.jsx';
+import './App.css';
 
-function App() {
-  const [count, setCount] = useState(0)
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-  return (
-    <div className="App">
-      <header className="App-header">
-        <h1>Welcome to React</h1>
-        <p>This is a clean, fresh start!</p>
-        <div className="card">
-          <button onClick={() => setCount((count) => count + 1)}>
-            Count is {count}
-          </button>
-          <p>
-            Edit <code>src/App.jsx</code> and save to test HMR
-          </p>
-        </div>
-        <p className="read-the-docs">
-          Click on the Vite and React logos to learn more
-        </p>
-      </header>
-    </div>
-  )
+function PrivateRoute({ children }) {
+  const { user, loading } = useAuth();
+  
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+  
+  return user ? children : <Navigate to="/login" />;
 }
 
-export default App
+function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <SocketProvider>
+          <Router>
+            <div className="App">
+              <Routes>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/" element={
+                  <PrivateRoute>
+                    <Layout />
+                  </PrivateRoute>
+                }>
+                  <Route index element={<Dashboard />} />
+                  <Route path="projects" element={<Projects />} />
+                  <Route path="projects/:id" element={<ProjectDetail />} />
+                  <Route path="bots" element={<Bots />} />
+                  <Route path="bots/:id" element={<BotDetail />} />
+                  <Route path="profile" element={<Profile />} />
+                </Route>
+              </Routes>
+            </div>
+          </Router>
+        </SocketProvider>
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+}
+
+export default App;
