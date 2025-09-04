@@ -1,5 +1,5 @@
 {
-  "name": "ar-catcher-game",
+  "name": "react-app",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -10,13 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@react-three/cannon": "^6.6.0",
-    "@react-three/drei": "^9.88.0",
-    "@react-three/fiber": "^8.15.0",
-    "howler": "^2.2.4",
     "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "three": "^0.158.0"
+    "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
@@ -30,14 +25,11 @@
     "globals": "^15.14.0",
     "vite": "^6.0.7"
   },
-  "description": "AR-style catching game using phone gyroscope",
+  "description": "A clean React application created with Vite",
   "keywords": [
-    "game",
-    "ar",
-    "gyroscope",
-    "3d",
     "react",
-    "threejs"
+    "vite",
+    "javascript"
   ],
   "author": "",
   "license": "MIT"
