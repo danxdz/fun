@@ -1,0 +1,12 @@
+# Railway configuration
+[build]
+builder = "nixpacks"
+
+[deploy]
+startCommand = "npm run server"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 300
+restartPolicyType = "on_failure"
+
+[env]
+NODE_ENV = "production"
