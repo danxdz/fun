@@ -1,10 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import { body, validationResult } from 'express-validator';
-import { User } from '../server/models/index.js';
 
 dotenv.config();
 
@@ -17,114 +13,82 @@ app.use(cors({
 }));
 app.use(express.json());
 
-// Register endpoint
-app.post('/register', [
-  body('email').isEmail().normalizeEmail(),
-  body('password').isLength({ min: 6 }),
-  body('firstName').trim().notEmpty(),
-  body('lastName').trim().notEmpty()
-], async (req, res) => {
+// Test endpoint
+app.get('/test', (req, res) => {
+  res.json({ 
+    message: 'API is working!',
+    timestamp: new Date().toISOString(),
+    env: process.env.NODE_ENV
+  });
+});
+
+// Register endpoint (simplified without database)
+app.post('/register', async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     const { email, password, firstName, lastName } = req.body;
-
-    // Check if user already exists
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      return res.status(400).json({ error: 'User already exists' });
+    
+    // Simple validation
+    if (!email || !password || !firstName || !lastName) {
+      return res.status(400).json({ error: 'All fields are required' });
+    }
+    
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
     }
 
-    // Create user
-    const user = await User.create({
-      email,
-      password,
-      firstName,
-      lastName
-    });
-
-    // Generate token
-    const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '7d' }
-    );
-
+    // For now, just return success without database
     res.status(201).json({
-      message: 'User created successfully',
-      token,
+      message: 'User created successfully (demo mode)',
+      token: 'demo-token-' + Date.now(),
       user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role
+        id: 'demo-' + Date.now(),
+        email,
+        firstName,
+        lastName,
+        role: 'user'
       }
     });
   } catch (error) {
     console.error('Registration error:', error);
-    res.status(500).json({ error: 'Registration failed' });
+    res.status(500).json({ error: 'Registration failed', details: error.message });
   }
 });
 
-// Login endpoint
-app.post('/login', [
-  body('email').isEmail().normalizeEmail(),
-  body('password').notEmpty()
-], async (req, res) => {
+// Login endpoint (simplified without database)
+app.post('/login', async (req, res) => {
   try {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({ errors: errors.array() });
-    }
-
     const { email, password } = req.body;
-
-    // Find user
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      return res.status(401).json({ error: 'Invalid credentials' });
+    
+    // Simple validation
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    // Check password
-    const isValidPassword = await bcrypt.compare(password, user.password);
-    if (!isValidPassword) {
-      return res.status(401).json({ error: 'Invalid credentials' });
-    }
-
-    // Update last login
-    await user.update({ lastLogin: new Date() });
-
-    // Generate token
-    const token = jwt.sign(
-      { userId: user.id },
-      process.env.JWT_SECRET || 'your-secret-key',
-      { expiresIn: '7d' }
-    );
-
+    // For demo purposes, accept any valid email/password
     res.json({
-      message: 'Login successful',
-      token,
+      message: 'Login successful (demo mode)',
+      token: 'demo-token-' + Date.now(),
       user: {
-        id: user.id,
-        email: user.email,
-        firstName: user.firstName,
-        lastName: user.lastName,
-        role: user.role
+        id: 'demo-' + Date.now(),
+        email,
+        firstName: 'Demo',
+        lastName: 'User',
+        role: 'user'
       }
     });
   } catch (error) {
     console.error('Login error:', error);
-    res.status(500).json({ error: 'Login failed' });
+    res.status(500).json({ error: 'Login failed', details: error.message });
   }
 });
 
 // Health check
 app.get('/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    message: 'API is running in demo mode'
+  });
 });
 
 export default app;
