@@ -1,56 +1,105 @@
-.App {
-  text-align: center;
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', system-ui, sans-serif;
 }
 
-.App-header {
-  background-color: #282c34;
-  padding: 20px;
-  color: white;
-  border-radius: 8px;
-  margin: 20px 0;
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
 }
 
-.App-header h1 {
-  margin: 0 0 20px 0;
-  font-size: 2.5em;
-  color: #61dafb;
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
 }
 
-.App-header p {
-  margin: 10px 0;
-  font-size: 1.2em;
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
 }
 
-.card {
-  background-color: #3a3f4b;
-  border-radius: 8px;
-  margin: 20px 0;
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
-.card button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  color: white;
-  cursor: pointer;
-  transition: border-color 0.25s;
-  margin: 10px;
+/* Loading animation */
+.loading-spinner {
+  border: 2px solid #e2e8f0;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
 }
 
-.card button:hover {
-  border-color: #646cff;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.card button:focus,
-.card button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+/* Status indicators */
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
 }
 
-.read-the-docs {
-  font-size: 0.9em;
-  margin-top: 20px;
+.status-idle { background-color: #6b7280; }
+.status-running { background-color: #3b82f6; }
+.status-completed { background-color: #10b981; }
+.status-failed { background-color: #ef4444; }
+.status-stopped { background-color: #f59e0b; }
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
 }
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Loading animation */
+.loading-spinner {
+  border: 2px solid #e2e8f0;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Status indicators */
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 8px;
+}
+
+.status-idle { background-color: #6b7280; }
+.status-running { background-color: #3b82f6; }
+.status-completed { background-color: #10b981; }
+.status-failed { background-color: #ef4444; }
+.status-stopped { background-color: #f59e0b; }
