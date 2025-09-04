@@ -74,4 +74,5 @@ async function initializeDatabase() {
 // Initialize database on cold start
 initializeDatabase();
 
+// Export for Vercel
 export default app;
