@@ -1,4 +1,4 @@
-# Railway configuration
+# Railway configuration for AutoBot Manager
 [build]
 builder = "nixpacks"
 
@@ -10,3 +10,8 @@ restartPolicyType = "on_failure"
 
 [env]
 NODE_ENV = "production"
+PORT = "3001"
+FRONTEND_URL = "https://your-app-name.railway.app"
+LOG_LEVEL = "info"
+RATE_LIMIT_WINDOW_MS = "900000"
+RATE_LIMIT_MAX_REQUESTS = "100"
