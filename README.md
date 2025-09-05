@@ -10,20 +10,55 @@
 
 ## 🚀 Quick Deploy
 
-### Deploy to Railway
+### 🌐 Frontend Only (Demo Mode)
+**Perfect for trying out the interface and exploring features**
+
+[![Deploy Frontend with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/danxdz/fun)
+
+*Deploys the React frontend with demo data - no server needed!*
+
+### 🖥️ Full Stack Deployment (Production Ready)
+**Complete SaaS application with real bot functionality**
+
+#### Deploy Full Stack to Railway
 [![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new?template=https://github.com/danxdz/fun)
 
-### Deploy to Render
+#### Deploy Full Stack to Render
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy/schema-new?template=https://github.com/danxdz/fun)
 
-### Deploy to Heroku
+#### Deploy Full Stack to Heroku
 [![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/danxdz/fun)
 
-### Deploy to Vercel
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/danxdz/fun)
-
-### Deploy to DigitalOcean App Platform
+#### Deploy Full Stack to DigitalOcean App Platform
 [![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/danxdz/fun)
+
+### 🐳 Docker Deployment
+```bash
+# Clone and deploy with Docker Compose
+git clone https://github.com/danxdz/fun.git
+cd fun
+docker-compose up -d
+```
+
+## 🎯 Deployment Modes
+
+### 🌐 Demo Mode (Vercel)
+- ✅ **Frontend Only** - React app with demo data
+- ✅ **No Server Required** - Works out of the box
+- ✅ **Sample Projects** - Explore the interface
+- ✅ **Demo Bots** - See bot functionality
+- ✅ **Perfect for Testing** - Try before you deploy
+- ❌ **No Real Git Operations** - Demo data only
+- ❌ **No Real Authentication** - Demo users only
+
+### 🖥️ Production Mode (Full Stack)
+- ✅ **Complete Backend** - Node.js + Express server
+- ✅ **Real Database** - PostgreSQL with Supabase
+- ✅ **Real Authentication** - JWT with user management
+- ✅ **Real Git Operations** - Actual repository management
+- ✅ **Real Bot Execution** - Cursor AI-powered automation
+- ✅ **WebSocket Support** - Real-time updates
+- ✅ **Production Ready** - Full SaaS functionality
 
 ## ✨ Features
 
@@ -53,77 +88,50 @@
 
 ## 🚀 Quick Start
 
-### Prerequisites
-- Node.js 18+
-- PostgreSQL 12+
-- Git
+### 🌐 Demo Mode (Frontend Only)
+**Perfect for exploring the interface**
 
-### Installation
-
-1. **Clone the repository**
 ```bash
 git clone https://github.com/danxdz/fun.git
 cd fun
-```
-
-2. **Install dependencies**
-```bash
 npm install
+npm run demo
 ```
 
-3. **Set up environment variables**
+Access at: http://localhost:5173
+
+### 🖥️ Full Stack Setup
+**Complete SaaS with real functionality**
+
 ```bash
-cp .env.example .env
+git clone https://github.com/danxdz/fun.git
+cd fun
+npm run setup
+npm run start:dev
 ```
 
-Edit `.env` with your configuration:
-```env
-# Database
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=autobot_manager
-DB_USER=postgres
-DB_PASSWORD=your_password
+📖 **Detailed Setup Guide**: [SETUP-FULL-STACK.md](SETUP-FULL-STACK.md)
 
-# JWT
-JWT_SECRET=your-secret-key
+### Prerequisites
+- Node.js 18+
+- Supabase account (for full stack)
+- Git
 
-# Server
-PORT=3001
-NODE_ENV=development
-
-# Frontend URL
-FRONTEND_URL=http://localhost:5173
-```
-
-4. **Set up the database**
+### Quick Commands
 ```bash
-# Create database
-createdb autobot_manager
+# Demo mode (frontend only)
+npm run demo
 
-# Run migrations
+# Full stack development
+npm run start:dev
+
+# Production build
+npm run production
+
+# Database setup
 npm run db:migrate
-
-# Seed initial data (optional)
 npm run db:seed
 ```
-
-5. **Start the development servers**
-
-Terminal 1 - Backend:
-```bash
-npm run server:dev
-```
-
-Terminal 2 - Frontend:
-```bash
-npm run dev
-```
-
-6. **Access the application**
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:3001
-- API Health Check: http://localhost:3001/api/health
 
 ## 🐳 Docker Deployment
 

@@ -13,7 +13,12 @@
     "db:migrate": "node server/database/migrate.js",
     "db:seed": "node server/database/seed.js",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "start": "npm run build && npm run server",
+    "start:dev": "concurrently \"npm run dev\" \"npm run server:dev\"",
+    "setup": "npm install && npm run db:migrate && npm run db:seed",
+    "demo": "npm run dev",
+    "production": "npm run build && npm run server"
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
@@ -62,6 +67,7 @@
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^8.2.2",
     "eslint": "^9.17.0",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.0.0",
