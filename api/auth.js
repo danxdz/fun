@@ -6,7 +6,7 @@ let users = [
   {
     id: 'demo-user-1',
     email: 'demo@autobot.com',
-    password_hash: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/8.5K5G.', // password: demo123
+    password_hash: '$2a$12$v46E.V7dKcG9wnTBtN8QROJwgKf0a94r54ZbMWDQ773/ZkgjR8HlS', // password: demo123
     first_name: 'Demo',
     last_name: 'User',
     role: 'user',
@@ -99,6 +99,7 @@ export default async function handler(req, res) {
 
         // Check password
         const isValidPassword = await bcrypt.compare(password, user.password_hash);
+        console.log('Login attempt:', { email, password: password.substring(0, 3) + '***', isValidPassword });
         if (!isValidPassword) {
           return res.status(401).json({ error: 'Invalid credentials' });
         }
