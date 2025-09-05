@@ -1,5 +1,20 @@
-import { supabase } from '../lib/supabase.js';
 import jwt from 'jsonwebtoken';
+
+// Simple in-memory storage for demo (same as auth.js)
+let users = [
+  {
+    id: 'demo-user-1',
+    email: 'demo@autobot.com',
+    password_hash: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/8.5K5G.', // password: demo123
+    first_name: 'Demo',
+    last_name: 'User',
+    role: 'user',
+    is_active: true,
+    created_at: new Date().toISOString(),
+    last_login: null,
+    preferences: {}
+  }
+];
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -29,15 +44,9 @@ export default async function handler(req, res) {
       // Verify JWT token
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
       
-      // Get user from database
-      const { data: user, error } = await supabase
-        .from('users')
-        .select('id, email, first_name, last_name, role, last_login, preferences')
-        .eq('id', decoded.userId)
-        .eq('is_active', true)
-        .single();
-
-      if (error || !user) {
+      // Get user from in-memory storage
+      const user = users.find(u => u.id === decoded.userId && u.is_active);
+      if (!user) {
         return res.status(401).json({ error: 'Invalid token' });
       }
 

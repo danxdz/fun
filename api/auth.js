@@ -1,6 +1,20 @@
-import { supabase } from '../lib/supabase.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+
+// Simple in-memory storage for demo (replace with Supabase when configured)
+let users = [
+  {
+    id: 'demo-user-1',
+    email: 'demo@autobot.com',
+    password_hash: '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj4J/8.5K5G.', // password: demo123
+    first_name: 'Demo',
+    last_name: 'User',
+    role: 'user',
+    is_active: true,
+    created_at: new Date().toISOString(),
+    last_login: null
+  }
+];
 
 export default async function handler(req, res) {
   // Enable CORS
@@ -35,12 +49,7 @@ export default async function handler(req, res) {
       // Check if this is a registration (has firstName/lastName) or login
       if (firstName && lastName) {
         // Registration
-        const { data: existingUser } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', email)
-          .single();
-
+        const existingUser = users.find(u => u.email === email);
         if (existingUser) {
           return res.status(400).json({ error: 'User already exists' });
         }
@@ -49,22 +58,19 @@ export default async function handler(req, res) {
         const passwordHash = await bcrypt.hash(password, 12);
 
         // Create user
-        const { data: newUser, error: createError } = await supabase
-          .from('users')
-          .insert({
-            email,
-            password_hash: passwordHash,
-            first_name: firstName,
-            last_name: lastName,
-            role: 'user'
-          })
-          .select('id, email, first_name, last_name, role')
-          .single();
+        const newUser = {
+          id: `user-${Date.now()}`,
+          email,
+          password_hash: passwordHash,
+          first_name: firstName,
+          last_name: lastName,
+          role: 'user',
+          is_active: true,
+          created_at: new Date().toISOString(),
+          last_login: null
+        };
 
-        if (createError) {
-          console.error('Registration error:', createError);
-          return res.status(500).json({ error: 'Registration failed' });
-        }
+        users.push(newUser);
 
         // Generate JWT token
         const token = jwt.sign(
@@ -86,14 +92,8 @@ export default async function handler(req, res) {
         });
       } else {
         // Login
-        const { data: user, error: loginError } = await supabase
-          .from('users')
-          .select('id, email, first_name, last_name, role, password_hash')
-          .eq('email', email)
-          .eq('is_active', true)
-          .single();
-
-        if (loginError || !user) {
+        const user = users.find(u => u.email === email && u.is_active);
+        if (!user) {
           return res.status(401).json({ error: 'Invalid credentials' });
         }
 
@@ -104,10 +104,7 @@ export default async function handler(req, res) {
         }
 
         // Update last login
-        await supabase
-          .from('users')
-          .update({ last_login: new Date().toISOString() })
-          .eq('id', user.id);
+        user.last_login = new Date().toISOString();
 
         // Generate JWT token
         const token = jwt.sign(
@@ -130,7 +127,7 @@ export default async function handler(req, res) {
       }
     } catch (error) {
       console.error('Auth error:', error);
-      res.status(500).json({ error: 'Authentication failed' });
+      res.status(500).json({ error: 'Authentication failed: ' + error.message });
     }
   } else {
     res.status(405).json({ error: 'Method not allowed' });

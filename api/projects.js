@@ -1,5 +1,6 @@
 import { supabase } from '../lib/supabase.js';
 import GitHubService from '../lib/githubService.js';
+import { demoProjects } from './demo-data.js';
 import jwt from 'jsonwebtoken';
 
 async function authenticateUser(req) {
@@ -58,7 +59,14 @@ export default async function handler(req, res) {
 
         res.status(200).json({ repositories: result.repositories });
       } else {
-        // Get user's projects
+        // Check if Supabase is available, otherwise use demo data
+        if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
+          // Return demo data
+          res.status(200).json({ projects: demoProjects });
+          return;
+        }
+
+        // Get user's projects from Supabase
         const { data: projects, error } = await supabase
           .from('projects')
           .select(`
