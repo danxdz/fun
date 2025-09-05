@@ -5,7 +5,6 @@ import {
   ArrowLeftIcon,
   FolderIcon,
   StarIcon,
-  GitBranchIcon,
   ExclamationTriangleIcon,
   ClockIcon,
   CodeBracketIcon,
@@ -132,7 +131,7 @@ export default function ProjectDetail() {
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center">
-                  <GitBranchIcon className="h-4 w-4 text-gray-400 mr-1" />
+                  <CodeBracketIcon className="h-4 w-4 text-gray-400 mr-1" />
                   <span className="text-lg font-semibold text-gray-900">{project.githubData.forks || 0}</span>
                 </div>
                 <p className="text-xs text-gray-500">Forks</p>
@@ -166,7 +165,7 @@ export default function ProjectDetail() {
               {githubInfo.branches.slice(0, 5).map((branch) => (
                 <div key={branch.name} className="flex items-center justify-between p-2 bg-gray-50 rounded">
                   <div className="flex items-center">
-                    <GitBranchIcon className="h-4 w-4 text-gray-400 mr-2" />
+                    <CodeBracketIcon className="h-4 w-4 text-gray-400 mr-2" />
                     <span className="text-sm font-medium text-gray-900">{branch.name}</span>
                     {branch.protected && (
                       <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">

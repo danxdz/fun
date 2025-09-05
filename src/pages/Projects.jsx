@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
-import { PlusIcon, FolderIcon, StarIcon, GitBranchIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, FolderIcon, StarIcon, CodeBracketIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 
 export default function Projects() {
@@ -77,7 +77,7 @@ export default function Projects() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500">Forks:</span>
                       <div className="flex items-center">
-                        <GitBranchIcon className="h-3 w-3 text-gray-400 mr-1" />
+                        <CodeBracketIcon className="h-3 w-3 text-gray-400 mr-1" />
                         <span className="text-gray-900 font-medium">{project.githubData.forks || 0}</span>
                       </div>
                     </div>

@@ -8,7 +8,6 @@ import {
   ExclamationTriangleIcon,
   ClockIcon,
   StarIcon,
-  GitBranchIcon,
   CodeBracketIcon
 } from '@heroicons/react/24/outline';
 import axios from 'axios';
