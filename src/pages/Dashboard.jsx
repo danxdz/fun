@@ -6,44 +6,53 @@ import {
   CogIcon, 
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  ClockIcon
+  ClockIcon,
+  StarIcon,
+  GitBranchIcon,
+  CodeBracketIcon
 } from '@heroicons/react/24/outline';
 import axios from 'axios';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 export default function Dashboard() {
-  const { data: projectsData } = useQuery('projects', () =>
-    axios.get('/api/projects').then(res => res.data)
+  const { data: dashboardData, isLoading } = useQuery('dashboard', () =>
+    axios.get('/api/dashboard').then(res => res.data)
   );
 
-  const { data: botsData } = useQuery('bots', () =>
-    axios.get('/api/bots').then(res => res.data)
-  );
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="loading-spinner" />
+      </div>
+    );
+  }
 
-  const projects = projectsData?.projects || [];
-  const bots = botsData?.bots || [];
-
-  const stats = {
-    totalProjects: projects.length,
-    totalBots: bots.length,
-    activeBots: bots.filter(bot => bot.status === 'running').length,
-    completedRuns: bots.reduce((acc, bot) => acc + (bot.BotRuns?.filter(run => run.status === 'completed').length || 0), 0)
+  const stats = dashboardData?.statistics || {
+    projects: { total: 0, active: 0, github: 0 },
+    bots: { total: 0, running: 0, completed: 0, failed: 0 },
+    runs: { total: 0, completed: 0, failed: 0, running: 0 },
+    github: { totalStars: 0, totalForks: 0, totalIssues: 0 }
   };
 
-  const recentActivity = bots
-    .flatMap(bot => bot.BotRuns || [])
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 5);
+  const recentActivity = dashboardData?.recentActivity || [];
+  const weeklyActivity = dashboardData?.weeklyActivity || [];
+  const projects = dashboardData?.projects || [];
+  const bots = dashboardData?.bots || [];
 
-  const chartData = [
-    { name: 'Mon', runs: 12, updates: 8 },
-    { name: 'Tue', runs: 19, updates: 15 },
-    { name: 'Wed', runs: 15, updates: 12 },
-    { name: 'Thu', runs: 22, updates: 18 },
-    { name: 'Fri', runs: 18, updates: 14 },
-    { name: 'Sat', runs: 10, updates: 7 },
-    { name: 'Sun', runs: 8, updates: 5 },
-  ];
+  // Prepare chart data
+  const chartData = weeklyActivity.map(day => ({
+    name: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }),
+    runs: day.runs,
+    completed: day.completed,
+    failed: day.failed
+  }));
+
+  const botTypeData = Object.entries(stats.bots.byType || {}).map(([type, count]) => ({
+    name: type.replace('_', ' '),
+    value: count
+  }));
+
+  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   return (
     <div className="space-y-6">
@@ -69,7 +78,10 @@ export default function Dashboard() {
                     Total Projects
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {stats.totalProjects}
+                    {stats.projects.total}
+                  </dd>
+                  <dd className="text-xs text-gray-500">
+                    {stats.projects.active} active
                   </dd>
                 </dl>
               </div>
@@ -89,27 +101,10 @@ export default function Dashboard() {
                     Total Bots
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {stats.totalBots}
+                    {stats.bots.total}
                   </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <ClockIcon className="h-6 w-6 text-blue-400" />
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Active Bots
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {stats.activeBots}
+                  <dd className="text-xs text-gray-500">
+                    {stats.bots.running} running
                   </dd>
                 </dl>
               </div>
@@ -126,10 +121,36 @@ export default function Dashboard() {
               <div className="ml-5 w-0 flex-1">
                 <dl>
                   <dt className="text-sm font-medium text-gray-500 truncate">
-                    Completed Runs
+                    Bot Runs
                   </dt>
                   <dd className="text-lg font-medium text-gray-900">
-                    {stats.completedRuns}
+                    {stats.runs.total}
+                  </dd>
+                  <dd className="text-xs text-gray-500">
+                    {stats.runs.completed} completed
+                  </dd>
+                </dl>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white overflow-hidden shadow rounded-lg">
+          <div className="p-5">
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <StarIcon className="h-6 w-6 text-yellow-400" />
+              </div>
+              <div className="ml-5 w-0 flex-1">
+                <dl>
+                  <dt className="text-sm font-medium text-gray-500 truncate">
+                    GitHub Stars
+                  </dt>
+                  <dd className="text-lg font-medium text-gray-900">
+                    {stats.github.totalStars}
+                  </dd>
+                  <dd className="text-xs text-gray-500">
+                    {stats.github.totalForks} forks
                   </dd>
                 </dl>
               </div>
@@ -139,9 +160,9 @@ export default function Dashboard() {
       </div>
 
       {/* Charts and Activity */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Activity Chart */}
-        <div className="bg-white shadow rounded-lg p-6">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+        {/* Weekly Activity Chart */}
+        <div className="bg-white shadow rounded-lg p-6 lg:col-span-2">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Weekly Activity</h3>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={chartData}>
@@ -149,42 +170,123 @@ export default function Dashboard() {
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Line type="monotone" dataKey="runs" stroke="#3b82f6" strokeWidth={2} />
-              <Line type="monotone" dataKey="updates" stroke="#10b981" strokeWidth={2} />
+              <Line type="monotone" dataKey="runs" stroke="#3b82f6" strokeWidth={2} name="Total Runs" />
+              <Line type="monotone" dataKey="completed" stroke="#10b981" strokeWidth={2} name="Completed" />
+              <Line type="monotone" dataKey="failed" stroke="#ef4444" strokeWidth={2} name="Failed" />
             </LineChart>
           </ResponsiveContainer>
         </div>
 
+        {/* Bot Types */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Bot Types</h3>
+          {botTypeData.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={botTypeData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="value"
+                >
+                  {botTypeData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="flex items-center justify-center h-64">
+              <p className="text-gray-500 text-sm">No bots created yet</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Recent Activity and Projects */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Recent Activity */}
         <div className="bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
           <div className="space-y-4">
             {recentActivity.length > 0 ? (
-              recentActivity.map((run) => (
-                <div key={run.id} className="flex items-center space-x-3">
-                  <div className={`status-indicator status-${run.status}`} />
+              recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-center space-x-3">
+                  <div className={`status-indicator status-${activity.status}`} />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
-                      {run.Bot?.name || 'Unknown Bot'}
+                      {activity.title}
                     </p>
                     <p className="text-sm text-gray-500">
-                      {new Date(run.createdAt).toLocaleDateString()}
+                      {activity.description}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(activity.timestamp).toLocaleString()}
                     </p>
                   </div>
                   <div className="flex-shrink-0">
                     <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                      run.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      run.status === 'failed' ? 'bg-red-100 text-red-800' :
-                      run.status === 'running' ? 'bg-blue-100 text-blue-800' :
+                      activity.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      activity.status === 'failed' || activity.status === 'error' ? 'bg-red-100 text-red-800' :
+                      activity.status === 'running' ? 'bg-blue-100 text-blue-800' :
                       'bg-gray-100 text-gray-800'
                     }`}>
-                      {run.status}
+                      {activity.status}
                     </span>
                   </div>
                 </div>
               ))
             ) : (
               <p className="text-gray-500 text-sm">No recent activity</p>
+            )}
+          </div>
+        </div>
+
+        {/* Recent Projects */}
+        <div className="bg-white shadow rounded-lg p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Projects</h3>
+          <div className="space-y-4">
+            {projects.slice(0, 5).map((project) => (
+              <div key={project.id} className="flex items-center space-x-3">
+                <FolderIcon className="h-5 w-5 text-gray-400" />
+                <div className="flex-1 min-w-0">
+                  <Link
+                    to={`/projects/${project.id}`}
+                    className="text-sm font-medium text-gray-900 hover:text-primary-600 truncate block"
+                  >
+                    {project.name}
+                  </Link>
+                  <p className="text-sm text-gray-500">
+                    {project.githubData ? (
+                      <span className="flex items-center">
+                        <StarIcon className="h-3 w-3 text-yellow-400 mr-1" />
+                        {project.githubData.stars || 0} stars
+                      </span>
+                    ) : (
+                      'No GitHub data'
+                    )}
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Created {new Date(project.createdAt).toLocaleDateString()}
+                  </p>
+                </div>
+                <div className="flex-shrink-0">
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    project.status === 'active' ? 'bg-green-100 text-green-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {project.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {projects.length === 0 && (
+              <p className="text-gray-500 text-sm">No projects yet</p>
             )}
           </div>
         </div>
@@ -209,7 +311,7 @@ export default function Dashboard() {
                 Add New Project
               </h3>
               <p className="mt-2 text-sm text-gray-500">
-                Connect a new repository to start automating
+                Create or import a GitHub repository
               </p>
             </div>
           </Link>
@@ -229,7 +331,7 @@ export default function Dashboard() {
                 Create Bot
               </h3>
               <p className="mt-2 text-sm text-gray-500">
-                Set up automated workflows for your projects
+                Set up AI-powered automation workflows
               </p>
             </div>
           </Link>

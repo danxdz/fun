@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
-import { PlusIcon, FolderIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, FolderIcon, StarIcon, GitBranchIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 import axios from 'axios';
 
 export default function Projects() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  
   const { data: projectsData, isLoading, refetch } = useQuery('projects', () =>
     axios.get('/api/projects').then(res => res.data)
   );
@@ -59,10 +60,38 @@ export default function Projects() {
                   <span className="text-gray-500">Repository:</span>
                   <span className="text-gray-900 font-medium">{project.repositoryType}</span>
                 </div>
-                <div className="flex items-center justify-between text-sm mt-1">
-                  <span className="text-gray-500">Bots:</span>
-                  <span className="text-gray-900 font-medium">{project.Bots?.length || 0}</span>
-                </div>
+                
+                {project.githubData && (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Language:</span>
+                      <span className="text-gray-900 font-medium">{project.githubData.language || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Stars:</span>
+                      <div className="flex items-center">
+                        <StarIcon className="h-3 w-3 text-yellow-400 mr-1" />
+                        <span className="text-gray-900 font-medium">{project.githubData.stars || 0}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-gray-500">Forks:</span>
+                      <div className="flex items-center">
+                        <GitBranchIcon className="h-3 w-3 text-gray-400 mr-1" />
+                        <span className="text-gray-900 font-medium">{project.githubData.forks || 0}</span>
+                      </div>
+                    </div>
+                    {project.githubData.openIssues > 0 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Issues:</span>
+                        <div className="flex items-center">
+                          <ExclamationTriangleIcon className="h-3 w-3 text-red-400 mr-1" />
+                          <span className="text-gray-900 font-medium">{project.githubData.openIssues}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="mt-6 flex justify-end">
@@ -110,34 +139,64 @@ export default function Projects() {
 }
 
 function CreateProjectModal({ onClose, onSuccess }) {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    repositoryUrl: '',
-    repositoryType: 'github',
-    accessToken: '',
-    defaultBranch: 'main'
-  });
+  const [createType, setCreateType] = useState('github'); // 'github' or 'import'
+  const [githubRepos, setGithubRepos] = useState([]);
+  const [loadingRepos, setLoadingRepos] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const loadGithubRepos = async () => {
+    setLoadingRepos(true);
+    try {
+      const response = await axios.get('/api/projects?action=github-repos');
+      setGithubRepos(response.data.repositories);
+    } catch (error) {
+      console.error('Failed to load GitHub repos:', error);
+      setError('Failed to load GitHub repositories');
+    } finally {
+      setLoadingRepos(false);
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleCreateGithubRepo = async (formData) => {
     setLoading(true);
     setError('');
 
     try {
-      await axios.post('/api/projects', formData);
+      const response = await axios.post('/api/projects', {
+        action: 'create-github',
+        ...formData
+      });
+      
+      if (response.data.setupSuccess) {
+        alert('Repository created and set up successfully!');
+      } else {
+        alert('Repository created but setup failed. You can still use it.');
+      }
+      
       onSuccess();
     } catch (error) {
-      setError(error.response?.data?.error || 'Failed to create project');
+      setError(error.response?.data?.error || 'Failed to create repository');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleImportGithubRepo = async (repo) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      await axios.post('/api/projects', {
+        action: 'import-github',
+        repositoryUrl: repo.url,
+        name: repo.name,
+        description: repo.description
+      });
+      
+      onSuccess();
+    } catch (error) {
+      setError(error.response?.data?.error || 'Failed to import repository');
     } finally {
       setLoading(false);
     }
@@ -149,108 +208,221 @@ function CreateProjectModal({ onClose, onSuccess }) {
         <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" onClick={onClose} />
         
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-          <form onSubmit={handleSubmit}>
-            <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-              <div className="sm:flex sm:items-start">
-                <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900">
-                    Create New Project
-                  </h3>
-                  <div className="mt-4 space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Project Name
-                      </label>
-                      <input
-                        type="text"
-                        name="name"
-                        required
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        value={formData.name}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Description
-                      </label>
-                      <textarea
-                        name="description"
-                        rows={3}
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        value={formData.description}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Repository URL
-                      </label>
-                      <input
-                        type="url"
-                        name="repositoryUrl"
-                        required
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        value={formData.repositoryUrl}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Repository Type
-                      </label>
-                      <select
-                        name="repositoryType"
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        value={formData.repositoryType}
-                        onChange={handleChange}
-                      >
-                        <option value="github">GitHub</option>
-                        <option value="gitlab">GitLab</option>
-                        <option value="bitbucket">Bitbucket</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700">
-                        Access Token
-                      </label>
-                      <input
-                        type="password"
-                        name="accessToken"
-                        required
-                        className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
-                        value={formData.accessToken}
-                        onChange={handleChange}
-                      />
-                    </div>
+          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div className="sm:flex sm:items-start">
+              <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                <h3 className="text-lg leading-6 font-medium text-gray-900">
+                  Create New Project
+                </h3>
+                
+                {/* Create Type Tabs */}
+                <div className="mt-4">
+                  <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => setCreateType('github')}
+                      className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
+                        createType === 'github'
+                          ? 'bg-white text-primary-600 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Create New Repo
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setCreateType('import');
+                        loadGithubRepos();
+                      }}
+                      className={`flex-1 py-2 px-3 text-sm font-medium rounded-md transition-colors ${
+                        createType === 'import'
+                          ? 'bg-white text-primary-600 shadow-sm'
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      Import Existing
+                    </button>
                   </div>
-                  
-                  {error && (
-                    <div className="mt-4 rounded-md bg-red-50 p-4">
-                      <div className="text-sm text-red-700">{error}</div>
-                    </div>
-                  )}
                 </div>
+
+                {createType === 'github' ? (
+                  <CreateGithubRepoForm onSubmit={handleCreateGithubRepo} loading={loading} />
+                ) : (
+                  <ImportGithubRepoForm 
+                    githubRepos={githubRepos}
+                    loadingRepos={loadingRepos}
+                    onImport={handleImportGithubRepo}
+                    loading={loading}
+                  />
+                )}
+                
+                {error && (
+                  <div className="mt-4 rounded-md bg-red-50 p-4">
+                    <div className="text-sm text-red-700">{error}</div>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
-              >
-                {loading ? 'Creating...' : 'Create Project'}
-              </button>
+          </div>
+          <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CreateGithubRepoForm({ onSubmit, loading }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    description: '',
+    isPrivate: false,
+    templateType: 'basic'
+  });
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData({
+      ...formData,
+      [name]: type === 'checkbox' ? checked : value
+    });
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="mt-4 space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Repository Name
+        </label>
+        <input
+          type="text"
+          name="name"
+          required
+          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+          value={formData.name}
+          onChange={handleChange}
+          placeholder="my-awesome-project"
+        />
+      </div>
+      
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Description
+        </label>
+        <textarea
+          name="description"
+          rows={3}
+          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+          value={formData.description}
+          onChange={handleChange}
+          placeholder="A brief description of your project"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700">
+          Template Type
+        </label>
+        <select
+          name="templateType"
+          className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+          value={formData.templateType}
+          onChange={handleChange}
+        >
+          <option value="basic">Basic (README + .gitignore)</option>
+          <option value="react">React App</option>
+          <option value="node">Node.js App</option>
+        </select>
+      </div>
+
+      <div className="flex items-center">
+        <input
+          type="checkbox"
+          name="isPrivate"
+          className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
+          checked={formData.isPrivate}
+          onChange={handleChange}
+        />
+        <label className="ml-2 block text-sm text-gray-900">
+          Make this repository private
+        </label>
+      </div>
+
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+      >
+        {loading ? 'Creating...' : 'Create Repository'}
+      </button>
+    </form>
+  );
+}
+
+function ImportGithubRepoForm({ githubRepos, loadingRepos, onImport, loading }) {
+  if (loadingRepos) {
+    return (
+      <div className="mt-4 flex justify-center items-center h-32">
+        <div className="loading-spinner" />
+      </div>
+    );
+  }
+
+  if (githubRepos.length === 0) {
+    return (
+      <div className="mt-4 text-center py-8">
+        <p className="text-sm text-gray-500">No GitHub repositories found.</p>
+        <p className="text-xs text-gray-400 mt-1">Make sure you have a GitHub token configured.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4">
+      <p className="text-sm text-gray-600 mb-3">Select a repository to import:</p>
+      <div className="max-h-64 overflow-y-auto space-y-2">
+        {githubRepos.map((repo) => (
+          <div
+            key={repo.id}
+            className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer"
+            onClick={() => onImport(repo)}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-gray-900">{repo.name}</h4>
+                <p className="text-xs text-gray-500 mt-1">
+                  {repo.description || 'No description'}
+                </p>
+                <div className="flex items-center space-x-4 mt-2 text-xs text-gray-400">
+                  <span>{repo.language || 'N/A'}</span>
+                  <span>⭐ {repo.stars}</span>
+                  <span>🍴 {repo.forks}</span>
+                  {repo.private && <span className="text-red-500">Private</span>}
+                </div>
+              </div>
               <button
                 type="button"
-                onClick={onClose}
-                className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                disabled={loading}
+                className="ml-3 inline-flex items-center px-3 py-1 border border-transparent text-xs font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50"
               >
-                Cancel
+                {loading ? 'Importing...' : 'Import'}
               </button>
             </div>
-          </form>
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );
