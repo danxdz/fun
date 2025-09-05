@@ -35,17 +35,23 @@ export default async function handler(req, res) {
     try {
       // Get token from Authorization header
       const authHeader = req.headers.authorization;
+      console.log('Me endpoint - auth header:', authHeader ? 'present' : 'missing');
+      
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        console.log('Me endpoint - no valid auth header');
         return res.status(401).json({ error: 'No token provided' });
       }
 
       const token = authHeader.substring(7);
+      console.log('Me endpoint - token:', token.substring(0, 20) + '...');
       
       // Verify JWT token
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
+      console.log('Me endpoint - decoded token:', decoded);
       
       // Get user from in-memory storage
       const user = users.find(u => u.id === decoded.userId && u.is_active);
+      console.log('Me endpoint - user found:', !!user);
       if (!user) {
         return res.status(401).json({ error: 'Invalid token' });
       }

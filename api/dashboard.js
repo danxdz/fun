@@ -41,16 +41,18 @@ export default async function handler(req, res) {
   }
 
   try {
-    const user = await authenticateUser(req);
     const { method } = req;
 
     if (method === 'GET') {
       // Check if Supabase is available, otherwise use demo data
       if (!process.env.SUPABASE_URL || !process.env.SUPABASE_ANON_KEY) {
-        // Return demo data
+        // Return demo data without authentication for demo mode
         res.status(200).json(demoDashboardData);
         return;
       }
+
+      // For Supabase mode, authenticate user
+      const user = await authenticateUser(req);
 
       // Get user's projects from Supabase
       const { data: projects, error: projectsError } = await supabase
