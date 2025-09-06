@@ -531,10 +531,68 @@ app.get('/auth/callback', async (req, res) => {
       return res.send(`
         <!DOCTYPE html>
         <html>
-        <head><title>Authentication Successful</title></head>
+        <head>
+          <title>Authentication Complete</title>
+          <style>
+            body {
+              margin: 0;
+              padding: 0;
+              background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+              color: #00ff88;
+              font-family: 'Courier New', monospace;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              min-height: 100vh;
+              overflow: hidden;
+            }
+            .container {
+              text-align: center;
+              padding: 2rem;
+              border: 1px solid #00ff88;
+              border-radius: 8px;
+              background: rgba(0, 255, 136, 0.05);
+              box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+            }
+            .terminal {
+              font-size: 14px;
+              line-height: 1.6;
+            }
+            .success { color: #00ff88; }
+            .info { color: #00bfff; }
+            .warning { color: #ffaa00; }
+            .loading {
+              display: inline-block;
+              width: 20px;
+              height: 20px;
+              border: 2px solid #00ff88;
+              border-radius: 50%;
+              border-top-color: transparent;
+              animation: spin 1s linear infinite;
+            }
+            @keyframes spin {
+              to { transform: rotate(360deg); }
+            }
+            .blink { animation: blink 1s infinite; }
+            @keyframes blink {
+              0%, 50% { opacity: 1; }
+              51%, 100% { opacity: 0; }
+            }
+          </style>
+        </head>
         <body>
+          <div class="container">
+            <div class="terminal">
+              <div class="success">[AUTH] Authentication successful</div>
+              <div class="info">[USER] Welcome, ${githubUser.name || githubUser.login}</div>
+              <div class="success">[TOKEN] Access token acquired</div>
+              <div class="success">[PERMS] Repository access granted</div>
+              <div class="warning">[SYS] Initializing dashboard...</div>
+              <div class="info">[LOAD] <span class="loading"></span> Redirecting in progress</div>
+              <div class="blink">_</div>
+            </div>
+          </div>
           <script>
-            console.log('Setting token and user data...');
             localStorage.setItem('token', '${appToken}');
             localStorage.setItem('user', JSON.stringify(${JSON.stringify({
               id: userId,
@@ -545,17 +603,10 @@ app.get('/auth/callback', async (req, res) => {
               githubAvatar: githubUser.avatar_url,
               githubToken: githubToken
             })}));
-            console.log('Token set:', localStorage.getItem('token') ? 'YES' : 'NO');
-            console.log('User set:', localStorage.getItem('user') ? 'YES' : 'NO');
             setTimeout(() => {
               window.location.href = '/';
-            }, 1000);
+            }, 2000);
           </script>
-          <h1>🎉 Authentication Successful!</h1>
-          <p>Welcome ${githubUser.name || githubUser.login}!</p>
-          <p>✅ Account connected successfully</p>
-          <p>✅ Repository management enabled</p>
-          <p>Redirecting to dashboard...</p>
         </body>
         </html>
       `);
