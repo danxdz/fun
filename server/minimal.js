@@ -1304,9 +1304,12 @@ app.post('/api/projects', async (req, res) => {
       updatedAt: new Date().toISOString()
     };
     
-    // Add repositoryUrl if provided (for imports)
+    // Add repositoryUrl if provided (for imports) or placeholder for new repos
     if (repositoryUrl) {
       projectData.repositoryUrl = repositoryUrl;
+    } else if (action === 'create-github') {
+      // For new repos, provide a placeholder URL that can be updated later
+      projectData.repositoryUrl = `https://github.com/${user.user_metadata?.user_name || 'user'}/${name}`;
     }
     
     // Only add accessToken if it's provided (not for imports)
