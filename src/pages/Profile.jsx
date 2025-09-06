@@ -117,28 +117,41 @@ export default function Profile() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-4">
-            {user?.githubAvatar && (
-              <img
-                src={user.githubAvatar}
-                alt="Profile"
-                className="h-16 w-16 rounded-full border-4 border-white shadow-lg"
-              />
-            )}
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 mb-8">
+          <div className="flex items-center space-x-6">
+            <div className="relative">
+              {user?.githubAvatar ? (
+                <img
+                  src={user.githubAvatar}
+                  alt="Profile"
+                  className="h-20 w-20 rounded-full border-4 border-white shadow-lg"
+                />
+              ) : (
+                <div className="h-20 w-20 rounded-full bg-gradient-to-br from-purple-100 to-pink-100 border-4 border-white shadow-lg flex items-center justify-center">
+                  <UserIcon className="h-10 w-10 text-purple-600" />
+                </div>
+              )}
+              <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
+            </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+                <UserIcon className="h-8 w-8 text-purple-600 mr-3" />
                 {user?.firstName && user?.lastName 
                   ? `${user.firstName} ${user.lastName}` 
                   : user?.githubUsername || 'Profile'
                 }
               </h1>
-              <p className="text-lg text-gray-600">
+              <p className="text-lg text-gray-600 mt-1">
                 {user?.githubUsername && `@${user.githubUsername}`}
               </p>
+              <div className="flex items-center mt-2">
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  ✓ Active Account
+                </span>
+              </div>
             </div>
           </div>
-          <p className="text-gray-500">
+          <p className="text-gray-600 mt-4">
             Manage your account settings, API keys, and preferences
           </p>
         </div>

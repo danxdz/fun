@@ -14,24 +14,21 @@ import apiClient from '../config/axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 export default function Dashboard() {
-  console.log('Dashboard component rendering...');
-  
   const { data: dashboardData, isLoading } = useQuery('dashboard', () =>
     apiClient.get('/api/dashboard').then(res => res.data)
   );
-  
-  console.log('Dashboard data:', dashboardData);
-  console.log('Dashboard loading:', isLoading);
 
 
   if (isLoading) {
     return (
-      <div style={{ padding: '20px', backgroundColor: 'lightblue', minHeight: '100vh' }}>
-        <div style={{ background: 'yellow', padding: '10px', marginBottom: '20px' }}>
-          🎯 Dashboard Loading State
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-6 animate-pulse">
+            <CodeBracketIcon className="h-8 w-8 text-blue-600" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Dashboard</h2>
+          <p className="text-gray-500">Preparing your automation overview...</p>
         </div>
-        <h1>Loading Dashboard...</h1>
-        <p>Please wait while we load your data...</p>
       </div>
     );
   }
@@ -64,22 +61,26 @@ export default function Dashboard() {
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
 
   return (
-    <div className="space-y-6">
-      <div style={{ background: 'green', color: 'white', padding: '10px', marginBottom: '20px' }}>
-        🎯 Dashboard Main Content Rendering!
-      </div>
+    <div className="space-y-8">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Overview of your automation projects and bots
-        </p>
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6">
+        <div className="flex items-center">
+          <div className="w-12 h-12 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mr-4">
+            <CodeBracketIcon className="h-6 w-6 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Automation Dashboard</h1>
+            <p className="mt-1 text-gray-600">
+              Monitor your projects, bots, and automation workflows
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="bg-white overflow-hidden shadow-lg rounded-lg border border-gray-100 hover:shadow-xl transition-shadow duration-200">
+          <div className="p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <FolderIcon className="h-6 w-6 text-gray-400" />
@@ -101,8 +102,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
+        <div className="bg-white overflow-hidden shadow-lg rounded-lg border border-gray-100 hover:shadow-xl transition-shadow duration-200">
+          <div className="p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <CogIcon className="h-6 w-6 text-gray-400" />
@@ -124,8 +125,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
+        <div className="bg-white overflow-hidden shadow-lg rounded-lg border border-gray-100 hover:shadow-xl transition-shadow duration-200">
+          <div className="p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <CheckCircleIcon className="h-6 w-6 text-green-400" />
@@ -147,8 +148,8 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
+        <div className="bg-white overflow-hidden shadow-lg rounded-lg border border-gray-100 hover:shadow-xl transition-shadow duration-200">
+          <div className="p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
                 <StarIcon className="h-6 w-6 text-yellow-400" />
