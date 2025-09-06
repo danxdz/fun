@@ -15,11 +15,41 @@ import apiClient from '../config/axios';
 export default function Bots() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [newBot, setNewBot] = useState({
+    name: '',
+    type: 'module_update',
+    description: '',
+    projectId: '',
+    schedule: '',
+    config: {}
+  });
   const { data: botsData, isLoading, refetch } = useQuery('bots', () =>
     apiClient.get('/api/bots').then(res => res.data)
   );
 
   const bots = botsData?.bots || [];
+
+  const handleCreateBot = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await apiClient.post('/api/bots', newBot);
+      setShowCreateModal(false);
+      setNewBot({
+        name: '',
+        type: 'module_update',
+        description: '',
+        projectId: '',
+        schedule: '',
+        config: {}
+      });
+      refetch();
+    } catch (error) {
+      alert('Failed to create bot: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleStartBot = async (botId) => {
     setLoading(true);
@@ -53,49 +83,63 @@ export default function Bots() {
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'running':
-        return <PlayIcon className="h-5 w-5 text-green-500" />;
-      case 'completed':
-        return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
-      case 'error':
-        return <ExclamationTriangleIcon className="h-5 w-5 text-red-500" />;
-      default:
-        return <ClockIcon className="h-5 w-5 text-gray-500" />;
-    }
-  };
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'running':
         return 'bg-green-100 text-green-800';
       case 'completed':
-        return 'bg-green-100 text-green-800';
+        return 'bg-blue-100 text-blue-800';
       case 'error':
         return 'bg-red-100 text-red-800';
+      case 'idle':
+        return 'bg-gray-100 text-gray-800';
+      case 'paused':
+        return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'running':
+        return <PlayIcon className="h-4 w-4" />;
+      case 'completed':
+        return <CheckCircleIcon className="h-4 w-4" />;
+      case 'error':
+        return <ExclamationTriangleIcon className="h-4 w-4" />;
+      case 'idle':
+        return <ClockIcon className="h-4 w-4" />;
+      case 'paused':
+        return <StopIcon className="h-4 w-4" />;
+      default:
+        return <ClockIcon className="h-4 w-4" />;
     }
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Bots</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage your automation bots and workflows
-          </p>
+      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 mb-8">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+              <CogIcon className="h-8 w-8 text-blue-600 mr-3" />
+              Automation Bots
+            </h1>
+            <p className="mt-2 text-gray-600">
+              Streamline your development workflow with intelligent automation
+            </p>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Create Bot
+          </button>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-        >
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Create Bot
-        </button>
       </div>
 
       {/* Bots Grid */}
@@ -106,7 +150,7 @@ export default function Bots() {
       ) : (bots || []).length > 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {bots.map((bot) => (
-            <div key={bot.id} className="bg-white shadow rounded-lg p-6">
+            <div key={bot.id} className="bg-white shadow-lg rounded-lg p-6 hover:shadow-xl transition-shadow duration-200 border border-gray-100">
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <CogIcon className="h-8 w-8 text-gray-400" />
@@ -167,19 +211,22 @@ export default function Bots() {
           ))}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <CogIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No bots</h3>
-          <p className="mt-1 text-sm text-gray-500">Get started by creating your first automation bot.</p>
-          <div className="mt-6">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Create Bot
-            </button>
+        <div className="text-center py-16">
+          <div className="mx-auto w-24 h-24 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-6">
+            <CogIcon className="h-12 w-12 text-blue-600" />
           </div>
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No bots yet</h3>
+          <p className="text-gray-500 mb-8 max-w-md mx-auto">
+            Create your first automation bot to streamline your development workflow. 
+            Choose from module updates, security scans, or custom automation.
+          </p>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Create Your First Bot
+          </button>
         </div>
       )}
 
@@ -202,9 +249,10 @@ function CreateBotModal({ onClose, onSuccess }) {
   const [error, setError] = useState('');
   const [botData, setBotData] = useState({
     name: '',
-    type: 'automation',
+    type: 'module_update',
     description: '',
     projectId: '',
+    schedule: '',
     config: {}
   });
 
@@ -273,10 +321,10 @@ function CreateBotModal({ onClose, onSuccess }) {
                 onChange={(e) => setBotData({ ...botData, type: e.target.value })}
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
               >
-                <option value="automation">Automation</option>
-                <option value="monitoring">Monitoring</option>
-                <option value="deployment">Deployment</option>
-                <option value="testing">Testing</option>
+                <option value="module_update">📦 Module Update Bot</option>
+                <option value="dependency_update">🔧 Dependency Update Bot</option>
+                <option value="security_scan">🔒 Security Scan Bot</option>
+                <option value="custom">⚙️ Custom Bot</option>
               </select>
             </div>
 
@@ -298,6 +346,23 @@ function CreateBotModal({ onClose, onSuccess }) {
                   </option>
                 ))}
               </select>
+            </div>
+
+            <div>
+              <label htmlFor="schedule" className="block text-sm font-medium text-gray-700">
+                Schedule (Cron Expression)
+              </label>
+              <input
+                type="text"
+                id="schedule"
+                value={botData.schedule}
+                onChange={(e) => setBotData({ ...botData, schedule: e.target.value })}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                placeholder="0 0 * * * (daily at midnight)"
+              />
+              <p className="mt-1 text-xs text-gray-500">
+                Leave empty for manual execution only. Use cron format: minute hour day month weekday
+              </p>
             </div>
 
             <div>
