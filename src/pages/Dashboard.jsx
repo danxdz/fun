@@ -18,10 +18,14 @@ export default function Dashboard() {
     apiClient.get('/api/dashboard').then(res => res.data)
   );
 
+  // Simple test to see if component renders
+  console.log('Dashboard component rendering...', { isLoading, dashboardData });
+
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="loading-spinner" />
+      <div style={{ padding: '20px', backgroundColor: 'lightblue', minHeight: '100vh' }}>
+        <h1>Loading Dashboard...</h1>
+        <p>Please wait while we load your data...</p>
       </div>
     );
   }
@@ -55,6 +59,14 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
+      {/* Test div to see if component renders */}
+      <div style={{ padding: '20px', backgroundColor: 'lightgreen', border: '2px solid green' }}>
+        <h1 style={{ color: 'darkgreen', fontSize: '24px' }}>🎉 Dashboard Component is Rendering!</h1>
+        <p>If you can see this, the component is working!</p>
+        <p>Loading: {isLoading ? 'Yes' : 'No'}</p>
+        <p>Data: {dashboardData ? 'Present' : 'Missing'}</p>
+      </div>
+      
       {/* Header */}
       <div>
         <h1 className="text-2xl font-semibold text-gray-900">Dashboard</h1>
