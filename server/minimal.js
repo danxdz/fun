@@ -333,16 +333,10 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
-// GitHub OAuth login endpoint
-app.post('/api/auth/github', async (req, res) => {
+// GitHub OAuth login endpoint (GET for initiation)
+app.get('/api/auth/github', async (req, res) => {
   try {
-    const { code } = req.body;
-    
-    console.log('GitHub OAuth request received:', { code: !!code });
-    
-    if (!code) {
-      return res.status(400).json({ error: 'GitHub authorization code required' });
-    }
+    console.log('GitHub OAuth initiation request received');
     
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_ANON_KEY;
@@ -362,13 +356,12 @@ app.post('/api/auth/github', async (req, res) => {
     });
     
     if (error) {
+      console.error('GitHub OAuth initiation error:', error);
       return res.status(401).json({ error: error.message });
     }
     
-    res.json({
-      url: data.url,
-      message: 'Redirect to GitHub for authentication'
-    });
+    // Redirect to GitHub OAuth URL
+    res.redirect(data.url);
     
   } catch (error) {
     console.error('GitHub OAuth error:', error);
