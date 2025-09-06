@@ -218,10 +218,47 @@ app.post('/api/auth', async (req, res) => {
       });
       
     } else {
-      return res.status(400).json({ 
-        error: 'Please specify action: "login" or "register"',
-        received: { action, type, email: !!email, password: !!password },
-        availableEndpoints: ['/api/auth/login', '/api/auth/register']
+      // If no action specified, try to determine from context
+      // Check if this might be a registration attempt by looking at the request
+      const userAgent = req.headers['user-agent'] || '';
+      const referer = req.headers.referer || '';
+      
+      console.log('No action specified, checking context:', { userAgent, referer });
+      
+      // If the referer contains 'register', assume it's a registration
+      if (referer.includes('register') || referer.includes('signup')) {
+        console.log('Detected registration attempt from referer');
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password
+        });
+        
+        if (error) {
+          return res.status(400).json({ error: error.message });
+        }
+        
+        return res.json({
+          user: data.user,
+          session: data.session,
+          message: 'Registration successful'
+        });
+      }
+      
+      // Default to login attempt
+      console.log('Defaulting to login attempt');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        return res.status(401).json({ error: error.message });
+      }
+      
+      res.json({
+        user: data.user,
+        session: data.session,
+        message: 'Login successful'
       });
     }
     
