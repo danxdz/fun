@@ -191,7 +191,7 @@ export default function Dashboard() {
         {/* Bot Types */}
         <div className="bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Bot Types</h3>
-          {botTypeData.length > 0 ? (
+          {(botTypeData || []).length > 0 ? (
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -204,7 +204,7 @@ export default function Dashboard() {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {botTypeData.map((entry, index) => (
+                  {(botTypeData || []).map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -225,8 +225,8 @@ export default function Dashboard() {
         <div className="bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Activity</h3>
           <div className="space-y-4">
-            {recentActivity.length > 0 ? (
-              recentActivity.map((activity) => (
+            {(recentActivity || []).length > 0 ? (
+              (recentActivity || []).map((activity) => (
                 <div key={activity.id} className="flex items-center space-x-3">
                   <div className={`status-indicator status-${activity.status}`} />
                   <div className="flex-1 min-w-0">
@@ -262,7 +262,7 @@ export default function Dashboard() {
         <div className="bg-white shadow rounded-lg p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Recent Projects</h3>
           <div className="space-y-4">
-            {projects.slice(0, 5).map((project) => (
+            {(projects || []).slice(0, 5).map((project) => (
               <div key={project.id} className="flex items-center space-x-3">
                 <FolderIcon className="h-5 w-5 text-gray-400" />
                 <div className="flex-1 min-w-0">
@@ -296,7 +296,7 @@ export default function Dashboard() {
                 </div>
               </div>
             ))}
-            {projects.length === 0 && (
+            {(projects || []).length === 0 && (
               <p className="text-gray-500 text-sm">No projects yet</p>
             )}
           </div>
