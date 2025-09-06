@@ -77,6 +77,135 @@ app.get('/api/debug/supabase', async (req, res) => {
   }
 });
 
+// Basic auth endpoints (minimal implementation)
+app.post('/api/auth', async (req, res) => {
+  try {
+    const { email, password, action } = req.body;
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    if (action === 'login') {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        return res.status(401).json({ error: error.message });
+      }
+      
+      res.json({
+        user: data.user,
+        session: data.session,
+        message: 'Login successful'
+      });
+      
+    } else if (action === 'register') {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password
+      });
+      
+      if (error) {
+        return res.status(400).json({ error: error.message });
+      }
+      
+      res.json({
+        user: data.user,
+        session: data.session,
+        message: 'Registration successful'
+      });
+      
+    } else {
+      res.status(400).json({ error: 'Invalid action. Use "login" or "register"' });
+    }
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get current user
+app.get('/api/me', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error) {
+      return res.status(401).json({ error: error.message });
+    }
+    
+    res.json({ user });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Dashboard endpoint
+app.get('/api/dashboard', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    const { data: { user }, error } = await supabase.auth.getUser(token);
+    
+    if (error) {
+      return res.status(401).json({ error: error.message });
+    }
+    
+    // Return basic dashboard data
+    res.json({
+      user,
+      message: 'Dashboard data',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Serve static files
 app.use(express.static('dist'));
 
