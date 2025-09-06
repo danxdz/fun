@@ -1108,8 +1108,21 @@ app.get('/api/dashboard', async (req, res) => {
       });
     }
     
+    // Verify our custom JWT token
+    const jwt = await import('jsonwebtoken');
+    let decoded;
+    
+    try {
+      decoded = jwt.default.verify(token, process.env.JWT_SECRET || 'fallback-secret');
+      console.log('Dashboard JWT decoded successfully:', { userId: decoded.userId, githubUsername: decoded.githubUsername });
+    } catch (jwtError) {
+      console.error('Dashboard JWT verification failed:', jwtError.message);
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    // Get user from our database using the userId from JWT
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -1118,11 +1131,18 @@ app.get('/api/dashboard', async (req, res) => {
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    const { data: { user }, error } = await supabase.auth.getUser(token);
+    const { data: user, error } = await supabase
+      .from('Users')
+      .select('*')
+      .eq('id', decoded.userId)
+      .single();
     
-    if (error) {
-      return res.status(401).json({ error: error.message });
+    if (error || !user) {
+      console.error('Dashboard user lookup failed:', { error, userId: decoded.userId });
+      return res.status(401).json({ error: 'User not found' });
     }
+    
+    console.log('Dashboard user found:', { id: user.id, email: user.email, githubUsername: user.githubUsername });
     
     // Return basic dashboard data
     res.json({
