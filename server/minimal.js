@@ -25,6 +25,58 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Supabase test endpoint
+app.get('/api/debug/supabase', async (req, res) => {
+  try {
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.json({
+        error: 'Supabase configuration missing',
+        supabaseUrl: !!supabaseUrl,
+        supabaseKey: !!supabaseKey,
+        env: process.env.NODE_ENV || 'development'
+      });
+    }
+
+    // Test Supabase connection
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Try to query a simple table
+    const { data, error } = await supabase
+      .from('Users')
+      .select('count')
+      .limit(1);
+    
+    if (error) {
+      return res.json({
+        error: 'Supabase connection failed',
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+    }
+    
+    res.json({
+      status: 'Supabase connection successful',
+      supabaseUrl: supabaseUrl,
+      hasKey: !!supabaseKey,
+      env: process.env.NODE_ENV || 'development',
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    res.json({
+      error: 'Supabase test failed',
+      message: error.message,
+      env: process.env.NODE_ENV || 'development'
+    });
+  }
+});
+
 // Serve static files
 app.use(express.static('dist'));
 
