@@ -42,4 +42,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Start the application (frontend already built)
 USER nextjs
-CMD ["sh", "-c", "echo 'Starting server...' && ls -la server/ && node server/minimal.js"]
+CMD ["node", "server/minimal.js"]

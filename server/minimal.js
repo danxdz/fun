@@ -1,7 +1,13 @@
+console.log('Starting minimal server...');
+console.log('Current working directory:', process.cwd());
+console.log('Node version:', process.version);
+
 import express from 'express';
 import dotenv from 'dotenv';
 
+console.log('Loading environment variables...');
 dotenv.config();
+console.log('Environment loaded. PORT:', process.env.PORT);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -28,10 +34,12 @@ app.get('*', (req, res) => {
 });
 
 // Start server
+console.log('About to start server on port:', PORT);
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`Minimal server running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`Listening on all interfaces (0.0.0.0:${PORT})`);
+  console.log(`✅ Minimal server running on port ${PORT}`);
+  console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`✅ Listening on all interfaces (0.0.0.0:${PORT})`);
+  console.log(`✅ Health check available at: http://0.0.0.0:${PORT}/api/health`);
 });
 
 // Add error handling
