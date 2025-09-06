@@ -1825,6 +1825,71 @@ app.get('/api/docs', (req, res) => {
   res.json(apiDocs);
 });
 
+// Get project detail endpoint
+app.get('/api/project-detail', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const { projectId, action = 'basic' } = req.query;
+    
+    if (!projectId) {
+      return res.status(400).json({ error: 'Project ID is required' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get user from auth
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError) {
+      return res.status(401).json({ error: authError.message });
+    }
+    
+    // Get project details
+    const { data: project, error: projectError } = await supabase
+      .from('Projects')
+      .select(`
+        *,
+        Teams(name, description),
+        Bots(id, name, type, status, lastRun)
+      `)
+      .eq('id', projectId)
+      .eq('UserId', user.id)
+      .eq('isActive', true)
+      .single();
+    
+    if (projectError || !project) {
+      return res.status(404).json({ error: 'Project not found' });
+    }
+    
+    console.log('Project detail fetched:', { projectId, action, projectName: project.name });
+    
+    res.json({
+      project,
+      action,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Get project detail error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Serve static files
 // Serve static files with cache-busting headers
 app.use(express.static('dist', {
