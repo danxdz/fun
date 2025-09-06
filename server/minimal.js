@@ -445,9 +445,11 @@ app.get('/auth/callback', async (req, res) => {
               window.location.href = '/dashboard';
             }, 1000);
           </script>
-          <p>Authentication successful! Redirecting to dashboard...</p>
+          <h1>🎉 GitHub Authentication Successful!</h1>
           <p>Token: ${token ? 'Set' : 'Missing'}</p>
           <p>User: ${user ? 'Set' : 'Missing'}</p>
+          <p>Redirecting to dashboard in 1 second...</p>
+          <p>If you're not redirected, <a href="/dashboard">click here</a></p>
         </body>
         </html>
       `);
