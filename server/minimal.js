@@ -25,7 +25,126 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Supabase test endpoint
+// Comprehensive system test endpoint
+app.get('/api/debug/system', async (req, res) => {
+  try {
+    const results = {
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || 'development',
+      tests: {}
+    };
+
+    // Test 1: Environment Variables
+    results.tests.environmentVariables = {
+      SUPABASE_URL: !!process.env.SUPABASE_URL,
+      SUPABASE_ANON_KEY: !!process.env.SUPABASE_ANON_KEY,
+      SUPABASE_SERVICE_ROLE_KEY: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+      NODE_ENV: process.env.NODE_ENV || 'development',
+      PORT: process.env.PORT || '3001'
+    };
+
+    // Test 2: Supabase Connection
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      results.tests.supabaseConnection = {
+        status: 'failed',
+        error: 'Missing environment variables'
+      };
+    } else {
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        // Test database connection
+        const { data, error } = await supabase
+          .from('Users')
+          .select('count')
+          .limit(1);
+        
+        results.tests.supabaseConnection = {
+          status: error ? 'failed' : 'success',
+          error: error ? error.message : null,
+          code: error ? error.code : null
+        };
+      } catch (error) {
+        results.tests.supabaseConnection = {
+          status: 'failed',
+          error: error.message
+        };
+      }
+    }
+
+    // Test 3: Service Role Key
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      try {
+        const { createClient } = await import('@supabase/supabase-js');
+        const serviceSupabase = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY, {
+          auth: { autoRefreshToken: false, persistSession: false }
+        });
+        
+        // Test admin access
+        const { data, error } = await serviceSupabase.auth.admin.listUsers({ page: 1, perPage: 1 });
+        
+        results.tests.serviceRoleKey = {
+          status: error ? 'failed' : 'success',
+          error: error ? error.message : null
+        };
+      } catch (error) {
+        results.tests.serviceRoleKey = {
+          status: 'failed',
+          error: error.message
+        };
+      }
+    } else {
+      results.tests.serviceRoleKey = {
+        status: 'missing',
+        error: 'SUPABASE_SERVICE_ROLE_KEY not configured'
+      };
+    }
+
+    // Test 4: Database Schema
+    try {
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      
+      const { data, error } = await supabase
+        .from('Users')
+        .select('id, email, firstName, lastName, createdAt')
+        .limit(1);
+      
+      results.tests.databaseSchema = {
+        status: error ? 'failed' : 'success',
+        error: error ? error.message : null,
+        sampleData: data ? data.length : 0
+      };
+    } catch (error) {
+      results.tests.databaseSchema = {
+        status: 'failed',
+        error: error.message
+      };
+    }
+
+    // Overall status
+    const allTestsPassed = Object.values(results.tests).every(test => 
+      test.status === 'success' || test.status === 'missing'
+    );
+    
+    results.overallStatus = allTestsPassed ? 'healthy' : 'issues_detected';
+    
+    res.json(results);
+    
+  } catch (error) {
+    res.status(500).json({
+      error: 'System test failed',
+      message: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
+// Legacy Supabase test endpoint (for backward compatibility)
 app.get('/api/debug/supabase', async (req, res) => {
   try {
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -475,7 +594,9 @@ app.delete('/api/user/profile', async (req, res) => {
     });
     
     // First, get the current user to verify they exist
-    const { data: { user }, error: getUserError } = await supabase.auth.getUser(token);
+    // We need to use the anon key client to validate the token
+    const anonSupabase = createClient(supabaseUrl, process.env.SUPABASE_ANON_KEY);
+    const { data: { user }, error: getUserError } = await anonSupabase.auth.getUser(token);
     
     if (getUserError) {
       return res.status(401).json({ error: getUserError.message });
