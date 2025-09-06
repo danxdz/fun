@@ -375,52 +375,188 @@ app.post('/api/auth/refresh', async (req, res) => {
   }
 });
 
-// GitHub OAuth login endpoint (GET for initiation)
+// GitHub OAuth login endpoint - Direct GitHub OAuth for real tokens
 app.post('/api/auth/github', async (req, res) => {
   try {
     console.log('GitHub OAuth initiation request received');
     
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
+    const clientId = process.env.GITHUB_CLIENT_ID;
+    const redirectUri = `${req.headers.origin || 'https://web-production-8747.up.railway.app'}/auth/callback`;
     
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ error: 'Supabase not configured' });
+    if (!clientId) {
+      return res.status(500).json({ error: 'GitHub Client ID not configured' });
     }
     
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Generate state parameter for security
+    const state = Math.random().toString(36).substring(2, 15);
     
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'github',
-      options: {
-        redirectTo: `${req.headers.origin || 'https://web-production-8747.up.railway.app'}/auth/callback`,
-        scopes: 'repo,public_repo,user:email'
-      }
-    });
+    // Direct GitHub OAuth URL with proper scopes
+    const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,public_repo,user:email&state=${state}`;
     
-    if (error) {
-      console.error('GitHub OAuth initiation error:', error);
-      return res.status(401).json({ error: error.message });
-    }
+    console.log('Redirecting to GitHub OAuth:', githubAuthUrl);
     
-    // Return JSON response with GitHub OAuth URL
-    res.json({
-      url: data.url,
-      message: 'Redirect to GitHub for authentication'
+    res.json({ 
+      url: githubAuthUrl,
+      message: 'Redirect to GitHub for authentication with real token'
     });
     
   } catch (error) {
-    console.error('GitHub OAuth error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('GitHub OAuth initiation error:', error);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-// GitHub OAuth callback endpoint
+// GitHub OAuth callback endpoint - Exchange code for real GitHub token
 app.get('/auth/callback', async (req, res) => {
   try {
-    const { code, access_token } = req.query;
+    const { code, state, error } = req.query;
     
-    // Handle both authorization code flow and implicit flow
+    // Handle OAuth error
+    if (error) {
+      console.error('GitHub OAuth error:', error);
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Authentication Error</title></head>
+        <body>
+          <h1>❌ Authentication Error</h1>
+          <p>Error: ${error}</p>
+          <a href="/login">Try Again</a>
+        </body>
+        </html>
+      `);
+    }
+    
+    // Handle authorization code flow
+    if (code) {
+      console.log('GitHub OAuth callback with code:', code.substring(0, 10) + '...');
+      
+      // Exchange code for GitHub access token
+      const clientId = process.env.GITHUB_CLIENT_ID;
+      const clientSecret = process.env.GITHUB_CLIENT_SECRET;
+      
+      if (!clientId || !clientSecret) {
+        throw new Error('GitHub OAuth credentials not configured');
+      }
+      
+      // Exchange authorization code for access token
+      const tokenResponse = await fetch('https://github.com/login/oauth/access_token', {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          code: code,
+        }),
+      });
+      
+      const tokenData = await tokenResponse.json();
+      console.log('GitHub token response:', tokenData);
+      
+      if (tokenData.error) {
+        throw new Error(`GitHub token error: ${tokenData.error_description}`);
+      }
+      
+      const githubToken = tokenData.access_token;
+      console.log('GitHub token obtained:', githubToken.substring(0, 10) + '...');
+      
+      // Get GitHub user info
+      const userResponse = await fetch('https://api.github.com/user', {
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json',
+        },
+      });
+      
+      const githubUser = await userResponse.json();
+      console.log('GitHub user info:', githubUser);
+      
+      if (!githubUser.id) {
+        throw new Error('Failed to get GitHub user info');
+      }
+      
+      // Create or update user in our database
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      
+      // Generate a JWT token for our app
+      const jwt = await import('jsonwebtoken');
+      const appToken = jwt.sign(
+        { 
+          userId: githubUser.id.toString(),
+          email: githubUser.email,
+          githubUsername: githubUser.login,
+          githubToken: githubToken
+        },
+        process.env.JWT_SECRET || 'fallback-secret',
+        { expiresIn: '7d' }
+      );
+      
+      // Save user to database
+      const userData = {
+        id: githubUser.id.toString(),
+        email: githubUser.email || `${githubUser.login}@github.local`,
+        firstName: githubUser.name?.split(' ')[0] || '',
+        lastName: githubUser.name?.split(' ').slice(1).join(' ') || '',
+        githubUsername: githubUser.login,
+        githubAvatar: githubUser.avatar_url,
+        githubToken: githubToken, // Real GitHub token!
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+      
+      console.log('Saving user data:', userData);
+      
+      const { error: dbError } = await supabase
+        .from('Users')
+        .upsert(userData, { onConflict: 'id' });
+      
+      if (dbError) {
+        console.error('Database error:', dbError);
+      } else {
+        console.log('User saved successfully with real GitHub token');
+      }
+      
+      // Redirect to frontend with token
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head><title>Authentication Successful</title></head>
+        <body>
+          <script>
+            console.log('Setting token and user data...');
+            localStorage.setItem('token', '${appToken}');
+            localStorage.setItem('user', JSON.stringify(${JSON.stringify({
+              id: githubUser.id.toString(),
+              email: githubUser.email || `${githubUser.login}@github.local`,
+              firstName: githubUser.name?.split(' ')[0] || '',
+              lastName: githubUser.name?.split(' ').slice(1).join(' ') || '',
+              githubUsername: githubUser.login,
+              githubAvatar: githubUser.avatar_url,
+              githubToken: githubToken
+            })}));
+            console.log('Token set:', localStorage.getItem('token') ? 'YES' : 'NO');
+            console.log('User set:', localStorage.getItem('user') ? 'YES' : 'NO');
+            setTimeout(() => {
+              window.location.href = '/';
+            }, 1000);
+          </script>
+          <h1>🎉 GitHub Authentication Successful!</h1>
+          <p>Welcome ${githubUser.name || githubUser.login}!</p>
+          <p>✅ Real GitHub token obtained</p>
+          <p>✅ Repository creation enabled</p>
+          <p>Redirecting to dashboard...</p>
+        </body>
+        </html>
+      `);
+    }
+    
+    // Handle implicit flow (fallback)
     if (!code && !access_token) {
       // If no query parameters, serve a client-side handler for URL fragments
       return res.send(`
