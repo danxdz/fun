@@ -53,9 +53,14 @@ app.use('/api/users', userRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/bots', botRoutes);
 
-// Health check
+// Health check (simple, no dependencies)
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', timestamp: new Date().toISOString() });
+  res.json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
 });
 
 // Supabase connection test
@@ -191,26 +196,32 @@ const PORT = process.env.PORT || 3001;
 // Supabase connection and server start
 async function startServer() {
   try {
-    // Test Supabase connection
-    try {
-      const { data, error } = await supabase.from('Users').select('count').limit(1);
-      if (error) throw error;
-      logger.info('Supabase connection established successfully.');
-    } catch (dbError) {
-      logger.warn('Supabase connection failed:', dbError.message);
-      logger.warn('Some features may not work until Supabase is configured.');
-    }
-    
+    // Start server first, test Supabase connection in background
     server.listen(PORT, () => {
       logger.info(`Server running on port ${PORT}`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`Frontend available at: http://localhost:${PORT}`);
       logger.info(`API available at: http://localhost:${PORT}/api`);
       logger.info(`Using Supabase for database operations`);
+      
+      // Test Supabase connection in background (non-blocking)
+      testSupabaseConnection();
     });
   } catch (error) {
     logger.error('Unable to start server:', error);
     process.exit(1);
+  }
+}
+
+// Test Supabase connection (non-blocking)
+async function testSupabaseConnection() {
+  try {
+    const { data, error } = await supabase.from('Users').select('count').limit(1);
+    if (error) throw error;
+    logger.info('Supabase connection established successfully.');
+  } catch (dbError) {
+    logger.warn('Supabase connection failed:', dbError.message);
+    logger.warn('Some features may not work until Supabase is configured.');
   }
 }
 

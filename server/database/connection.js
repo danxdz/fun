@@ -3,11 +3,30 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-// Create Supabase client
-export const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY
-);
+// Create Supabase client with error handling
+let supabase;
+try {
+  if (!process.env.SUPABASE_URL) {
+    throw new Error('SUPABASE_URL environment variable is required');
+  }
+  
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+  if (!supabaseKey) {
+    throw new Error('SUPABASE_SERVICE_ROLE_KEY or SUPABASE_ANON_KEY environment variable is required');
+  }
+  
+  supabase = createClient(process.env.SUPABASE_URL, supabaseKey);
+} catch (error) {
+  console.error('Failed to create Supabase client:', error.message);
+  // Create a mock client for development
+  supabase = {
+    from: () => ({
+      select: () => ({ limit: () => ({ data: null, error: error }) })
+    })
+  };
+}
+
+export { supabase };
 
 // Legacy sequelize export for compatibility (will be removed)
 export const sequelize = {
