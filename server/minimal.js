@@ -528,20 +528,31 @@ app.get('/auth/callback', async (req, res) => {
         // Method 1: From session provider_token
         if (session?.provider_token) {
           githubToken = session.provider_token;
-          console.log('GitHub token found in session.provider_token');
+          console.log('GitHub token found in session.provider_token:', githubToken.substring(0, 10) + '...');
         }
         // Method 2: From user metadata (if Supabase stores it there)
         else if (user.user_metadata?.provider_token) {
           githubToken = user.user_metadata.provider_token;
-          console.log('GitHub token found in user.user_metadata.provider_token');
+          console.log('GitHub token found in user.user_metadata.provider_token:', githubToken.substring(0, 10) + '...');
         }
         // Method 3: From app metadata
         else if (user.app_metadata?.provider_token) {
           githubToken = user.app_metadata.provider_token;
-          console.log('GitHub token found in user.app_metadata.provider_token');
+          console.log('GitHub token found in user.app_metadata.provider_token:', githubToken.substring(0, 10) + '...');
+        }
+        // Method 4: Check if there's an access_token in the URL (implicit flow)
+        else if (access_token) {
+          // In implicit flow, the access_token might be the GitHub token
+          githubToken = access_token;
+          console.log('Using access_token as GitHub token:', githubToken.substring(0, 10) + '...');
         }
         else {
           console.log('No GitHub token found in any expected location');
+          console.log('Available data sources:');
+          console.log('- session:', session ? 'present' : 'missing');
+          console.log('- user.user_metadata:', user.user_metadata ? 'present' : 'missing');
+          console.log('- user.app_metadata:', user.app_metadata ? 'present' : 'missing');
+          console.log('- access_token:', access_token ? 'present' : 'missing');
         }
         
         const userData = {
