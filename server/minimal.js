@@ -1241,15 +1241,14 @@ app.get('/api/bots', async (req, res) => {
       return res.status(401).json({ error: authError.message });
     }
     
-    // Get user's bots
+    // Get user's bots through their projects
     const { data: bots, error } = await supabase
       .from('Bots')
       .select(`
         *,
-        Projects(name, repositoryUrl),
-        Teams(name)
+        Projects!inner(name, repositoryUrl, UserId)
       `)
-      .eq('UserId', user.id)
+      .eq('Projects.UserId', user.id)
       .eq('isActive', true)
       .order('createdAt', { ascending: false });
     

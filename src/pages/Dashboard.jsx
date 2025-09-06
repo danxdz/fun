@@ -42,17 +42,17 @@ export default function Dashboard() {
   const projects = dashboardData?.projects || [];
   const bots = dashboardData?.bots || [];
 
-  // Prepare chart data
-  const chartData = weeklyActivity.map(day => ({
+  // Prepare chart data with null checks
+  const chartData = (weeklyActivity || []).map(day => ({
     name: new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' }),
-    runs: day.runs,
-    completed: day.completed,
-    failed: day.failed
+    runs: day.runs || 0,
+    completed: day.completed || 0,
+    failed: day.failed || 0
   }));
 
-  const botTypeData = Object.entries(stats.bots.byType || {}).map(([type, count]) => ({
+  const botTypeData = Object.entries(stats.bots?.byType || {}).map(([type, count]) => ({
     name: type.replace('_', ' '),
-    value: count
+    value: count || 0
   }));
 
   const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
