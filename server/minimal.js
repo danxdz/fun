@@ -1928,6 +1928,25 @@ app.delete('/api/bots/:id', async (req, res) => {
 
     const { id } = req.params;
     
+    // Verify that the bot belongs to the user through their projects
+    const { data: bot, error: botError } = await supabase
+      .from('Bots')
+      .select(`
+        id,
+        name,
+        Projects!inner(UserId)
+      `)
+      .eq('id', id)
+      .eq('Projects.UserId', user.id)
+      .single();
+    
+    if (botError || !bot) {
+      return res.status(404).json({ 
+        error: 'Bot not found or does not belong to user',
+        botId: id
+      });
+    }
+
     // Soft delete bot
     const { data, error } = await supabase
       .from('Bots')
@@ -1936,7 +1955,6 @@ app.delete('/api/bots/:id', async (req, res) => {
         updatedAt: new Date().toISOString()
       })
       .eq('id', id)
-      .eq('UserId', user.id)
       .select()
       .single();
     
@@ -1950,7 +1968,9 @@ app.delete('/api/bots/:id', async (req, res) => {
     }
     
     res.json({
-      message: 'Bot deleted successfully'
+      message: 'Bot deleted successfully',
+      botId: id,
+      botName: bot.name
     });
     
   } catch (error) {

@@ -8,7 +8,8 @@ import {
   StopIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
-  ClockIcon
+  ClockIcon,
+  TrashIcon
 } from '@heroicons/react/24/outline';
 import apiClient from '../config/axios';
 
@@ -78,6 +79,24 @@ export default function Bots() {
     } catch (error) {
       console.error('Failed to stop bot:', error);
       alert('Failed to stop bot: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDeleteBot = async (botId, botName) => {
+    if (!window.confirm(`Are you sure you want to delete the bot "${botName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await apiClient.delete(`/api/bots/${botId}`);
+      refetch(); // Refresh the bots list
+      alert('Bot deleted successfully!');
+    } catch (error) {
+      console.error('Failed to delete bot:', error);
+      alert('Failed to delete bot: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
@@ -207,6 +226,13 @@ export default function Bots() {
                 >
                   <StopIcon className="h-4 w-4 mr-1" />
                   Stop
+                </button>
+                <button 
+                  onClick={() => handleDeleteBot(bot.id, bot.name)}
+                  disabled={loading}
+                  className="inline-flex justify-center items-center px-3 py-2 border border-red-300 shadow-sm text-sm font-medium rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <TrashIcon className="h-4 w-4" />
                 </button>
               </div>
             </div>
