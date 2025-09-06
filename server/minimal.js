@@ -982,6 +982,9 @@ app.put('/api/user/profile', async (req, res) => {
     
     const { firstName, lastName, githubUsername, githubAvatar, cursorApiKey, preferences } = req.body;
     
+    // Don't update email - it's managed by Supabase auth
+    // Email updates should go through auth.updateUser() if needed
+    
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_ANON_KEY;
     

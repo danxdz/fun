@@ -30,7 +30,9 @@ export default function Profile() {
     setLoading(true);
     setMessage('');
 
-    const result = await updateProfile(profileData);
+    // Don't send email in profile update - it's managed by auth system
+    const { email, ...profileDataToUpdate } = profileData;
+    const result = await updateProfile(profileDataToUpdate);
     
     if (result.success) {
       setMessage('Profile updated successfully!');
