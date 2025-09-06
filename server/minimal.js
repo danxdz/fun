@@ -139,7 +139,7 @@ app.get('/api/debug/system', async (req, res) => {
 
     // Test 2: Supabase Connection
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       results.tests.supabaseConnection = {
@@ -242,7 +242,7 @@ app.get('/api/debug/system', async (req, res) => {
 app.get('/api/debug/supabase', async (req, res) => {
   try {
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.json({
@@ -302,7 +302,7 @@ app.post('/api/auth/login', async (req, res) => {
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -344,7 +344,7 @@ app.post('/api/auth/refresh', async (req, res) => {
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -381,7 +381,7 @@ app.post('/api/auth/github', async (req, res) => {
     console.log('GitHub OAuth initiation request received');
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -466,7 +466,7 @@ app.get('/auth/callback', async (req, res) => {
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).send('Server configuration error');
@@ -586,7 +586,7 @@ app.post('/api/auth/register', async (req, res) => {
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -657,7 +657,7 @@ app.post('/api/auth', async (req, res) => {
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -832,7 +832,7 @@ app.get('/api/me', async (req, res) => {
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -879,7 +879,7 @@ app.get('/api/dashboard', async (req, res) => {
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -918,7 +918,7 @@ app.get('/api/user/profile', async (req, res) => {
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -1253,14 +1253,21 @@ app.post('/api/projects', async (req, res) => {
       return res.status(401).json({ error: 'No token provided' });
     }
     
-    const { name, description, repositoryUrl, repositoryType, accessToken, defaultBranch, teamId } = req.body;
+    const { action, name, description, repositoryUrl, repositoryType, accessToken, defaultBranch, teamId } = req.body;
     
-    if (!name || !repositoryUrl || !accessToken) {
-      return res.status(400).json({ error: 'Name, repository URL, and access token are required' });
+    // Handle GitHub import action
+    if (action === 'import-github') {
+      if (!name || !repositoryUrl) {
+        return res.status(400).json({ error: 'Name and repository URL are required for import' });
+      }
+    } else {
+      if (!name || !repositoryUrl || !accessToken) {
+        return res.status(400).json({ error: 'Name, repository URL, and access token are required' });
+      }
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -1323,7 +1330,7 @@ app.get('/api/bots', async (req, res) => {
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -1383,7 +1390,7 @@ app.post('/api/bots', async (req, res) => {
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -1449,7 +1456,7 @@ app.put('/api/bots/:id', async (req, res) => {
     const { name, type, description, config, schedule, status } = req.body;
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -1518,7 +1525,7 @@ app.delete('/api/bots/:id', async (req, res) => {
     const { id } = req.params;
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -1577,7 +1584,7 @@ app.get('/api/teams', async (req, res) => {
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
