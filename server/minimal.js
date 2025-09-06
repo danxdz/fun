@@ -1605,7 +1605,15 @@ app.get('/api/docs', (req, res) => {
 });
 
 // Serve static files
-app.use(express.static('dist'));
+// Serve static files with cache-busting headers
+app.use(express.static('dist', {
+  setHeaders: (res, path) => {
+    // Add cache-busting headers for all static files
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+}));
 
 // Catch-all handler for React app (but exclude API routes)
 app.get('*', (req, res, next) => {
