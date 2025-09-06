@@ -109,6 +109,43 @@ const logRequest = (req, res, next) => {
 // Apply logging middleware
 app.use(logRequest);
 
+// Helper function to verify custom JWT and get user
+async function verifyTokenAndGetUser(token) {
+  if (!token) {
+    throw new Error('No token provided');
+  }
+  
+  const jwt = await import('jsonwebtoken');
+  let decoded;
+  try {
+    decoded = jwt.default.verify(token, process.env.JWT_SECRET);
+  } catch (jwtError) {
+    throw new Error('Invalid token');
+  }
+  
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase not configured');
+  }
+  
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabase = createClient(supabaseUrl, supabaseKey);
+  
+  const { data: user, error: userError } = await supabase
+    .from('Users')
+    .select('*')
+    .eq('id', decoded.userId)
+    .single();
+  
+  if (userError || !user) {
+    throw new Error('User not found');
+  }
+  
+  return { user, supabase };
+}
+
 // Simple health check
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -1447,26 +1484,8 @@ app.get('/api/projects', async (req, res) => {
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-    
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ error: 'Supabase not configured' });
-    }
-    
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    // Get user from auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError) {
-      return res.status(401).json({ error: authError.message });
-    }
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+    console.log('Projects: User found:', user.email);
     
     // Check if requesting GitHub repositories
     if (req.query.action === 'github-repos') {
@@ -1556,7 +1575,11 @@ app.get('/api/projects', async (req, res) => {
     
   } catch (error) {
     console.error('Get projects error:', error);
-    res.status(500).json({ error: error.message });
+    if (error.message === 'No token provided' || error.message === 'Invalid token' || error.message === 'User not found') {
+      res.status(401).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 
