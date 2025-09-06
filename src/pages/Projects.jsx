@@ -276,6 +276,21 @@ function CreateProjectModal({ onClose, onSuccess }) {
                     </button>
                   </div>
                 </div>
+                
+                {/* Explanation */}
+                <div className="mt-3 text-sm text-gray-600">
+                  {createType === 'github' ? (
+                    <p>
+                      <strong>Create New Repository:</strong> Creates a brand new GitHub repository. 
+                      <span className="text-orange-600"> Currently limited - will create project record only.</span>
+                    </p>
+                  ) : (
+                    <p>
+                      <strong>Import Existing Repository:</strong> Links to an existing GitHub repository you own. 
+                      Creates a project record to manage it.
+                    </p>
+                  )}
+                </div>
 
                 {createType === 'github' ? (
                   <CreateGithubRepoForm onSubmit={handleCreateGithubRepo} loading={loading} />

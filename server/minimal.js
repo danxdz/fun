@@ -1387,11 +1387,11 @@ app.post('/api/projects', async (req, res) => {
         if (!userProfile?.githubToken) {
           console.log('No GitHub token available, returning project without GitHub repo');
           return res.status(201).json({
-            message: 'Project created successfully (GitHub repository creation requires GitHub token)',
+            message: 'Project created successfully, but GitHub repository creation is not available yet',
             project: data,
             setupSuccess: false,
-            note: 'Please ensure you logged in with GitHub to create repositories',
-            debug: 'No GitHub token found in user profile'
+            note: 'GitHub repository creation requires additional setup. For now, you can import existing repositories.',
+            suggestion: 'Use "Import from GitHub" to link existing repositories to this project'
           });
         }
         
