@@ -537,9 +537,9 @@ app.get('/auth/callback', async (req, res) => {
             body {
               margin: 0;
               padding: 0;
-              background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
-              color: #00ff88;
-              font-family: 'Courier New', monospace;
+              background: #ffffff;
+              color: #000000;
+              font-family: 'Inter', system-ui, sans-serif;
               display: flex;
               align-items: center;
               justify-content: center;
@@ -548,27 +548,31 @@ app.get('/auth/callback', async (req, res) => {
             }
             .container {
               text-align: center;
-              padding: 2rem;
-              border: 1px solid #00ff88;
-              border-radius: 8px;
-              background: rgba(0, 255, 136, 0.05);
-              box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+              padding: 3rem;
+              border: 1px solid #e5e7eb;
+              border-radius: 0.75rem;
+              background: #ffffff;
+              box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+              max-width: 400px;
+              width: 90%;
             }
-            .terminal {
-              font-size: 14px;
+            .status {
+              font-size: 16px;
               line-height: 1.6;
+              margin-bottom: 1rem;
             }
-            .success { color: #00ff88; }
-            .info { color: #00bfff; }
-            .warning { color: #ffaa00; }
+            .success { color: #10b981; }
+            .info { color: #6b7280; }
+            .warning { color: #f59e0b; }
             .loading {
               display: inline-block;
-              width: 20px;
-              height: 20px;
-              border: 2px solid #00ff88;
+              width: 16px;
+              height: 16px;
+              border: 2px solid #e5e7eb;
               border-radius: 50%;
-              border-top-color: transparent;
+              border-top-color: #000000;
               animation: spin 1s linear infinite;
+              margin-right: 0.5rem;
             }
             @keyframes spin {
               to { transform: rotate(360deg); }
@@ -578,18 +582,29 @@ app.get('/auth/callback', async (req, res) => {
               0%, 50% { opacity: 1; }
               51%, 100% { opacity: 0; }
             }
+            .title {
+              font-size: 1.5rem;
+              font-weight: 600;
+              margin-bottom: 1rem;
+              color: #000000;
+            }
+            .message {
+              font-size: 0.875rem;
+              color: #6b7280;
+              margin-bottom: 0.5rem;
+            }
           </style>
         </head>
         <body>
           <div class="container">
-            <div class="terminal">
-              <div class="success">[AUTH] Authentication successful</div>
-              <div class="info">[USER] Welcome, ${githubUser.name || githubUser.login}</div>
-              <div class="success">[TOKEN] Access token acquired</div>
-              <div class="success">[PERMS] Repository access granted</div>
-              <div class="warning">[SYS] Initializing dashboard...</div>
-              <div class="info">[LOAD] <span class="loading"></span> Redirecting in progress</div>
-              <div class="blink">_</div>
+            <div class="title">Authentication Complete</div>
+            <div class="status">
+              <div class="success">✓ Authentication successful</div>
+              <div class="info">Welcome, ${githubUser.name || githubUser.login}</div>
+              <div class="success">✓ Access token acquired</div>
+              <div class="success">✓ Repository access granted</div>
+              <div class="warning">Initializing dashboard...</div>
+              <div class="info"><span class="loading"></span>Redirecting in progress<span class="blink">_</span></div>
             </div>
           </div>
           <script>

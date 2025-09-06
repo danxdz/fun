@@ -116,8 +116,8 @@ function PrivateRoute({ children }) {
   
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="bg-yellow-500 text-white p-4 rounded">
+      <div className="flex items-center justify-center min-h-screen bg-white">
+        <div className="bg-black text-white p-4 rounded">
           🔄 Loading authentication... User: {user ? 'present' : 'missing'}
         </div>
       </div>
@@ -185,7 +185,7 @@ function App() {
               <div className="bg-red-500 text-white p-2 text-center text-sm font-bold">
                 🚨 DEBUG MODE - App is rendering successfully
               </div>
-              <div className="bg-blue-500 text-white p-2 text-center text-sm">
+              <div className="bg-black text-white p-2 text-center text-sm">
                 ✅ React Query and Auth Provider loaded
               </div>
               <Routes>
