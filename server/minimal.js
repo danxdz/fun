@@ -149,6 +149,34 @@ app.post('/api/auth/register', async (req, res) => {
       return res.status(400).json({ error: error.message });
     }
     
+    // If user was created successfully, add them to the Users table
+    if (data.user) {
+      try {
+        console.log('Adding user to database:', data.user.email);
+        
+        const { error: dbError } = await supabase
+          .from('Users')
+          .insert({
+            id: data.user.id,
+            email: data.user.email,
+            firstName: '', // You might want to collect this during registration
+            lastName: '',  // You might want to collect this during registration
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        
+        if (dbError) {
+          console.error('Database insert error:', dbError);
+          // Don't fail registration if DB insert fails, just log it
+        } else {
+          console.log('User added to database successfully');
+        }
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+        // Don't fail registration if DB insert fails
+      }
+    }
+    
     res.json({
       user: data.user,
       session: data.session,
@@ -209,6 +237,32 @@ app.post('/api/auth', async (req, res) => {
       
       if (error) {
         return res.status(400).json({ error: error.message });
+      }
+      
+      // If user was created successfully, add them to the Users table
+      if (data.user) {
+        try {
+          console.log('Adding user to database (legacy):', data.user.email);
+          
+          const { error: dbError } = await supabase
+            .from('Users')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              firstName: '',
+              lastName: '',
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            });
+          
+          if (dbError) {
+            console.error('Database insert error (legacy):', dbError);
+          } else {
+            console.log('User added to database successfully (legacy)');
+          }
+        } catch (dbError) {
+          console.error('Database error (legacy):', dbError);
+        }
       }
       
       res.json({
