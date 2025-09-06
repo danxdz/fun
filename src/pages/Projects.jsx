@@ -415,7 +415,10 @@ function ImportGithubRepoForm({ githubRepos, loadingRepos, onImport, loading, er
           <div
             key={repo.id}
             className="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 cursor-pointer"
-            onClick={() => onImport(repo)}
+            onClick={() => {
+              console.log('Import button clicked for repo:', repo);
+              onImport(repo);
+            }}
           >
             <div className="flex items-center justify-between">
               <div className="flex-1">

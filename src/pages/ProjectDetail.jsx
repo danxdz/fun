@@ -14,7 +14,7 @@ import { Link } from 'react-router-dom';
 import apiClient from '../config/axios';
 
 export default function ProjectDetail() {
-  const { projectId } = useParams();
+  const { id: projectId } = useParams();
   const [showGithubInfo, setShowGithubInfo] = useState(false);
 
   const { data: projectData, isLoading } = useQuery(['project-detail', projectId], () =>
