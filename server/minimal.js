@@ -1454,8 +1454,12 @@ app.get('/api/teams', async (req, res) => {
 // Serve static files
 app.use(express.static('dist'));
 
-// Catch-all handler for React app
-app.get('*', (req, res) => {
+// Catch-all handler for React app (but exclude API routes)
+app.get('*', (req, res, next) => {
+  // Don't serve React app for API routes
+  if (req.path.startsWith('/api/')) {
+    return next();
+  }
   res.sendFile('index.html', { root: 'dist' });
 });
 
