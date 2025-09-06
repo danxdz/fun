@@ -968,7 +968,7 @@ app.put('/api/user/profile', async (req, res) => {
       return res.status(401).json({ error: 'No token provided' });
     }
     
-    const { firstName, lastName, githubUsername, githubAvatar, preferences } = req.body;
+    const { firstName, lastName, githubUsername, githubAvatar, cursorApiKey, preferences } = req.body;
     
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_ANON_KEY;
@@ -996,6 +996,7 @@ app.put('/api/user/profile', async (req, res) => {
     if (lastName !== undefined) updateData.lastName = lastName;
     if (githubUsername !== undefined) updateData.githubUsername = githubUsername;
     if (githubAvatar !== undefined) updateData.githubAvatar = githubAvatar;
+    if (cursorApiKey !== undefined) updateData.cursorApiKey = cursorApiKey;
     if (preferences !== undefined) updateData.preferences = preferences;
     
     const { data, error } = await supabase

@@ -23,6 +23,7 @@ CREATE TABLE "Users" (
     "lastName" VARCHAR(255) DEFAULT '',
     "githubUsername" VARCHAR(255) DEFAULT '',
     "githubAvatar" TEXT DEFAULT '',
+    "cursorApiKey" TEXT DEFAULT '',
     role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('admin', 'user', 'viewer')),
     "isActive" BOOLEAN DEFAULT true,
     "lastLogin" TIMESTAMP WITH TIME ZONE,

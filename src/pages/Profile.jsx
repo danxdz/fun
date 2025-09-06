@@ -13,7 +13,8 @@ export default function Profile() {
     lastName: user?.lastName || '',
     email: user?.email || '',
     githubUsername: user?.githubUsername || '',
-    githubAvatar: user?.githubAvatar || ''
+    githubAvatar: user?.githubAvatar || '',
+    cursorApiKey: user?.cursorApiKey || ''
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -195,6 +196,23 @@ export default function Profile() {
                   className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                   placeholder="your-github-username"
                 />
+              </div>
+              
+              <div>
+                <label htmlFor="cursorApiKey" className="block text-sm font-medium text-gray-700">
+                  Cursor API Key
+                </label>
+                <input
+                  type="password"
+                  id="cursorApiKey"
+                  value={profileData.cursorApiKey}
+                  onChange={(e) => setProfileData({ ...profileData, cursorApiKey: e.target.value })}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  placeholder="Enter your Cursor API key"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Used for AI-powered automation features. Get your key from Cursor settings.
+                </p>
               </div>
               <div>
                 <label htmlFor="githubAvatar" className="block text-sm font-medium text-gray-700">
