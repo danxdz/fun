@@ -1121,15 +1121,28 @@ app.get('/api/projects', async (req, res) => {
     // Check if requesting GitHub repositories
     if (req.query.action === 'github-repos') {
       try {
+        console.log('GitHub repos request for user:', user.id);
+        
         // Get user's GitHub username from their profile
-        const { data: userProfile } = await supabase
+        const { data: userProfile, error: profileError } = await supabase
           .from('Users')
-          .select('githubUsername')
+          .select('githubUsername, email')
           .eq('id', user.id)
           .single();
         
+        console.log('User profile data:', userProfile);
+        console.log('Profile error:', profileError);
+        
+        if (profileError) {
+          console.error('Profile fetch error:', profileError);
+          return res.status(500).json({ error: 'Failed to fetch user profile' });
+        }
+        
         if (!userProfile?.githubUsername) {
-          return res.status(400).json({ error: 'GitHub username not found in profile' });
+          console.log('No GitHub username found, user needs to update profile');
+          return res.status(400).json({ 
+            error: 'GitHub username not found in profile. Please update your profile with your GitHub username.' 
+          });
         }
         
         // Fetch repositories from GitHub API

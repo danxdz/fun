@@ -147,12 +147,14 @@ function CreateProjectModal({ onClose, onSuccess }) {
 
   const loadGithubRepos = async () => {
     setLoadingRepos(true);
+    setError('');
     try {
       const response = await apiClient.get('/api/projects?action=github-repos');
       setGithubRepos(response.data.repositories);
     } catch (error) {
       console.error('Failed to load GitHub repos:', error);
-      setError('Failed to load GitHub repositories');
+      const errorMessage = error.response?.data?.error || 'Failed to load GitHub repositories';
+      setError(errorMessage);
     } finally {
       setLoadingRepos(false);
     }
@@ -254,6 +256,7 @@ function CreateProjectModal({ onClose, onSuccess }) {
                     loadingRepos={loadingRepos}
                     onImport={handleImportGithubRepo}
                     loading={loading}
+                    error={error}
                   />
                 )}
                 
@@ -372,7 +375,7 @@ function CreateGithubRepoForm({ onSubmit, loading }) {
   );
 }
 
-function ImportGithubRepoForm({ githubRepos, loadingRepos, onImport, loading }) {
+function ImportGithubRepoForm({ githubRepos, loadingRepos, onImport, loading, error }) {
   if (loadingRepos) {
     return (
       <div className="mt-4 flex justify-center items-center h-32">
@@ -381,11 +384,22 @@ function ImportGithubRepoForm({ githubRepos, loadingRepos, onImport, loading }) 
     );
   }
 
+  if (error) {
+    return (
+      <div className="mt-4 text-center py-8">
+        <div className="text-red-600 text-sm mb-2">{error}</div>
+        <p className="text-xs text-gray-400">
+          Please update your profile with your GitHub username, or contact support if the issue persists.
+        </p>
+      </div>
+    );
+  }
+
   if (githubRepos.length === 0) {
     return (
       <div className="mt-4 text-center py-8">
         <p className="text-sm text-gray-500">No GitHub repositories found.</p>
-        <p className="text-xs text-gray-400 mt-1">Make sure you have a GitHub token configured.</p>
+        <p className="text-xs text-gray-400 mt-1">Make sure you have repositories in your GitHub account.</p>
       </div>
     );
   }
