@@ -436,11 +436,18 @@ app.get('/auth/callback', async (req, res) => {
         </head>
         <body>
           <script>
+            console.log('Setting token and user data...');
             localStorage.setItem('token', '${token}');
             localStorage.setItem('user', JSON.stringify(${JSON.stringify(user)}));
-            window.location.href = '/dashboard';
+            console.log('Token set:', localStorage.getItem('token') ? 'YES' : 'NO');
+            console.log('User set:', localStorage.getItem('user') ? 'YES' : 'NO');
+            setTimeout(() => {
+              window.location.href = '/dashboard';
+            }, 1000);
           </script>
-          <p>Authentication successful! Redirecting...</p>
+          <p>Authentication successful! Redirecting to dashboard...</p>
+          <p>Token: ${token ? 'Set' : 'Missing'}</p>
+          <p>User: ${user ? 'Set' : 'Missing'}</p>
         </body>
         </html>
       `);
