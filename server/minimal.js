@@ -1007,7 +1007,7 @@ app.put('/api/user/profile', async (req, res) => {
       return res.status(401).json({ error: 'No token provided' });
     }
     
-    const { firstName, lastName, githubUsername, githubAvatar, cursorApiKey, preferences } = req.body;
+    const { firstName, lastName, githubUsername, githubAvatar, cursorApiKey, githubToken, preferences } = req.body;
     
     // Don't update email - it's managed by Supabase auth
     // Email updates should go through auth.updateUser() if needed
@@ -1039,6 +1039,7 @@ app.put('/api/user/profile', async (req, res) => {
     if (githubUsername !== undefined) updateData.githubUsername = githubUsername;
     if (githubAvatar !== undefined) updateData.githubAvatar = githubAvatar;
     if (cursorApiKey !== undefined) updateData.cursorApiKey = cursorApiKey;
+    if (githubToken !== undefined) updateData.githubToken = githubToken;
     if (preferences !== undefined) updateData.preferences = preferences;
     
     console.log('Profile update data:', updateData);

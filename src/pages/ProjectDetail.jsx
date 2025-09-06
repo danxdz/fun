@@ -17,7 +17,7 @@ export default function ProjectDetail() {
   const { id: projectId } = useParams();
   const [showGithubInfo, setShowGithubInfo] = useState(false);
 
-  const { data: projectData, isLoading } = useQuery(['project-detail', projectId], () =>
+  const { data: projectData, isLoading } = useQuery(['project-detail', projectId, showGithubInfo], () =>
     apiClient.get(`/api/project-detail?projectId=${projectId}&action=${showGithubInfo ? 'github-info' : 'basic'}`).then(res => res.data)
   );
 
