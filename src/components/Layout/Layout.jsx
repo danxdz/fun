@@ -19,19 +19,12 @@ const navigation = [
 ];
 
 export default function Layout() {
-  console.log('Layout component rendering...');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
-  
-  console.log('Layout: user:', user, 'location:', location.pathname);
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Debug banner for Layout */}
-      <div className="bg-orange-500 text-white p-2 text-center text-sm font-bold">
-        🎯 Layout component rendered successfully! User: {user?.githubUsername || user?.email || 'Unknown'}
-      </div>
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
