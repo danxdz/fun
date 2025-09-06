@@ -58,6 +58,106 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
+// Supabase connection test
+app.get('/api/debug/supabase', async (req, res) => {
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({
+        error: 'Supabase configuration missing',
+        supabaseUrl: !!supabaseUrl,
+        supabaseKey: !!supabaseKey,
+        env: process.env.NODE_ENV
+      });
+    }
+    
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Test connection by querying a simple table
+    const { data, error } = await supabase
+      .from('Users')
+      .select('count')
+      .limit(1);
+    
+    if (error) {
+      return res.status(500).json({
+        error: 'Supabase connection failed',
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
+    }
+    
+    res.json({
+      status: 'Supabase connection successful',
+      supabaseUrl: supabaseUrl,
+      hasKey: !!supabaseKey,
+      env: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      error: 'Supabase test failed',
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Database connection test
+app.get('/api/debug/database', async (req, res) => {
+  try {
+    await sequelize.authenticate();
+    
+    // Test a simple query
+    const [results] = await sequelize.query('SELECT 1 as test');
+    
+    res.json({
+      status: 'Database connection successful',
+      database: sequelize.getDatabaseName(),
+      dialect: sequelize.getDialect(),
+      host: sequelize.getHostname(),
+      port: sequelize.getPort(),
+      env: process.env.NODE_ENV,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      error: 'Database connection failed',
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
+  }
+});
+
+// Environment debug endpoint
+app.get('/api/debug/env', (req, res) => {
+  const safeEnv = {
+    NODE_ENV: process.env.NODE_ENV,
+    PORT: process.env.PORT,
+    FRONTEND_URL: process.env.FRONTEND_URL,
+    DB_HOST: process.env.DB_HOST ? '***' : undefined,
+    DB_PORT: process.env.DB_PORT,
+    DB_NAME: process.env.DB_NAME,
+    DB_USER: process.env.DB_USER ? '***' : undefined,
+    SUPABASE_URL: process.env.SUPABASE_URL ? '***' : undefined,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY ? '***' : undefined,
+    JWT_SECRET: process.env.JWT_SECRET ? '***' : undefined
+  };
+  
+  res.json({
+    environment: safeEnv,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Socket.io setup
 setupSocketHandlers(io);
 
