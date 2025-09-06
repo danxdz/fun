@@ -382,11 +382,18 @@ app.post('/api/auth/refresh', async (req, res) => {
 app.post('/api/auth/github', async (req, res) => {
   try {
     console.log('GitHub OAuth initiation request received');
+    console.log('Environment check:', {
+      GITHUB_CLIENT_ID: !!process.env.GITHUB_CLIENT_ID,
+      GITHUB_CLIENT_SECRET: !!process.env.GITHUB_CLIENT_SECRET,
+      JWT_SECRET: !!process.env.JWT_SECRET,
+      NODE_ENV: process.env.NODE_ENV
+    });
     
     const clientId = process.env.GITHUB_CLIENT_ID;
     const redirectUri = `${req.headers.origin || 'https://web-production-8747.up.railway.app'}/auth/callback`;
     
     if (!clientId) {
+      console.log('GitHub Client ID missing from environment');
       return res.status(500).json({ error: 'GitHub Client ID not configured' });
     }
     
