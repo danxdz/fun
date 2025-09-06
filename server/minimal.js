@@ -1929,6 +1929,220 @@ app.post('/api/bots/:id/start', async (req, res) => {
   }
 });
 
+// Execute bot endpoint (runs the actual bot logic)
+app.post('/api/bots/:id/execute', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+
+    const { id } = req.params;
+    
+    // Get bot with project details
+    const { data: bot, error: botError } = await supabase
+      .from('Bots')
+      .select(`
+        id, name, type, status, configuration, ProjectId,
+        Projects!inner(id, name, repositoryUrl, UserId)
+      `)
+      .eq('id', id)
+      .eq('Projects.UserId', user.id)
+      .single();
+    
+    if (botError || !bot) {
+      return res.status(404).json({ error: 'Bot not found or does not belong to user' });
+    }
+    
+    // Create bot run record
+    const { data: botRun, error: runError } = await supabase
+      .from('BotRuns')
+      .insert({
+        BotId: id,
+        status: 'running',
+        startTime: new Date().toISOString(),
+        logs: ['Bot execution started'],
+        results: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+      .select()
+      .single();
+    
+    if (runError) {
+      console.error('Bot run creation error:', runError);
+      return res.status(500).json({ error: 'Failed to create bot run record' });
+    }
+    
+    // Update bot status to running
+    await supabase
+      .from('Bots')
+      .update({ 
+        status: 'running',
+        lastRun: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', id);
+    
+    // Execute bot logic based on type
+    try {
+      const executionResult = await executeBotLogic(bot, botRun.id, supabase);
+      
+      // Update bot run with results
+      await supabase
+        .from('BotRuns')
+        .update({
+          status: 'completed',
+          endTime: new Date().toISOString(),
+          duration: Date.now() - new Date(botRun.startTime).getTime(),
+          logs: executionResult.logs,
+          results: executionResult.results,
+          updatedAt: new Date().toISOString()
+        })
+        .eq('id', botRun.id);
+      
+      // Update bot status back to idle
+      await supabase
+        .from('Bots')
+        .update({ 
+          status: 'idle',
+          updatedAt: new Date().toISOString()
+        })
+        .eq('id', id);
+      
+      res.json({
+        message: 'Bot executed successfully',
+        botRun: {
+          ...botRun,
+          status: 'completed',
+          endTime: new Date().toISOString(),
+          duration: Date.now() - new Date(botRun.startTime).getTime(),
+          logs: executionResult.logs,
+          results: executionResult.results
+        }
+      });
+      
+    } catch (executionError) {
+      console.error('Bot execution error:', executionError);
+      
+      // Update bot run with error
+      await supabase
+        .from('BotRuns')
+        .update({
+          status: 'failed',
+          endTime: new Date().toISOString(),
+          duration: Date.now() - new Date(botRun.startTime).getTime(),
+          logs: [...botRun.logs, `Error: ${executionError.message}`],
+          error: executionError.message,
+          updatedAt: new Date().toISOString()
+        })
+        .eq('id', botRun.id);
+      
+      // Update bot status back to idle
+      await supabase
+        .from('Bots')
+        .update({ 
+          status: 'idle',
+          updatedAt: new Date().toISOString()
+        })
+        .eq('id', id);
+      
+      res.status(500).json({ 
+        error: 'Bot execution failed',
+        details: executionError.message
+      });
+    }
+    
+  } catch (error) {
+    console.error('Execute bot error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Bot execution logic function
+async function executeBotLogic(bot, botRunId, supabase) {
+  const logs = [`Starting ${bot.type} bot execution`];
+  const results = {};
+  
+  try {
+    switch (bot.type) {
+      case 'module_update':
+        logs.push('Checking for module updates...');
+        results.moduleUpdates = await checkModuleUpdates(bot, logs);
+        logs.push(`Found ${results.moduleUpdates.length} potential updates`);
+        break;
+        
+      case 'dependency_update':
+        logs.push('Checking for dependency updates...');
+        results.dependencyUpdates = await checkDependencyUpdates(bot, logs);
+        logs.push(`Found ${results.dependencyUpdates.length} dependency updates`);
+        break;
+        
+      case 'security_scan':
+        logs.push('Running security scan...');
+        results.securityIssues = await runSecurityScan(bot, logs);
+        logs.push(`Found ${results.securityIssues.length} security issues`);
+        break;
+        
+      case 'custom':
+        logs.push('Running custom bot logic...');
+        results.customOutput = await runCustomBot(bot, logs);
+        logs.push('Custom bot execution completed');
+        break;
+        
+      default:
+        throw new Error(`Unknown bot type: ${bot.type}`);
+    }
+    
+    logs.push('Bot execution completed successfully');
+    
+  } catch (error) {
+    logs.push(`Error during execution: ${error.message}`);
+    throw error;
+  }
+  
+  return { logs, results };
+}
+
+// Module update checker
+async function checkModuleUpdates(bot, logs) {
+  logs.push('Simulating module update check...');
+  // TODO: Implement actual module update checking
+  // This would check package.json, requirements.txt, etc.
+  return [
+    { module: 'react', currentVersion: '18.2.0', latestVersion: '18.3.0', needsUpdate: true },
+    { module: 'axios', currentVersion: '1.4.0', latestVersion: '1.6.0', needsUpdate: true }
+  ];
+}
+
+// Dependency update checker
+async function checkDependencyUpdates(bot, logs) {
+  logs.push('Simulating dependency update check...');
+  // TODO: Implement actual dependency checking
+  return [
+    { dependency: 'lodash', currentVersion: '4.17.20', latestVersion: '4.17.21', needsUpdate: true }
+  ];
+}
+
+// Security scanner
+async function runSecurityScan(bot, logs) {
+  logs.push('Simulating security scan...');
+  // TODO: Implement actual security scanning
+  return [
+    { type: 'vulnerability', severity: 'medium', description: 'Outdated dependency with known vulnerability' }
+  ];
+}
+
+// Custom bot runner
+async function runCustomBot(bot, logs) {
+  logs.push('Running custom bot configuration...');
+  const config = bot.configuration || {};
+  logs.push(`Custom configuration: ${JSON.stringify(config)}`);
+  // TODO: Implement custom bot logic based on configuration
+  return { message: 'Custom bot executed', config };
+}
+
 // Stop bot endpoint
 app.post('/api/bots/:id/stop', async (req, res) => {
   try {

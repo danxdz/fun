@@ -15,6 +15,8 @@ import apiClient from '../config/axios';
 
 export default function Bots() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showLogsModal, setShowLogsModal] = useState(false);
+  const [selectedBotLogs, setSelectedBotLogs] = useState(null);
   const [loading, setLoading] = useState(false);
   const [newBot, setNewBot] = useState({
     name: '',
@@ -55,12 +57,20 @@ export default function Bots() {
   const handleStartBot = async (botId) => {
     setLoading(true);
     try {
+      // First start the bot
       await apiClient.post(`/api/bots/${botId}/start`);
+      
+      // Then execute the bot logic
+      const response = await apiClient.post(`/api/bots/${botId}/execute`);
+      
       refetch(); // Refresh the bots list
-      alert('Bot started successfully!');
+      alert(`Bot executed successfully! Check the logs for details.`);
+      
+      // Log the execution results
+      console.log('Bot execution result:', response.data);
     } catch (error) {
-      console.error('Failed to start bot:', error);
-      alert('Failed to start bot: ' + (error.response?.data?.error || error.message));
+      console.error('Failed to execute bot:', error);
+      alert('Failed to execute bot: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
@@ -75,6 +85,20 @@ export default function Bots() {
     } catch (error) {
       console.error('Failed to stop bot:', error);
       alert('Failed to stop bot: ' + (error.response?.data?.error || error.message));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewLogs = async (botId) => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get(`/api/bot-runs?botId=${botId}`);
+      setSelectedBotLogs(response.data.botRuns || []);
+      setShowLogsModal(true);
+    } catch (error) {
+      console.error('Failed to fetch bot logs:', error);
+      alert('Failed to fetch bot logs: ' + (error.response?.data?.error || error.message));
     } finally {
       setLoading(false);
     }
@@ -213,15 +237,13 @@ export default function Bots() {
                   className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <PlayIcon className="h-4 w-4 mr-1" />
-                  {bot.status === 'running' ? 'Running...' : 'Start'}
+                  {bot.status === 'running' ? 'Running...' : 'Execute'}
                 </button>
                 <button 
-                  onClick={() => handleStopBot(bot.id)}
-                  disabled={bot.status !== 'running'}
-                  className="flex-1 inline-flex justify-center items-center px-3 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                  onClick={() => handleViewLogs(bot.id)}
+                  className="inline-flex justify-center items-center px-3 py-2 border border-blue-300 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                  <StopIcon className="h-4 w-4 mr-1" />
-                  Stop
+                  📋 Logs
                 </button>
                 <button 
                   onClick={() => handleDeleteBot(bot.id, bot.name)}
@@ -261,6 +283,17 @@ export default function Bots() {
           onSuccess={() => {
             setShowCreateModal(false);
             refetch();
+          }}
+        />
+      )}
+
+      {/* Bot Logs Modal */}
+      {showLogsModal && (
+        <BotLogsModal
+          logs={selectedBotLogs}
+          onClose={() => {
+            setShowLogsModal(false);
+            setSelectedBotLogs(null);
           }}
         />
       )}
@@ -438,6 +471,72 @@ function CreateBotModal({ onClose, onSuccess }) {
               />
             </div>
 
+            {/* Bot-specific configuration */}
+            {botData.type === 'module_update' && (
+              <div>
+                <label htmlFor="modules" className="block text-sm font-medium text-gray-700">
+                  Modules to Check
+                </label>
+                <input
+                  type="text"
+                  id="modules"
+                  value={botData.config.modules || ''}
+                  onChange={(e) => setBotData({ 
+                    ...botData, 
+                    config: { ...botData.config, modules: e.target.value.split(',').map(m => m.trim()) }
+                  })}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  placeholder="react, axios, lodash (comma-separated)"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Specify which modules to check for updates
+                </p>
+              </div>
+            )}
+
+            {botData.type === 'security_scan' && (
+              <div>
+                <label htmlFor="scanLevel" className="block text-sm font-medium text-gray-700">
+                  Scan Level
+                </label>
+                <select
+                  id="scanLevel"
+                  value={botData.config.scanLevel || 'medium'}
+                  onChange={(e) => setBotData({ 
+                    ...botData, 
+                    config: { ...botData.config, scanLevel: e.target.value }
+                  })}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                >
+                  <option value="low">Low - Basic checks only</option>
+                  <option value="medium">Medium - Standard security checks</option>
+                  <option value="high">High - Comprehensive security scan</option>
+                </select>
+              </div>
+            )}
+
+            {botData.type === 'custom' && (
+              <div>
+                <label htmlFor="customScript" className="block text-sm font-medium text-gray-700">
+                  Custom Script/Command
+                </label>
+                <textarea
+                  id="customScript"
+                  value={botData.config.customScript || ''}
+                  onChange={(e) => setBotData({ 
+                    ...botData, 
+                    config: { ...botData.config, customScript: e.target.value }
+                  })}
+                  rows={4}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  placeholder="npm run test&#10;npm audit&#10;git status"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Enter commands or scripts to run (one per line)
+                </p>
+              </div>
+            )}
+
             {error && (
               <div className="text-red-600 text-sm">{error}</div>
             )}
@@ -459,6 +558,103 @@ function CreateBotModal({ onClose, onSuccess }) {
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function BotLogsModal({ logs, onClose }) {
+  const formatDuration = (ms) => {
+    if (!ms) return 'N/A';
+    if (ms < 1000) return `${ms}ms`;
+    return `${(ms / 1000).toFixed(1)}s`;
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'running': return 'text-blue-600 bg-blue-100';
+      case 'completed': return 'text-green-600 bg-green-100';
+      case 'failed': return 'text-red-600 bg-red-100';
+      case 'cancelled': return 'text-gray-600 bg-gray-100';
+      default: return 'text-gray-600 bg-gray-100';
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-10 mx-auto p-5 border w-4/5 max-w-4xl shadow-lg rounded-md bg-white">
+        <div className="mt-3">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Bot Execution Logs</h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <span className="sr-only">Close</span>
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          {logs && logs.length > 0 ? (
+            <div className="space-y-4 max-h-96 overflow-y-auto">
+              {logs.map((run, index) => (
+                <div key={run.id} className="border rounded-lg p-4 bg-gray-50">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center space-x-3">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(run.status)}`}>
+                        {run.status}
+                      </span>
+                      <span className="text-sm text-gray-600">
+                        {new Date(run.startTime).toLocaleString()}
+                      </span>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      Duration: {formatDuration(run.duration)}
+                    </div>
+                  </div>
+                  
+                  {run.logs && run.logs.length > 0 && (
+                    <div className="mt-3">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Execution Log:</h4>
+                      <div className="bg-black text-green-400 p-3 rounded text-sm font-mono max-h-32 overflow-y-auto">
+                        {run.logs.map((log, logIndex) => (
+                          <div key={logIndex} className="mb-1">
+                            {log}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {run.results && Object.keys(run.results).length > 0 && (
+                    <div className="mt-3">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">Results:</h4>
+                      <pre className="bg-gray-100 p-3 rounded text-sm overflow-x-auto">
+                        {JSON.stringify(run.results, null, 2)}
+                      </pre>
+                    </div>
+                  )}
+                  
+                  {run.error && (
+                    <div className="mt-3">
+                      <h4 className="text-sm font-medium text-red-700 mb-2">Error:</h4>
+                      <div className="bg-red-50 border border-red-200 p-3 rounded text-sm text-red-700">
+                        {run.error}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No execution logs found for this bot.</p>
+              <p className="text-sm text-gray-400 mt-1">Execute the bot to see logs here.</p>
+            </div>
+          )}
         </div>
       </div>
     </div>
