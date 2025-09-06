@@ -529,16 +529,34 @@ app.get('/auth/callback', async (req, res) => {
         if (session?.provider_token) {
           githubToken = session.provider_token;
           console.log('GitHub token found in session.provider_token:', githubToken.substring(0, 10) + '...');
+          
+          // Check if this is the known invalid token
+          if (githubToken.includes('ABCDLBQ0RGuSKGL9TJ1S_VxhjPQ0AOwAhXHaBnmMWDfVqdFB820O0KFmTXlVNQEVC7YBKQRGuCTseaP1')) {
+            console.log('Detected invalid placeholder token, clearing it');
+            githubToken = '';
+          }
         }
         // Method 2: From user metadata (if Supabase stores it there)
         else if (user.user_metadata?.provider_token) {
           githubToken = user.user_metadata.provider_token;
           console.log('GitHub token found in user.user_metadata.provider_token:', githubToken.substring(0, 10) + '...');
+          
+          // Check if this is the known invalid token
+          if (githubToken.includes('ABCDLBQ0RGuSKGL9TJ1S_VxhjPQ0AOwAhXHaBnmMWDfVqdFB820O0KFmTXlVNQEVC7YBKQRGuCTseaP1')) {
+            console.log('Detected invalid placeholder token, clearing it');
+            githubToken = '';
+          }
         }
         // Method 3: From app metadata
         else if (user.app_metadata?.provider_token) {
           githubToken = user.app_metadata.provider_token;
           console.log('GitHub token found in user.app_metadata.provider_token:', githubToken.substring(0, 10) + '...');
+          
+          // Check if this is the known invalid token
+          if (githubToken.includes('ABCDLBQ0RGuSKGL9TJ1S_VxhjPQ0AOwAhXHaBnmMWDfVqdFB820O0KFmTXlVNQEVC7YBKQRGuCTseaP1')) {
+            console.log('Detected invalid placeholder token, clearing it');
+            githubToken = '';
+          }
         }
         // Method 4: Check if there's an access_token in the URL (implicit flow)
         else if (access_token) {
@@ -553,6 +571,10 @@ app.get('/auth/callback', async (req, res) => {
           console.log('- user.user_metadata:', user.user_metadata ? 'present' : 'missing');
           console.log('- user.app_metadata:', user.app_metadata ? 'present' : 'missing');
           console.log('- access_token:', access_token ? 'present' : 'missing');
+          
+          // Clear any existing invalid token
+          githubToken = '';
+          console.log('Clearing invalid GitHub token - user needs to enter a valid one manually');
         }
         
         const userData = {
