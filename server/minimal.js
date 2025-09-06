@@ -537,7 +537,7 @@ app.get('/auth/callback', async (req, res) => {
             console.log('Setting token and user data...');
             localStorage.setItem('token', '${appToken}');
             localStorage.setItem('user', JSON.stringify(${JSON.stringify({
-              id: githubUser.id.toString(),
+              id: userId,
               email: githubUser.email || `${githubUser.login}@github.local`,
               firstName: githubUser.name?.split(' ')[0] || '',
               lastName: githubUser.name?.split(' ').slice(1).join(' ') || '',
