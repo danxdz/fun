@@ -516,6 +516,32 @@ app.get('/auth/callback', async (req, res) => {
         // Check if we have a GitHub token in the session
         console.log('Session data:', session);
         console.log('Provider token:', session?.provider_token);
+        console.log('Provider refresh token:', session?.provider_refresh_token);
+        console.log('Session provider:', session?.provider);
+        console.log('Session app metadata:', session?.app_metadata);
+        console.log('Session user metadata:', session?.user_metadata);
+        
+        // Try to extract GitHub token from various sources
+        let githubToken = '';
+        
+        // Method 1: From session provider_token
+        if (session?.provider_token) {
+          githubToken = session.provider_token;
+          console.log('GitHub token found in session.provider_token');
+        }
+        // Method 2: From user metadata (if Supabase stores it there)
+        else if (user.user_metadata?.provider_token) {
+          githubToken = user.user_metadata.provider_token;
+          console.log('GitHub token found in user.user_metadata.provider_token');
+        }
+        // Method 3: From app metadata
+        else if (user.app_metadata?.provider_token) {
+          githubToken = user.app_metadata.provider_token;
+          console.log('GitHub token found in user.app_metadata.provider_token');
+        }
+        else {
+          console.log('No GitHub token found in any expected location');
+        }
         
         const userData = {
           id: user.id,
@@ -524,7 +550,7 @@ app.get('/auth/callback', async (req, res) => {
           lastName: user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
           githubUsername: user.user_metadata?.user_name || '',
           githubAvatar: user.user_metadata?.avatar_url || '',
-          githubToken: session?.provider_token || '', // Get GitHub token from session
+          githubToken: githubToken,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
