@@ -34,119 +34,129 @@ export default function Projects() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900">Projects</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage your repositories and automation projects
-          </p>
+      <div className="page-header page-header-gradient-green">
+        <div className="flex justify-between items-center">
+          <div className="flex items-center">
+            <div className="page-header-icon">
+              <FolderIcon className="h-6 w-6 text-green-600" />
+            </div>
+            <div>
+              <h1 className="page-header-title">Projects</h1>
+              <p className="page-header-subtitle">
+                Manage your repositories and automation projects
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="btn btn-primary btn-lg"
+          >
+            <PlusIcon className="h-5 w-5 mr-2" />
+            Add Project
+          </button>
         </div>
-        <button
-          onClick={() => setShowCreateModal(true)}
-          className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-        >
-          <PlusIcon className="h-4 w-4 mr-2" />
-          Add Project
-        </button>
       </div>
 
       {/* Projects Grid */}
       {isLoading ? (
         <div className="flex justify-center items-center h-64">
-          <div className="loading-spinner" />
+          <div className="loading-spinner w-8 h-8" />
+          <span className="ml-2 text-gray-500">Loading projects...</span>
         </div>
       ) : (projects || []).length > 0 ? (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid-responsive">
           {projects.map((project) => (
-            <div key={project.id} className="bg-white shadow rounded-lg p-6">
-              <div className="flex items-center">
-                <FolderIcon className="h-8 w-8 text-gray-400" />
-                <div className="ml-4 flex-1">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    <Link to={`/projects/${project.id}`} className="hover:text-primary-600">
-                      {project.name}
-                    </Link>
-                  </h3>
-                  <p className="text-sm text-gray-500 mt-1">
-                    {project.description || 'No description'}
-                  </p>
-                </div>
-              </div>
-              
-              <div className="mt-4">
-                <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-500">Repository:</span>
-                  <span className="text-gray-900 font-medium">{project.repositoryType}</span>
+            <div key={project.id} className="card hover-lift">
+              <div className="card-body">
+                <div className="flex items-center">
+                  <FolderIcon className="h-8 w-8 text-gray-400" />
+                  <div className="ml-4 flex-1">
+                    <h3 className="text-lg font-medium text-gray-900">
+                      <Link to={`/projects/${project.id}`} className="hover:text-primary-600">
+                        {project.name}
+                      </Link>
+                    </h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {project.description || 'No description'}
+                    </p>
+                  </div>
                 </div>
                 
-                {project.githubData && (
-                  <div className="mt-2 space-y-1">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Language:</span>
-                      <span className="text-gray-900 font-medium">{project.githubData.language || 'N/A'}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Stars:</span>
-                      <div className="flex items-center">
-                        <StarIcon className="h-3 w-3 text-yellow-400 mr-1" />
-                        <span className="text-gray-900 font-medium">{project.githubData.stars || 0}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">Forks:</span>
-                      <div className="flex items-center">
-                        <CodeBracketIcon className="h-3 w-3 text-gray-400 mr-1" />
-                        <span className="text-gray-900 font-medium">{project.githubData.forks || 0}</span>
-                      </div>
-                    </div>
-                    {project.githubData.openIssues > 0 && (
+                <div className="mt-4">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Repository:</span>
+                    <span className="text-gray-900 font-medium">{project.repositoryType}</span>
+                  </div>
+                  
+                  {project.githubData && (
+                    <div className="mt-2 space-y-1">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-gray-500">Issues:</span>
+                        <span className="text-gray-500">Language:</span>
+                        <span className="text-gray-900 font-medium">{project.githubData.language || 'N/A'}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Stars:</span>
                         <div className="flex items-center">
-                          <ExclamationTriangleIcon className="h-3 w-3 text-red-400 mr-1" />
-                          <span className="text-gray-900 font-medium">{project.githubData.openIssues}</span>
+                          <StarIcon className="h-3 w-3 text-yellow-400 mr-1" />
+                          <span className="text-gray-900 font-medium">{project.githubData.stars || 0}</span>
                         </div>
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">Forks:</span>
+                        <div className="flex items-center">
+                          <CodeBracketIcon className="h-3 w-3 text-gray-400 mr-1" />
+                          <span className="text-gray-900 font-medium">{project.githubData.forks || 0}</span>
+                        </div>
+                      </div>
+                      {project.githubData.openIssues > 0 && (
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-500">Issues:</span>
+                          <div className="flex items-center">
+                            <ExclamationTriangleIcon className="h-3 w-3 text-red-400 mr-1" />
+                            <span className="text-gray-900 font-medium">{project.githubData.openIssues}</span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
 
-              <div className="mt-6 flex justify-between items-center">
-                <Link
-                  to={`/projects/${project.id}`}
-                  className="text-sm text-primary-600 hover:text-primary-500 font-medium"
-                >
-                  View Details →
-                </Link>
-                <button
-                  onClick={() => handleDeleteProject(project.id, project.name)}
-                  disabled={deletingProject === project.id}
-                  className="inline-flex items-center px-2 py-1 border border-red-300 text-xs font-medium rounded text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <TrashIcon className="h-3 w-3 mr-1" />
-                  {deletingProject === project.id ? 'Deleting...' : 'Delete'}
-                </button>
+                <div className="mt-6 flex justify-between items-center">
+                  <Link
+                    to={`/projects/${project.id}`}
+                    className="text-sm text-primary-600 hover:text-primary-500 font-medium"
+                  >
+                    View Details →
+                  </Link>
+                  <button
+                    onClick={() => handleDeleteProject(project.id, project.name)}
+                    disabled={deletingProject === project.id}
+                    className="btn btn-danger btn-sm"
+                  >
+                    <TrashIcon className="h-3 w-3 mr-1" />
+                    {deletingProject === project.id ? 'Deleting...' : 'Delete'}
+                  </button>
+                </div>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-12">
-          <FolderIcon className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No projects</h3>
-          <p className="mt-1 text-sm text-gray-500">
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <FolderIcon className="h-16 w-16 text-gray-400" />
+          </div>
+          <h3 className="empty-state-title">No projects</h3>
+          <p className="empty-state-description">
             Get started by creating your first project.
           </p>
-          <div className="mt-6">
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add Project
-            </button>
-          </div>
+          <button
+            onClick={() => setShowCreateModal(true)}
+            className="empty-state-action"
+          >
+            <PlusIcon className="h-4 w-4 mr-2" />
+            Add Project
+          </button>
         </div>
       )}
 

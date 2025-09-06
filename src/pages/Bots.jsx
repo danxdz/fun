@@ -121,20 +121,22 @@ export default function Bots() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 mb-8">
+      <div className="page-header page-header-gradient-blue">
         <div className="flex justify-between items-center">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-              <CogIcon className="h-8 w-8 text-blue-600 mr-3" />
-              Automation Bots
-            </h1>
-            <p className="mt-2 text-gray-600">
-              Streamline your development workflow with intelligent automation
-            </p>
+          <div className="flex items-center">
+            <div className="page-header-icon">
+              <CogIcon className="h-6 w-6 text-blue-600" />
+            </div>
+            <div>
+              <h1 className="page-header-title">Automation Bots</h1>
+              <p className="page-header-subtitle">
+                Streamline your development workflow with intelligent automation
+              </p>
+            </div>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg shadow-sm text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform hover:scale-105"
+            className="btn btn-primary btn-lg"
           >
             <PlusIcon className="h-5 w-5 mr-2" />
             Create Bot

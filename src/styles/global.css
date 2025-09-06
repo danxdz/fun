@@ -1,0 +1,489 @@
+/* ========================================
+   AUTOBOT MANAGER - GLOBAL STYLES
+   ======================================== */
+
+/* Import Inter font */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ========================================
+   CSS RESET & BASE STYLES
+   ======================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  color: #1f2937;
+  background-color: #ffffff;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========================================
+   GLOBAL COMPONENT STYLES
+   ======================================== */
+
+/* Page Headers */
+.page-header {
+  @apply bg-gradient-to-r from-gray-50 to-gray-100 rounded-2xl p-8 mb-8;
+  @apply border border-gray-200 shadow-soft;
+}
+
+.page-header-gradient-blue {
+  @apply bg-gradient-to-r from-blue-50 to-purple-50;
+}
+
+.page-header-gradient-green {
+  @apply bg-gradient-to-r from-green-50 to-blue-50;
+}
+
+.page-header-gradient-purple {
+  @apply bg-gradient-to-r from-purple-50 to-pink-50;
+}
+
+.page-header-icon {
+  @apply w-12 h-12 bg-white rounded-full flex items-center justify-center mr-4;
+  @apply shadow-medium border border-gray-100;
+}
+
+.page-header-title {
+  @apply text-3xl font-bold text-gray-900 mb-2;
+}
+
+.page-header-subtitle {
+  @apply text-gray-600 text-lg;
+}
+
+/* Cards */
+.card {
+  @apply bg-white rounded-xl border border-gray-200 shadow-soft;
+  @apply hover:shadow-medium transition-all duration-300;
+}
+
+.card-header {
+  @apply px-6 py-4 border-b border-gray-100;
+}
+
+.card-body {
+  @apply px-6 py-6;
+}
+
+.card-footer {
+  @apply px-6 py-4 border-t border-gray-100 bg-gray-50 rounded-b-xl;
+}
+
+/* Stats Cards */
+.stats-card {
+  @apply bg-white rounded-xl border border-gray-200 shadow-soft;
+  @apply hover:shadow-medium transition-all duration-300;
+  @apply overflow-hidden;
+}
+
+.stats-card-icon {
+  @apply w-12 h-12 rounded-full flex items-center justify-center;
+  @apply bg-gradient-to-br from-gray-100 to-gray-200;
+}
+
+.stats-card-value {
+  @apply text-2xl font-bold text-gray-900;
+}
+
+.stats-card-label {
+  @apply text-sm font-medium text-gray-500;
+}
+
+.stats-card-subtitle {
+  @apply text-xs text-gray-400 mt-1;
+}
+
+/* Buttons */
+.btn {
+  @apply inline-flex items-center justify-center px-4 py-2 text-sm font-medium rounded-lg;
+  @apply transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2;
+  @apply disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-primary {
+  @apply bg-gradient-to-r from-primary-600 to-primary-700 text-white;
+  @apply hover:from-primary-700 hover:to-primary-800 focus:ring-primary-500;
+  @apply shadow-medium hover:shadow-strong;
+}
+
+.btn-secondary {
+  @apply bg-gradient-to-r from-gray-600 to-gray-700 text-white;
+  @apply hover:from-gray-700 hover:to-gray-800 focus:ring-gray-500;
+  @apply shadow-medium hover:shadow-strong;
+}
+
+.btn-success {
+  @apply bg-gradient-to-r from-success-600 to-success-700 text-white;
+  @apply hover:from-success-700 hover:to-success-800 focus:ring-success-500;
+  @apply shadow-medium hover:shadow-strong;
+}
+
+.btn-danger {
+  @apply bg-gradient-to-r from-danger-600 to-danger-700 text-white;
+  @apply hover:from-danger-700 hover:to-danger-800 focus:ring-danger-500;
+  @apply shadow-medium hover:shadow-strong;
+}
+
+.btn-outline {
+  @apply border-2 border-gray-300 text-gray-700 bg-white;
+  @apply hover:bg-gray-50 hover:border-gray-400 focus:ring-gray-500;
+}
+
+.btn-ghost {
+  @apply text-gray-600 bg-transparent;
+  @apply hover:bg-gray-100 hover:text-gray-900 focus:ring-gray-500;
+}
+
+.btn-sm {
+  @apply px-3 py-1.5 text-xs;
+}
+
+.btn-lg {
+  @apply px-6 py-3 text-base;
+}
+
+.btn-xl {
+  @apply px-8 py-4 text-lg;
+}
+
+/* Form Elements */
+.form-group {
+  @apply mb-6;
+}
+
+.form-label {
+  @apply block text-sm font-medium text-gray-700 mb-2;
+}
+
+.form-input {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg;
+  @apply focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
+  @apply transition-all duration-200;
+  @apply placeholder-gray-400;
+}
+
+.form-input:focus {
+  @apply outline-none shadow-medium;
+}
+
+.form-textarea {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg;
+  @apply focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
+  @apply transition-all duration-200 resize-vertical;
+  @apply placeholder-gray-400;
+}
+
+.form-select {
+  @apply w-full px-4 py-3 border border-gray-300 rounded-lg;
+  @apply focus:ring-2 focus:ring-primary-500 focus:border-primary-500;
+  @apply transition-all duration-200 bg-white;
+}
+
+.form-error {
+  @apply text-danger-600 text-sm mt-1;
+}
+
+.form-help {
+  @apply text-gray-500 text-sm mt-1;
+}
+
+/* Status Indicators */
+.status-indicator {
+  @apply w-3 h-3 rounded-full;
+}
+
+.status-running {
+  @apply bg-blue-500 animate-pulse;
+}
+
+.status-completed {
+  @apply bg-success-500;
+}
+
+.status-failed {
+  @apply bg-danger-500;
+}
+
+.status-error {
+  @apply bg-danger-500;
+}
+
+.status-idle {
+  @apply bg-gray-400;
+}
+
+.status-paused {
+  @apply bg-warning-500;
+}
+
+/* Badges */
+.badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.badge-success {
+  @apply bg-success-100 text-success-800;
+}
+
+.badge-danger {
+  @apply bg-danger-100 text-danger-800;
+}
+
+.badge-warning {
+  @apply bg-warning-100 text-warning-800;
+}
+
+.badge-info {
+  @apply bg-primary-100 text-primary-800;
+}
+
+.badge-gray {
+  @apply bg-gray-100 text-gray-800;
+}
+
+/* Loading States */
+.loading-spinner {
+  @apply animate-spin rounded-full border-2 border-gray-300 border-t-primary-600;
+}
+
+.loading-overlay {
+  @apply absolute inset-0 bg-white bg-opacity-75 flex items-center justify-center;
+  @apply backdrop-blur-sm;
+}
+
+.loading-skeleton {
+  @apply bg-gray-200 animate-pulse rounded;
+}
+
+/* Empty States */
+.empty-state {
+  @apply text-center py-12 px-6;
+}
+
+.empty-state-icon {
+  @apply w-16 h-16 mx-auto mb-4 text-gray-400;
+}
+
+.empty-state-title {
+  @apply text-lg font-medium text-gray-900 mb-2;
+}
+
+.empty-state-description {
+  @apply text-gray-500 mb-6;
+}
+
+.empty-state-action {
+  @apply btn btn-primary;
+}
+
+/* Modals */
+.modal-overlay {
+  @apply fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center;
+  @apply z-50 backdrop-blur-sm;
+}
+
+.modal-content {
+  @apply bg-white rounded-2xl shadow-strong max-w-md w-full mx-4;
+  @apply animate-scale-in;
+}
+
+.modal-header {
+  @apply px-6 py-4 border-b border-gray-200;
+}
+
+.modal-title {
+  @apply text-lg font-semibold text-gray-900;
+}
+
+.modal-body {
+  @apply px-6 py-4;
+}
+
+.modal-footer {
+  @apply px-6 py-4 border-t border-gray-200 flex justify-end space-x-3;
+}
+
+/* Navigation */
+.nav-link {
+  @apply flex items-center px-3 py-2 text-sm font-medium rounded-lg;
+  @apply transition-all duration-200;
+}
+
+.nav-link-active {
+  @apply bg-primary-100 text-primary-700;
+}
+
+.nav-link-inactive {
+  @apply text-gray-600 hover:bg-gray-100 hover:text-gray-900;
+}
+
+/* Tables */
+.table {
+  @apply w-full border-collapse;
+}
+
+.table th {
+  @apply px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider;
+  @apply border-b border-gray-200 bg-gray-50;
+}
+
+.table td {
+  @apply px-6 py-4 whitespace-nowrap text-sm text-gray-900;
+  @apply border-b border-gray-100;
+}
+
+.table tbody tr:hover {
+  @apply bg-gray-50;
+}
+
+/* Responsive Grid */
+.grid-responsive {
+  @apply grid grid-cols-1 gap-6;
+}
+
+@media (min-width: 640px) {
+  .grid-responsive {
+    @apply grid-cols-2;
+  }
+}
+
+@media (min-width: 1024px) {
+  .grid-responsive {
+    @apply grid-cols-3;
+  }
+}
+
+@media (min-width: 1280px) {
+  .grid-responsive {
+    @apply grid-cols-4;
+  }
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+.text-gradient {
+  @apply bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent;
+}
+
+.bg-gradient-primary {
+  @apply bg-gradient-to-r from-primary-600 to-primary-700;
+}
+
+.bg-gradient-secondary {
+  @apply bg-gradient-to-r from-secondary-600 to-secondary-700;
+}
+
+.bg-gradient-success {
+  @apply bg-gradient-to-r from-success-600 to-success-700;
+}
+
+.bg-gradient-danger {
+  @apply bg-gradient-to-r from-danger-600 to-danger-700;
+}
+
+.shadow-glow {
+  box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+}
+
+.shadow-glow-success {
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
+}
+
+.shadow-glow-danger {
+  box-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+/* ========================================
+   ANIMATIONS & TRANSITIONS
+   ======================================== */
+
+.fade-in {
+  @apply animate-fade-in;
+}
+
+.slide-up {
+  @apply animate-slide-up;
+}
+
+.slide-down {
+  @apply animate-slide-down;
+}
+
+.scale-in {
+  @apply animate-scale-in;
+}
+
+.hover-lift {
+  @apply transition-transform duration-200 hover:-translate-y-1;
+}
+
+.hover-scale {
+  @apply transition-transform duration-200 hover:scale-105;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 640px) {
+  .page-header {
+    @apply p-4 mb-6;
+  }
+  
+  .page-header-title {
+    @apply text-2xl;
+  }
+  
+  .card-body {
+    @apply px-4 py-4;
+  }
+  
+  .modal-content {
+    @apply mx-2;
+  }
+}
+
+/* ========================================
+   ACCESSIBILITY
+   ======================================== */
+
+.sr-only {
+  @apply absolute w-px h-px p-0 -m-px overflow-hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.focus-visible {
+  @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+}
+
+/* ========================================
+   PRINT STYLES
+   ======================================== */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  
+  .page-header {
+    @apply shadow-none border-none;
+  }
+  
+  .card {
+    @apply shadow-none border border-gray-300;
+  }
+}

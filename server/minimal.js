@@ -1181,10 +1181,96 @@ app.get('/api/dashboard', async (req, res) => {
       return res.status(401).json({ error: 'User not found' });
     }
 
-    // Return basic dashboard data
+    // Get comprehensive dashboard statistics
+    const { data: projects } = await supabase
+      .from('Projects')
+      .select('*')
+      .eq('userId', user.id);
+
+    const { data: bots } = await supabase
+      .from('Bots')
+      .select('*')
+      .eq('userId', user.id);
+
+    const { data: botRuns } = await supabase
+      .from('BotRuns')
+      .select('*')
+      .eq('userId', user.id);
+
+    // Calculate statistics
+    const stats = {
+      projects: {
+        total: projects?.length || 0,
+        active: projects?.filter(p => p.status === 'active').length || 0,
+        github: projects?.filter(p => p.githubData).length || 0
+      },
+      bots: {
+        total: bots?.length || 0,
+        running: bots?.filter(b => b.status === 'running').length || 0,
+        completed: bots?.filter(b => b.status === 'completed').length || 0,
+        failed: bots?.filter(b => b.status === 'failed' || b.status === 'error').length || 0,
+        byType: {}
+      },
+      runs: {
+        total: botRuns?.length || 0,
+        completed: botRuns?.filter(r => r.status === 'completed').length || 0,
+        failed: botRuns?.filter(r => r.status === 'failed' || r.status === 'error').length || 0,
+        running: botRuns?.filter(r => r.status === 'running').length || 0
+      },
+      github: {
+        totalStars: projects?.reduce((sum, p) => sum + (p.githubData?.stars || 0), 0) || 0,
+        totalForks: projects?.reduce((sum, p) => sum + (p.githubData?.forks || 0), 0) || 0,
+        totalIssues: projects?.reduce((sum, p) => sum + (p.githubData?.openIssues || 0), 0) || 0
+      }
+    };
+
+    // Calculate bot types
+    if (bots) {
+      bots.forEach(bot => {
+        stats.bots.byType[bot.type] = (stats.bots.byType[bot.type] || 0) + 1;
+      });
+    }
+
+    // Generate recent activity
+    const recentActivity = [];
+    if (botRuns) {
+      recentActivity.push(...botRuns.slice(0, 10).map(run => ({
+        id: run.id,
+        title: `Bot run: ${run.botName || 'Unknown Bot'}`,
+        description: `Status: ${run.status}`,
+        status: run.status,
+        timestamp: run.createdAt || run.created_at
+      })));
+    }
+
+    // Generate weekly activity data
+    const weeklyActivity = [];
+    const today = new Date();
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dayRuns = botRuns?.filter(run => {
+        const runDate = new Date(run.createdAt || run.created_at);
+        return runDate.toDateString() === date.toDateString();
+      }) || [];
+      
+      weeklyActivity.push({
+        date: date.toISOString().split('T')[0],
+        runs: dayRuns.length,
+        completed: dayRuns.filter(r => r.status === 'completed').length,
+        failed: dayRuns.filter(r => r.status === 'failed' || r.status === 'error').length
+      });
+    }
+
+    // Return comprehensive dashboard data
     res.json({
       user,
-      message: 'Dashboard data',
+      statistics: stats,
+      recentActivity,
+      weeklyActivity,
+      projects: projects?.slice(0, 5) || [],
+      bots: bots?.slice(0, 5) || [],
+      message: 'Dashboard data loaded successfully',
       timestamp: new Date().toISOString()
     });
     

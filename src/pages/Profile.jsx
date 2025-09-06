@@ -117,7 +117,7 @@ export default function Profile() {
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 mb-8">
+        <div className="page-header page-header-gradient-purple">
           <div className="flex items-center space-x-6">
             <div className="relative">
               {user?.githubAvatar ? (
@@ -134,18 +134,18 @@ export default function Profile() {
               <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white"></div>
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+              <h1 className="page-header-title flex items-center">
                 <UserIcon className="h-8 w-8 text-purple-600 mr-3" />
                 {user?.firstName && user?.lastName 
                   ? `${user.firstName} ${user.lastName}` 
                   : user?.githubUsername || 'Profile'
                 }
               </h1>
-              <p className="text-lg text-gray-600 mt-1">
+              <p className="page-header-subtitle">
                 {user?.githubUsername && `@${user.githubUsername}`}
               </p>
               <div className="flex items-center mt-2">
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                <span className="badge badge-success">
                   ✓ Active Account
                 </span>
               </div>
