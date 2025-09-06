@@ -19,25 +19,7 @@ export const AuthProvider = ({ children }) => {
   
   console.log('AuthProvider: Initial state - user:', user, 'loading:', loading, 'token:', token ? 'present' : 'missing');
 
-  // Token refresh function
-  const refreshToken = async () => {
-    try {
-      console.log('AuthContext: Attempting token refresh...');
-      const response = await apiClient.post('/api/auth/refresh');
-      const { token: newToken } = response.data;
-      
-      if (newToken) {
-        localStorage.setItem('token', newToken);
-        setToken(newToken);
-        console.log('AuthContext: Token refreshed successfully');
-        return true;
-      }
-    } catch (error) {
-      console.error('AuthContext: Token refresh failed:', error);
-      logout();
-      return false;
-    }
-  };
+  // No token refresh needed for custom JWT tokens
 
   // Token is handled by axios interceptor in src/config/axios.js
 
