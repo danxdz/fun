@@ -37,7 +37,7 @@ export default function Projects() {
         <div className="flex justify-center items-center h-64">
           <div className="loading-spinner" />
         </div>
-      ) : projects.length > 0 ? (
+      ) : (projects || []).length > 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
             <div key={project.id} className="bg-white shadow rounded-lg p-6">

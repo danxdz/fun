@@ -103,7 +103,7 @@ export default function Bots() {
         <div className="flex justify-center items-center h-64">
           <div className="loading-spinner" />
         </div>
-      ) : bots.length > 0 ? (
+      ) : (bots || []).length > 0 ? (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {bots.map((bot) => (
             <div key={bot.id} className="bg-white shadow rounded-lg p-6">
@@ -182,6 +182,161 @@ export default function Bots() {
           </div>
         </div>
       )}
+
+      {/* Create Bot Modal */}
+      {showCreateModal && (
+        <CreateBotModal
+          onClose={() => setShowCreateModal(false)}
+          onSuccess={() => {
+            setShowCreateModal(false);
+            refetch();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function CreateBotModal({ onClose, onSuccess }) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [botData, setBotData] = useState({
+    name: '',
+    type: 'automation',
+    description: '',
+    projectId: '',
+    config: {}
+  });
+
+  const { data: projectsData } = useQuery('projects', () =>
+    apiClient.get('/api/projects').then(res => res.data)
+  );
+
+  const projects = projectsData?.projects || [];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      await apiClient.post('/api/bots', botData);
+      onSuccess();
+    } catch (error) {
+      console.error('Failed to create bot:', error);
+      setError(error.response?.data?.error || 'Failed to create bot');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+      <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="mt-3">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-medium text-gray-900">Create New Bot</h3>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <span className="sr-only">Close</span>
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                Bot Name
+              </label>
+              <input
+                type="text"
+                id="name"
+                value={botData.name}
+                onChange={(e) => setBotData({ ...botData, name: e.target.value })}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                placeholder="My Automation Bot"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="type" className="block text-sm font-medium text-gray-700">
+                Bot Type
+              </label>
+              <select
+                id="type"
+                value={botData.type}
+                onChange={(e) => setBotData({ ...botData, type: e.target.value })}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+              >
+                <option value="automation">Automation</option>
+                <option value="monitoring">Monitoring</option>
+                <option value="deployment">Deployment</option>
+                <option value="testing">Testing</option>
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="projectId" className="block text-sm font-medium text-gray-700">
+                Project
+              </label>
+              <select
+                id="projectId"
+                value={botData.projectId}
+                onChange={(e) => setBotData({ ...botData, projectId: e.target.value })}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                required
+              >
+                <option value="">Select a project</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={project.id}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="description" className="block text-sm font-medium text-gray-700">
+                Description
+              </label>
+              <textarea
+                id="description"
+                value={botData.description}
+                onChange={(e) => setBotData({ ...botData, description: e.target.value })}
+                rows={3}
+                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                placeholder="Describe what this bot does..."
+              />
+            </div>
+
+            {error && (
+              <div className="text-red-600 text-sm">{error}</div>
+            )}
+
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+              >
+                {loading ? 'Creating...' : 'Create Bot'}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   );
 }
