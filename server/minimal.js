@@ -1017,10 +1017,16 @@ app.put('/api/user/profile', async (req, res) => {
     console.log('Profile update data:', updateData);
     console.log('User ID:', user.id);
     
+    // Use upsert instead of update to handle case where user doesn't exist yet
     const { data, error } = await supabase
       .from('Users')
-      .update(updateData)
-      .eq('id', user.id)
+      .upsert({
+        id: user.id,
+        email: user.email,
+        ...updateData
+      }, {
+        onConflict: 'id'
+      })
       .select()
       .single();
     
