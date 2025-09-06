@@ -519,7 +519,7 @@ app.get('/auth/callback', async (req, res) => {
       
       const { error: dbError } = await supabase
         .from('Users')
-        .upsert(userData, { onConflict: 'id' });
+        .upsert(userData, { onConflict: 'email' });
       
       if (dbError) {
         console.error('Database error:', dbError);
@@ -1046,7 +1046,9 @@ app.get('/api/me', async (req, res) => {
     
     try {
       decoded = jwt.default.verify(token, process.env.JWT_SECRET || 'fallback-secret');
+      console.log('JWT decoded successfully:', { userId: decoded.userId, githubUsername: decoded.githubUsername });
     } catch (jwtError) {
+      console.error('JWT verification failed:', jwtError.message);
       return res.status(401).json({ error: 'Invalid token' });
     }
     
@@ -1068,8 +1070,11 @@ app.get('/api/me', async (req, res) => {
       .single();
     
     if (error || !user) {
+      console.error('User lookup failed:', { error, userId: decoded.userId });
       return res.status(401).json({ error: 'User not found' });
     }
+    
+    console.log('User found in database:', { id: user.id, email: user.email, githubUsername: user.githubUsername });
     
     console.log('Complete user data:', { id: user.id, email: user.email, githubUsername: user.githubUsername });
     res.json({ user });
