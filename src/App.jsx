@@ -89,6 +89,10 @@ function App() {
         <AuthProvider>
           <Router>
             <div className="App">
+              {/* Debug Banner */}
+              <div className="bg-red-500 text-white p-2 text-center text-sm font-bold">
+                🚨 DEBUG MODE - App is rendering successfully
+              </div>
               <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
