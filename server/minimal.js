@@ -73,6 +73,42 @@ const sanitizeInput = (input) => {
   return input.trim().replace(/[<>]/g, '');
 };
 
+// Enhanced logging middleware
+const logRequest = (req, res, next) => {
+  const start = Date.now();
+  const originalSend = res.send;
+  
+  res.send = function(data) {
+    const duration = Date.now() - start;
+    const logData = {
+      timestamp: new Date().toISOString(),
+      method: req.method,
+      url: req.url,
+      status: res.statusCode,
+      duration: `${duration}ms`,
+      ip: req.ip || req.headers['x-forwarded-for'] || 'unknown',
+      userAgent: req.headers['user-agent'] || 'unknown',
+      contentLength: res.get('content-length') || '0'
+    };
+    
+    // Log based on status code
+    if (res.statusCode >= 400) {
+      console.error('❌ Request Error:', logData);
+    } else if (res.statusCode >= 300) {
+      console.warn('⚠️ Request Redirect:', logData);
+    } else {
+      console.log('✅ Request Success:', logData);
+    }
+    
+    originalSend.call(this, data);
+  };
+  
+  next();
+};
+
+// Apply logging middleware
+app.use(logRequest);
+
 // Simple health check
 app.get('/api/health', (req, res) => {
   res.json({ 
@@ -81,6 +117,175 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development'
   });
+});
+
+// API Documentation endpoint
+app.get('/api/docs', (req, res) => {
+  const apiDocs = {
+    title: 'AutoBot Manager API',
+    version: '1.0.0',
+    description: 'Complete API for managing AI automation bots, projects, and teams',
+    baseUrl: 'https://web-production-8747.up.railway.app',
+    endpoints: {
+      authentication: {
+        'POST /api/auth': {
+          description: 'Login or register user',
+          parameters: {
+            email: 'string (required)',
+            password: 'string (required)',
+            firstName: 'string (optional, for registration)',
+            lastName: 'string (optional, for registration)',
+            action: 'string (optional: "login" or "register")'
+          },
+          response: 'Returns user data and JWT token'
+        },
+        'POST /api/auth/login': {
+          description: 'User login',
+          parameters: { email: 'string', password: 'string' },
+          response: 'Returns user data and JWT token'
+        },
+        'POST /api/auth/register': {
+          description: 'User registration',
+          parameters: { email: 'string', password: 'string', firstName: 'string', lastName: 'string' },
+          response: 'Returns user data and JWT token'
+        }
+      },
+      user: {
+        'GET /api/me': {
+          description: 'Get current user profile',
+          auth: 'Bearer token required',
+          response: 'Returns user profile data'
+        },
+        'GET /api/user/profile': {
+          description: 'Get user profile from database',
+          auth: 'Bearer token required',
+          response: 'Returns complete user profile'
+        },
+        'PUT /api/user/profile': {
+          description: 'Update user profile',
+          auth: 'Bearer token required',
+          parameters: { firstName: 'string', lastName: 'string', preferences: 'object' },
+          response: 'Returns updated user profile'
+        },
+        'DELETE /api/user/profile': {
+          description: 'Delete user account',
+          auth: 'Bearer token required',
+          response: 'Confirms account deletion'
+        }
+      },
+      projects: {
+        'GET /api/projects': {
+          description: 'Get user projects',
+          auth: 'Bearer token required',
+          response: 'Returns array of user projects with bots'
+        },
+        'POST /api/projects': {
+          description: 'Create new project',
+          auth: 'Bearer token required',
+          parameters: {
+            name: 'string (required)',
+            description: 'string',
+            repositoryUrl: 'string (required)',
+            repositoryType: 'string (default: "github")',
+            accessToken: 'string (required)',
+            defaultBranch: 'string (default: "main")',
+            teamId: 'string (optional)'
+          },
+          response: 'Returns created project data'
+        }
+      },
+      bots: {
+        'GET /api/bots': {
+          description: 'Get user bots',
+          auth: 'Bearer token required',
+          response: 'Returns array of user bots with project info'
+        },
+        'POST /api/bots': {
+          description: 'Create new bot',
+          auth: 'Bearer token required',
+          parameters: {
+            name: 'string (required)',
+            type: 'string (required)',
+            description: 'string',
+            projectId: 'string (required)',
+            teamId: 'string (optional)',
+            config: 'object',
+            schedule: 'string (optional)'
+          },
+          response: 'Returns created bot data'
+        },
+        'PUT /api/bots/:id': {
+          description: 'Update bot',
+          auth: 'Bearer token required',
+          parameters: { name: 'string', type: 'string', description: 'string', config: 'object', schedule: 'string', status: 'string' },
+          response: 'Returns updated bot data'
+        },
+        'DELETE /api/bots/:id': {
+          description: 'Delete bot',
+          auth: 'Bearer token required',
+          response: 'Confirms bot deletion'
+        }
+      },
+      teams: {
+        'GET /api/teams': {
+          description: 'Get teams',
+          auth: 'Bearer token required',
+          response: 'Returns array of teams'
+        }
+      },
+      dashboard: {
+        'GET /api/dashboard': {
+          description: 'Get dashboard data',
+          auth: 'Bearer token required',
+          response: 'Returns user dashboard with projects, bots, and stats'
+        }
+      },
+      debug: {
+        'GET /api/health': {
+          description: 'Health check endpoint',
+          response: 'Returns server status'
+        },
+        'GET /api/debug/supabase': {
+          description: 'Test Supabase connection',
+          response: 'Returns Supabase connection status'
+        },
+        'GET /api/debug/system': {
+          description: 'Comprehensive system health check',
+          response: 'Returns complete system status'
+        }
+      }
+    },
+    authentication: {
+      type: 'Bearer Token',
+      description: 'Include Authorization header with Bearer token for protected endpoints',
+      example: 'Authorization: Bearer your-jwt-token-here'
+    },
+    errorCodes: {
+      200: 'Success',
+      201: 'Created',
+      400: 'Bad Request - Invalid parameters',
+      401: 'Unauthorized - Invalid or missing token',
+      403: 'Forbidden - Insufficient permissions',
+      404: 'Not Found - Resource not found',
+      429: 'Too Many Requests - Rate limit exceeded',
+      500: 'Internal Server Error - Server error'
+    },
+    examples: {
+      login: {
+        url: 'POST /api/auth/login',
+        body: { email: 'user@example.com', password: 'password123' },
+        response: { user: {...}, token: 'jwt-token-here' }
+      },
+      createProject: {
+        url: 'POST /api/projects',
+        headers: { Authorization: 'Bearer jwt-token-here' },
+        body: { name: 'My Project', repositoryUrl: 'https://github.com/user/repo', accessToken: 'github-token' },
+        response: { project: {...} }
+      }
+    }
+  };
+  
+  res.json(apiDocs);
 });
 
 // Comprehensive system test endpoint
@@ -936,6 +1141,261 @@ app.post('/api/projects', async (req, res) => {
     
   } catch (error) {
     console.error('Create project error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Bot management endpoints
+app.get('/api/bots', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get user from auth
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError) {
+      return res.status(401).json({ error: authError.message });
+    }
+    
+    // Get user's bots
+    const { data: bots, error } = await supabase
+      .from('Bots')
+      .select(`
+        *,
+        Projects(name, repositoryUrl),
+        Teams(name)
+      `)
+      .eq('UserId', user.id)
+      .eq('isActive', true)
+      .order('createdAt', { ascending: false });
+    
+    if (error) {
+      console.error('Bots fetch error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    
+    res.json({
+      bots: bots || [],
+      count: bots ? bots.length : 0
+    });
+    
+  } catch (error) {
+    console.error('Get bots error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/bots', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const { name, type, description, projectId, teamId, config, schedule } = req.body;
+    
+    if (!name || !type || !projectId) {
+      return res.status(400).json({ error: 'Name, type, and project ID are required' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get user from auth
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError) {
+      return res.status(401).json({ error: authError.message });
+    }
+    
+    // Create bot
+    const { data, error } = await supabase
+      .from('Bots')
+      .insert({
+        name: sanitizeInput(name),
+        type: sanitizeInput(type),
+        description: sanitizeInput(description || ''),
+        ProjectId: projectId,
+        TeamId: teamId || null,
+        UserId: user.id,
+        config: config || {},
+        schedule: schedule || null,
+        status: 'inactive',
+        lastRun: null,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Bot creation error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    
+    res.status(201).json({
+      message: 'Bot created successfully',
+      bot: data
+    });
+    
+  } catch (error) {
+    console.error('Create bot error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/bots/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const { id } = req.params;
+    const { name, type, description, config, schedule, status } = req.body;
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get user from auth
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError) {
+      return res.status(401).json({ error: authError.message });
+    }
+    
+    // Update bot
+    const updateData = {
+      updatedAt: new Date().toISOString()
+    };
+    
+    if (name !== undefined) updateData.name = sanitizeInput(name);
+    if (type !== undefined) updateData.type = sanitizeInput(type);
+    if (description !== undefined) updateData.description = sanitizeInput(description);
+    if (config !== undefined) updateData.config = config;
+    if (schedule !== undefined) updateData.schedule = schedule;
+    if (status !== undefined) updateData.status = status;
+    
+    const { data, error } = await supabase
+      .from('Bots')
+      .update(updateData)
+      .eq('id', id)
+      .eq('UserId', user.id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Bot update error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    
+    if (!data) {
+      return res.status(404).json({ error: 'Bot not found' });
+    }
+    
+    res.json({
+      message: 'Bot updated successfully',
+      bot: data
+    });
+    
+  } catch (error) {
+    console.error('Update bot error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/bots/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const { id } = req.params;
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get user from auth
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError) {
+      return res.status(401).json({ error: authError.message });
+    }
+    
+    // Soft delete bot
+    const { data, error } = await supabase
+      .from('Bots')
+      .update({ 
+        isActive: false,
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', id)
+      .eq('UserId', user.id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Bot deletion error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    
+    if (!data) {
+      return res.status(404).json({ error: 'Bot not found' });
+    }
+    
+    res.json({
+      message: 'Bot deleted successfully'
+    });
+    
+  } catch (error) {
+    console.error('Delete bot error:', error);
     res.status(500).json({ error: error.message });
   }
 });
