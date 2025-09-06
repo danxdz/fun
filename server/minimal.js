@@ -567,7 +567,7 @@ app.get('/auth/callback', async (req, res) => {
     }
     
     // Handle implicit flow (fallback)
-    if (!code && !access_token) {
+    if (!code) {
       // If no query parameters, serve a client-side handler for URL fragments
       return res.send(`
         <!DOCTYPE html>
