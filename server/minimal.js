@@ -375,10 +375,11 @@ app.post('/api/auth/github', async (req, res) => {
 // GitHub OAuth callback endpoint
 app.get('/auth/callback', async (req, res) => {
   try {
-    const { code } = req.query;
+    const { code, access_token } = req.query;
     
-    if (!code) {
-      return res.status(400).send('Authorization code missing');
+    // Handle both authorization code flow and implicit flow
+    if (!code && !access_token) {
+      return res.status(400).send('Authorization code or access token missing');
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -391,16 +392,31 @@ app.get('/auth/callback', async (req, res) => {
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    let token, user;
     
-    if (error) {
-      console.error('OAuth callback error:', error);
-      return res.status(401).send('Authentication failed');
+    if (code) {
+      // Authorization code flow
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      
+      if (error) {
+        console.error('OAuth callback error:', error);
+        return res.status(401).send('Authentication failed');
+      }
+      
+      token = data.session?.access_token;
+      user = data.user;
+    } else if (access_token) {
+      // Implicit flow - get user info from token
+      const { data, error } = await supabase.auth.getUser(access_token);
+      
+      if (error) {
+        console.error('OAuth callback error:', error);
+        return res.status(401).send('Authentication failed');
+      }
+      
+      token = access_token;
+      user = data.user;
     }
-    
-    // Store token in localStorage via JavaScript
-    const token = data.session?.access_token;
-    const user = data.user;
     
     if (token && user) {
       // Add user to database if they don't exist
