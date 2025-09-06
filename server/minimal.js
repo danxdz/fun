@@ -379,7 +379,48 @@ app.get('/auth/callback', async (req, res) => {
     
     // Handle both authorization code flow and implicit flow
     if (!code && !access_token) {
-      return res.status(400).send('Authorization code or access token missing');
+      // If no query parameters, serve a client-side handler for URL fragments
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Processing Authentication...</title>
+        </head>
+        <body>
+          <script>
+            // Extract token from URL fragment
+            const hash = window.location.hash;
+            const params = new URLSearchParams(hash.substring(1));
+            const accessToken = params.get('access_token');
+            const userData = {
+              id: params.get('user_id') || '',
+              email: params.get('email') || '',
+              user_metadata: {
+                user_name: params.get('user_name') || '',
+                avatar_url: params.get('avatar_url') || ''
+              }
+            };
+            
+            if (accessToken) {
+              console.log('Setting token and user data from URL fragment...');
+              localStorage.setItem('token', accessToken);
+              localStorage.setItem('user', JSON.stringify(userData));
+              console.log('Token set:', localStorage.getItem('token') ? 'YES' : 'NO');
+              console.log('User set:', localStorage.getItem('user') ? 'YES' : 'NO');
+              setTimeout(() => {
+                window.location.href = '/dashboard';
+              }, 1000);
+            } else {
+              console.error('No access token found in URL fragment');
+              window.location.href = '/login?error=no_token';
+            }
+          </script>
+          <h1>🎉 Processing GitHub Authentication...</h1>
+          <p>Please wait while we complete your login...</p>
+          <p>If you're not redirected automatically, <a href="/dashboard">click here</a></p>
+        </body>
+        </html>
+      `);
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
