@@ -389,7 +389,7 @@ app.post('/api/auth/github', async (req, res) => {
       NODE_ENV: process.env.NODE_ENV
     });
     
-    const clientId = process.env.GITHUB_CLIENT_ID;
+    const clientId = process.env.GITHUB_CLIENT_ID || 'Ov23liFUwEe9ESktoMM2';
     const redirectUri = `${req.headers.origin || 'https://web-production-8747.up.railway.app'}/auth/callback`;
     
     if (!clientId) {
