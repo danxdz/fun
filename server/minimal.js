@@ -999,6 +999,9 @@ app.put('/api/user/profile', async (req, res) => {
     if (cursorApiKey !== undefined) updateData.cursorApiKey = cursorApiKey;
     if (preferences !== undefined) updateData.preferences = preferences;
     
+    console.log('Profile update data:', updateData);
+    console.log('User ID:', user.id);
+    
     const { data, error } = await supabase
       .from('Users')
       .update(updateData)
@@ -1008,8 +1011,11 @@ app.put('/api/user/profile', async (req, res) => {
     
     if (error) {
       console.error('Profile update error:', error);
+      console.error('Error details:', JSON.stringify(error, null, 2));
       return res.status(500).json({ error: error.message });
     }
+    
+    console.log('Profile update success:', data);
     
     res.json({
       message: 'Profile updated successfully',
