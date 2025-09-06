@@ -381,19 +381,10 @@ app.post('/api/auth/refresh', async (req, res) => {
 // GitHub OAuth login endpoint - Direct GitHub OAuth for real tokens
 app.post('/api/auth/github', async (req, res) => {
   try {
-    console.log('GitHub OAuth initiation request received');
-    console.log('Environment check:', {
-      GITHUB_CLIENT_ID: !!process.env.GITHUB_CLIENT_ID,
-      GITHUB_CLIENT_SECRET: !!process.env.GITHUB_CLIENT_SECRET,
-      JWT_SECRET: !!process.env.JWT_SECRET,
-      NODE_ENV: process.env.NODE_ENV
-    });
-    
-    const clientId = process.env.GITHUB_CLIENT_ID || 'Ov23liFUwEe9ESktoMM2';
+    const clientId = process.env.GITHUB_CLIENT_ID;
     const redirectUri = `${req.headers.origin || 'https://web-production-8747.up.railway.app'}/auth/callback`;
     
     if (!clientId) {
-      console.log('GitHub Client ID missing from environment');
       return res.status(500).json({ error: 'GitHub Client ID not configured' });
     }
     
@@ -442,7 +433,7 @@ app.get('/auth/callback', async (req, res) => {
       console.log('GitHub OAuth callback with code:', code.substring(0, 10) + '...');
       
       // Exchange code for GitHub access token
-      const clientId = process.env.GITHUB_CLIENT_ID || 'Ov23liFUwEe9ESktoMM2';
+      const clientId = process.env.GITHUB_CLIENT_ID;
       const clientSecret = process.env.GITHUB_CLIENT_SECRET;
       
       if (!clientId || !clientSecret) {

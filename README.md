@@ -1,311 +1,214 @@
-# AutoBot Manager 🤖
+# 🤖 AutoBot Manager
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
-[![React](https://img.shields.io/badge/React-18+-blue.svg)](https://reactjs.org/)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-12+-blue.svg)](https://www.postgresql.org/)
-[![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
-
-> A complete SaaS platform for automated git repository management and code updates.
-
-## 🚀 Quick Deploy
-
-### 🌐 Frontend Only (Demo Mode)
-**Perfect for trying out the interface and exploring features**
-
-[![Deploy Frontend with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/danxdz/fun){:target="_blank"}
-
-*Deploys the React frontend with demo data - no server needed!*
-
-### 🖥️ Full Stack Deployment (Production Ready)
-**Complete SaaS application with real bot functionality**
-
-#### Deploy Full Stack to Railway
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/danxdz/fun){:target="_blank"}
-
-#### Deploy Full Stack to Render
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy/schema-new?template=https://github.com/danxdz/fun){:target="_blank"}
-
-#### Deploy Full Stack to Heroku
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/danxdz/fun){:target="_blank"}
-
-#### Deploy Full Stack to DigitalOcean App Platform
-[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/danxdz/fun){:target="_blank"}
-
-### 🐳 Docker Deployment
-```bash
-# Clone and deploy with Docker Compose
-git clone https://github.com/danxdz/fun.git
-cd fun
-docker-compose up -d
-```
-
-## 🎯 Deployment Modes
-
-### 🌐 Demo Mode (Vercel)
-- ✅ **Frontend Only** - React app with demo data
-- ✅ **No Server Required** - Works out of the box
-- ✅ **Sample Projects** - Explore the interface
-- ✅ **Demo Bots** - See bot functionality
-- ✅ **Perfect for Testing** - Try before you deploy
-- ❌ **No Real Git Operations** - Demo data only
-- ❌ **No Real Authentication** - Demo users only
-
-### 🖥️ Production Mode (Full Stack)
-- ✅ **Complete Backend** - Node.js + Express server
-- ✅ **Real Database** - PostgreSQL with Supabase
-- ✅ **Real Authentication** - JWT with user management
-- ✅ **Real Git Operations** - Actual repository management
-- ✅ **Real Bot Execution** - Cursor AI-powered automation
-- ✅ **WebSocket Support** - Real-time updates
-- ✅ **Production Ready** - Full SaaS functionality
+A comprehensive SaaS platform for managing AI automation bots, projects, and teams with GitHub integration.
 
 ## ✨ Features
 
-### 🤖 Core Bot System
-- **Bot Spawner**: Automated worker creation and management
-- **Git Integration**: Real branch creation and management
-- **Module Updates**: Automated file generation and updates
-- **Progress Tracking**: Real-time status monitoring
-- **Multi-bot Processing**: Parallel bot execution
-- **Git Operations**: Automated commits and pushes
+- 🔐 **GitHub OAuth Authentication** - Real GitHub tokens for repository management
+- 📁 **Project Management** - Create and import GitHub repositories
+- 🤖 **Bot Management** - Create, configure, and manage AI automation bots
+- 👥 **Team Collaboration** - Organize projects and bots in teams
+- 📊 **Dashboard Analytics** - Monitor bot performance and project statistics
+- 🎨 **Modern UI** - Built with React, Tailwind CSS, and Vite
+- 🚀 **Production Ready** - Deployed on Railway with Docker
 
-### 🚀 SaaS Features
-- **User Authentication**: JWT-based auth with role management
-- **Project Management**: Repository connection and configuration
-- **Real-time Updates**: WebSocket integration for live status
-- **Dashboard**: Analytics and activity monitoring
-- **Team Collaboration**: Multi-user support with permissions
-- **API Integration**: RESTful API with comprehensive endpoints
+## 🚀 Quick Deploy
 
-### 🛠 Technical Stack
-- **Frontend**: React 18 + Vite + Tailwind CSS
-- **Backend**: Node.js + Express + Socket.io
-- **Database**: PostgreSQL + Sequelize ORM
-- **Authentication**: JWT + bcrypt
-- **Real-time**: Socket.io for live updates
-- **Charts**: Recharts for data visualization
+### Railway (Recommended)
 
-## 🚀 Quick Start
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/your-template-id)
 
-### 🌐 Demo Mode (Frontend Only)
-**Perfect for exploring the interface**
+### Other Platforms
 
-```bash
-git clone https://github.com/danxdz/fun.git
-cd fun
-npm install
-npm run demo
-```
+[![Deploy on Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy)
+[![Deploy on Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy)
 
-Access at: http://localhost:5173
-
-### 🖥️ Full Stack Setup
-**Complete SaaS with real functionality**
-
-```bash
-git clone https://github.com/danxdz/fun.git
-cd fun
-npm run setup
-npm run start:dev
-```
-
-📖 **Full Stack Setup**: [SETUP-FULL-STACK.md](SETUP-FULL-STACK.md)  
-📖 **Supabase Database Setup**: [SUPABASE-SETUP.md](SUPABASE-SETUP.md)
+## 🛠️ Local Development
 
 ### Prerequisites
+
 - Node.js 20+
-- Supabase account (for full stack)
-- Git
+- npm or yarn
+- Supabase account
+- GitHub OAuth App
 
-### Quick Commands
+### Setup
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/your-username/autobot-manager.git
+   cd autobot-manager
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Fill in your environment variables:
+   ```env
+   # Supabase
+   SUPABASE_URL=your_supabase_url
+   SUPABASE_ANON_KEY=your_supabase_anon_key
+   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
+   
+   # GitHub OAuth
+   GITHUB_CLIENT_ID=your_github_client_id
+   GITHUB_CLIENT_SECRET=your_github_client_secret
+   
+   # JWT
+   JWT_SECRET=your_jwt_secret
+   
+   # Server
+   PORT=3001
+   NODE_ENV=development
+   ```
+
+4. **Set up Supabase database**
+   ```bash
+   # Run the SQL script in Supabase SQL Editor
+   cat supabase-clean-setup.sql
+   ```
+
+5. **Start development server**
+   ```bash
+   npm run dev
+   ```
+
+6. **Open your browser**
+   ```
+   http://localhost:3001
+   ```
+
+## 🔧 GitHub OAuth Setup
+
+1. **Go to GitHub Settings** → Developer settings → OAuth Apps
+2. **Create a new OAuth App** with these settings:
+   - **Application name**: `AutoBot Manager`
+   - **Homepage URL**: `https://your-domain.com`
+   - **Authorization callback URL**: `https://your-domain.com/auth/callback`
+3. **Copy the Client ID and Client Secret** to your environment variables
+
+## 📦 Production Deployment
+
+### Railway
+
+1. **Connect your GitHub repository** to Railway
+2. **Add environment variables** in Railway dashboard:
+   - `SUPABASE_URL`
+   - `SUPABASE_ANON_KEY`
+   - `SUPABASE_SERVICE_ROLE_KEY`
+   - `GITHUB_CLIENT_ID`
+   - `GITHUB_CLIENT_SECRET`
+   - `JWT_SECRET`
+3. **Deploy automatically** on every push to main
+
+### Docker
+
 ```bash
-# Demo mode (frontend only)
-npm run demo
-
-# Full stack development
-npm run start:dev
-
-# Production build
-npm run production
-
-# Database setup
-npm run db:migrate
-npm run db:seed
-```
-
-## 🐳 Docker Deployment
-
-### Quick Docker Setup
-```bash
-# Using Docker Compose (Recommended)
-docker-compose up -d
-
-# Or build manually
+# Build the image
 docker build -t autobot-manager .
-docker run -p 3001:3001 -p 5173:5173 autobot-manager
+
+# Run the container
+docker run -p 3001:3001 \
+  -e SUPABASE_URL=your_supabase_url \
+  -e SUPABASE_ANON_KEY=your_supabase_anon_key \
+  -e SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key \
+  -e GITHUB_CLIENT_ID=your_github_client_id \
+  -e GITHUB_CLIENT_SECRET=your_github_client_secret \
+  -e JWT_SECRET=your_jwt_secret \
+  autobot-manager
 ```
 
-### Docker Compose with PostgreSQL
-```bash
-# Start all services
-docker-compose up -d
+## 🗄️ Database Schema
 
-# View logs
-docker-compose logs -f
+The application uses Supabase (PostgreSQL) with the following main tables:
 
-# Stop services
-docker-compose down
-```
+- **Users** - User profiles and GitHub integration
+- **Projects** - Project management and GitHub repositories
+- **Bots** - AI automation bot configurations
+- **Teams** - Team collaboration and organization
+
+Run `supabase-clean-setup.sql` in your Supabase SQL Editor to set up the database.
+
+## 🔄 GitHub Actions CI/CD
+
+The repository includes GitHub Actions for automated deployment:
+
+- **Build and Test** - Runs on every pull request
+- **Deploy to Railway** - Automatically deploys on push to main
+- **Security Scanning** - Scans for vulnerabilities
 
 ## 📚 API Documentation
 
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `GET /api/auth/me` - Get current user
+The API is fully documented and available at `/api/docs` when running the application.
 
-### Projects
-- `GET /api/projects` - List user projects
+### Key Endpoints
+
+- `POST /api/auth/github` - Initiate GitHub OAuth
+- `GET /auth/callback` - GitHub OAuth callback
+- `GET /api/projects` - Get user projects
 - `POST /api/projects` - Create new project
-- `GET /api/projects/:id` - Get project details
-- `PUT /api/projects/:id` - Update project
-- `DELETE /api/projects/:id` - Delete project
-
-### Bots
-- `GET /api/bots` - List user bots
+- `GET /api/bots` - Get user bots
 - `POST /api/bots` - Create new bot
-- `GET /api/bots/:id` - Get bot details
-- `PUT /api/bots/:id` - Update bot
-- `DELETE /api/bots/:id` - Delete bot
-- `POST /api/bots/:id/start` - Start bot
-- `POST /api/bots/:id/stop` - Stop bot
 
-### Real-time Events
-- `bot:status` - Bot status updates
-- `bot:log` - Bot execution logs
-- `project:update` - Project updates
+## 🧪 Testing
 
-## 🤖 Bot Types
+```bash
+# Run tests
+npm test
 
-### Module Update Bot
-- Updates package.json dependencies
-- Creates feature branches
-- Commits and pushes changes
-- Tracks update history
+# Run tests with coverage
+npm run test:coverage
 
-### Dependency Update Bot
-- Scans for outdated dependencies
-- Updates to latest versions
-- Runs compatibility checks
+# Run linting
+npm run lint
 
-### Security Scan Bot
-- Scans for security vulnerabilities
-- Generates security reports
-- Suggests fixes
-
-### Custom Bot
-- User-defined automation workflows
-- Custom scripts and logic
-- Flexible configuration
+# Fix linting issues
+npm run lint:fix
+```
 
 ## 📁 Project Structure
 
 ```
-├── src/                    # Frontend React app
-│   ├── components/         # Reusable components
-│   ├── contexts/          # React contexts
-│   ├── pages/             # Page components
-│   └── utils/             # Frontend utilities
-├── server/                # Backend Node.js app
-│   ├── controllers/       # Route controllers
-│   ├── middleware/        # Express middleware
-│   ├── models/            # Database models
-│   ├── routes/            # API routes
-│   ├── services/          # Business logic
-│   └── utils/             # Backend utilities
-├── public/                 # Static assets
-└── docs/                  # Documentation
+├── src/
+│   ├── components/     # React components
+│   ├── pages/         # Page components
+│   ├── contexts/      # React contexts
+│   ├── config/        # Configuration files
+│   └── utils/         # Utility functions
+├── server/
+│   └── minimal.js     # Express server
+├── public/            # Static assets
+├── dist/              # Build output
+└── docs/              # Documentation
 ```
 
-## 🛠 Development
+## 🔒 Security
 
-### Available Scripts
-- `npm run dev` - Start frontend development server
-- `npm run server:dev` - Start backend development server
-- `npm run build` - Build frontend for production
-- `npm run server` - Start production backend server
-- `npm run db:migrate` - Run database migrations
-- `npm run db:seed` - Seed database with sample data
-- `npm run test` - Run tests
-- `npm run lint` - Run ESLint
+- **JWT Authentication** - Secure token-based authentication
+- **GitHub OAuth** - Secure third-party authentication
+- **Row Level Security** - Database-level security with Supabase
+- **Input Validation** - Server-side input validation
+- **Rate Limiting** - API rate limiting protection
 
-### Database Migrations
-```bash
-# Create new migration
-npm run db:migrate:create -- --name migration_name
+## 🚀 Performance
 
-# Run migrations
-npm run db:migrate
-
-# Undo last migration
-npm run db:migrate:undo
-```
-
-## 🌐 Deployment Options
-
-### Railway Deployment
-1. Click the "Deploy on Railway" button above
-2. Sign in with GitHub (if not already signed in)
-3. Railway will automatically detect the repository
-4. Add environment variables
-5. Deploy!
-
-### Render Deployment
-1. Click the "Deploy to Render" button above
-2. Sign in with GitHub (if not already signed in)
-3. Render will automatically detect the repository
-4. Configure build settings
-5. Deploy!
-
-### Heroku Deployment
-1. Click the "Deploy to Heroku" button above
-2. Sign in with GitHub (if not already signed in)
-3. Heroku will automatically detect the repository
-4. Add PostgreSQL addon
-5. Deploy!
-
-### Vercel Deployment
-1. Click the "Deploy with Vercel" button above
-2. Sign in with GitHub (if not already signed in)
-3. Vercel will automatically detect the repository
-4. Configure environment variables
-5. Deploy!
-
-### DigitalOcean App Platform
-1. Click the "Deploy to DigitalOcean" button above
-2. Sign in with GitHub (if not already signed in)
-3. DigitalOcean will automatically detect the repository
-4. Configure app settings
-5. Deploy!
-
-## 🔧 Environment Variables for Production
-
-```env
-NODE_ENV=production
-DB_HOST=your-db-host
-DB_PASSWORD=your-secure-password
-JWT_SECRET=your-very-secure-secret
-FRONTEND_URL=https://your-domain.com
-```
+- **Vite Build System** - Fast development and optimized builds
+- **React Query** - Efficient data fetching and caching
+- **Docker Optimization** - Multi-stage builds for smaller images
+- **CDN Ready** - Static assets optimized for CDN delivery
 
 ## 🤝 Contributing
 
-We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
-
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
@@ -315,33 +218,20 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🆘 Support
 
-### Getting Help
-- 📖 [Documentation](https://github.com/danxdz/fun/wiki)
-- 🐛 [Report a Bug](https://github.com/danxdz/fun/issues)
-- 💡 [Request a Feature](https://github.com/danxdz/fun/issues)
-- 💬 [Discussions](https://github.com/danxdz/fun/discussions)
+- 📖 **Documentation**: Check the `/api/docs` endpoint
+- 🐛 **Issues**: Report bugs on GitHub Issues
+- 💬 **Discussions**: Join GitHub Discussions for questions
+- 📧 **Email**: Contact support@autobotmanager.com
 
-### Community
-- [Discord Server](https://discord.gg/autobot-manager)
-- [Twitter](https://twitter.com/autobotmanager)
-- [Blog](https://blog.autobotmanager.com)
+## 🎯 Roadmap
 
-## 🙏 Acknowledgments
-
-- Built with ❤️ using modern web technologies
-- Inspired by the need for better development automation
-- Thanks to all contributors and the open-source community
+- [ ] **Advanced Bot Templates** - Pre-built bot configurations
+- [ ] **Real-time Monitoring** - Live bot execution monitoring
+- [ ] **Team Permissions** - Granular team access control
+- [ ] **API Rate Limiting** - Advanced rate limiting strategies
+- [ ] **Multi-cloud Support** - Deploy to multiple cloud providers
+- [ ] **Mobile App** - React Native mobile application
 
 ---
 
-<div align="center">
-
-**AutoBot Manager** - Automating your development workflow with intelligent bots 🤖
-
-[![GitHub stars](https://img.shields.io/github/stars/danxdz/fun?style=social)](https://github.com/danxdz/fun)
-[![GitHub forks](https://img.shields.io/github/forks/danxdz/fun?style=social)](https://github.com/danxdz/fun)
-[![GitHub issues](https://img.shields.io/github/issues/danxdz/fun)](https://github.com/danxdz/fun/issues)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/danxdz/fun)](https://github.com/danxdz/fun/pulls)
-
-</div># Force redeploy Sat Sep  6 03:20:43 PM UTC 2025
-# Force redeploy Sat Sep  6 03:40:46 PM UTC 2025
+**Built with ❤️ by the AutoBot Manager Team**
