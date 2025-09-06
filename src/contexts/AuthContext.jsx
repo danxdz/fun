@@ -157,12 +157,20 @@ export const AuthProvider = ({ children }) => {
       // Get GitHub OAuth URL from backend
       console.log('Initiating GitHub OAuth...');
       const response = await apiClient.post('/api/auth/github');
+      console.log('GitHub OAuth response:', response.data);
       const { url } = response.data;
       
+      if (!url) {
+        throw new Error('No OAuth URL received from server');
+      }
+      
       // Redirect to GitHub OAuth URL
+      console.log('Redirecting to GitHub OAuth URL:', url);
       window.location.href = url;
       return { success: true };
     } catch (error) {
+      console.error('GitHub OAuth error:', error);
+      console.error('Error response:', error.response?.data);
       return { 
         success: false, 
         error: error.response?.data?.error || error.message || 'GitHub login failed' 
