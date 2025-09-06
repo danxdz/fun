@@ -551,10 +551,10 @@ app.get('/auth/callback', async (req, res) => {
               window.location.href = '/';
             }, 1000);
           </script>
-          <h1>🎉 GitHub Authentication Successful!</h1>
+          <h1>🎉 Authentication Successful!</h1>
           <p>Welcome ${githubUser.name || githubUser.login}!</p>
-          <p>✅ Real GitHub token obtained</p>
-          <p>✅ Repository creation enabled</p>
+          <p>✅ Account connected successfully</p>
+          <p>✅ Repository management enabled</p>
           <p>Redirecting to dashboard...</p>
         </body>
         </html>
