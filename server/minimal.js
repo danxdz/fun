@@ -847,7 +847,26 @@ app.get('/api/me', async (req, res) => {
       return res.status(401).json({ error: error.message });
     }
     
-    res.json({ user });
+    // Fetch complete user profile from Users table
+    const { data: userProfile, error: profileError } = await supabase
+      .from('Users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    
+    if (profileError) {
+      console.log('Profile fetch error (user might not exist in Users table yet):', profileError);
+      // Return auth user data if profile doesn't exist yet
+      res.json({ user });
+    } else {
+      // Merge auth user data with profile data
+      const completeUser = {
+        ...user,
+        ...userProfile
+      };
+      console.log('Complete user data:', { id: completeUser.id, email: completeUser.email, githubUsername: completeUser.githubUsername });
+      res.json({ user: completeUser });
+    }
     
   } catch (error) {
     res.status(500).json({ error: error.message });
