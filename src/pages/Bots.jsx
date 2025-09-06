@@ -55,11 +55,9 @@ export default function Bots() {
   const handleStartBot = async (botId) => {
     setLoading(true);
     try {
-      await apiClient.post('/api/bots', {
-        action: 'start',
-        botId: botId
-      });
+      await apiClient.post(`/api/bots/${botId}/start`);
       refetch(); // Refresh the bots list
+      alert('Bot started successfully!');
     } catch (error) {
       console.error('Failed to start bot:', error);
       alert('Failed to start bot: ' + (error.response?.data?.error || error.message));
@@ -71,11 +69,9 @@ export default function Bots() {
   const handleStopBot = async (botId) => {
     setLoading(true);
     try {
-      await apiClient.post('/api/bots', {
-        action: 'stop',
-        botId: botId
-      });
+      await apiClient.post(`/api/bots/${botId}/stop`);
       refetch(); // Refresh the bots list
+      alert('Bot stopped successfully!');
     } catch (error) {
       console.error('Failed to stop bot:', error);
       alert('Failed to stop bot: ' + (error.response?.data?.error || error.message));
@@ -289,20 +285,11 @@ function CreateBotModal({ onClose, onSuccess }) {
   );
 
   const projects = projectsData?.projects || [];
-  
-  // Debug logging
-  console.log('Projects data:', projectsData);
-  console.log('Projects array:', projects);
-  console.log('Projects loading:', projectsLoading);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-
-    // Debug logging
-    console.log('Bot data being submitted:', botData);
-    console.log('Available projects:', projects);
 
     // Validate required fields
     if (!botData.name.trim()) {
@@ -318,9 +305,7 @@ function CreateBotModal({ onClose, onSuccess }) {
     }
 
     try {
-      console.log('Sending bot creation request with data:', botData);
-      const response = await apiClient.post('/api/bots', botData);
-      console.log('Bot creation successful:', response.data);
+      await apiClient.post('/api/bots', botData);
       onSuccess();
     } catch (error) {
       console.error('Failed to create bot:', error);

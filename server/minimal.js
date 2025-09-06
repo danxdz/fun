@@ -1872,6 +1872,120 @@ app.post('/api/bots', async (req, res) => {
   }
 });
 
+// Start bot endpoint
+app.post('/api/bots/:id/start', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+
+    const { id } = req.params;
+    
+    // Verify bot belongs to user
+    const { data: bot, error: botError } = await supabase
+      .from('Bots')
+      .select(`
+        id, name, status, ProjectId,
+        Projects!inner(UserId)
+      `)
+      .eq('id', id)
+      .eq('Projects.UserId', user.id)
+      .single();
+    
+    if (botError || !bot) {
+      return res.status(404).json({ error: 'Bot not found or does not belong to user' });
+    }
+    
+    if (bot.status === 'running') {
+      return res.status(400).json({ error: 'Bot is already running' });
+    }
+    
+    // Update bot status to running
+    const { data, error } = await supabase
+      .from('Bots')
+      .update({ 
+        status: 'running',
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Start bot error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    
+    res.json({
+      message: 'Bot started successfully',
+      bot: data
+    });
+    
+  } catch (error) {
+    console.error('Start bot error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Stop bot endpoint
+app.post('/api/bots/:id/stop', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+
+    const { id } = req.params;
+    
+    // Verify bot belongs to user
+    const { data: bot, error: botError } = await supabase
+      .from('Bots')
+      .select(`
+        id, name, status, ProjectId,
+        Projects!inner(UserId)
+      `)
+      .eq('id', id)
+      .eq('Projects.UserId', user.id)
+      .single();
+    
+    if (botError || !bot) {
+      return res.status(404).json({ error: 'Bot not found or does not belong to user' });
+    }
+    
+    if (bot.status !== 'running') {
+      return res.status(400).json({ error: 'Bot is not currently running' });
+    }
+    
+    // Update bot status to idle
+    const { data, error } = await supabase
+      .from('Bots')
+      .update({ 
+        status: 'idle',
+        updatedAt: new Date().toISOString()
+      })
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Stop bot error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    
+    res.json({
+      message: 'Bot stopped successfully',
+      bot: data
+    });
+    
+  } catch (error) {
+    console.error('Stop bot error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.put('/api/bots/:id', async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '') || 
