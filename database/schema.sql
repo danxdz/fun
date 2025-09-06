@@ -5,160 +5,200 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- Users table
-CREATE TABLE users (
+CREATE TABLE "Users" (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
-  password_hash VARCHAR(255) NOT NULL,
-  first_name VARCHAR(100) NOT NULL,
-  last_name VARCHAR(100) NOT NULL,
+  password VARCHAR(255) NOT NULL,
+  "firstName" VARCHAR(100) NOT NULL,
+  "lastName" VARCHAR(100) NOT NULL,
   role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('admin', 'user', 'viewer')),
-  is_active BOOLEAN DEFAULT true,
-  last_login TIMESTAMP WITH TIME ZONE,
+  "isActive" BOOLEAN DEFAULT true,
+  "lastLogin" TIMESTAMP WITH TIME ZONE,
   preferences JSONB DEFAULT '{}',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Teams table
-CREATE TABLE teams (
+CREATE TABLE "Teams" (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
-  is_active BOOLEAN DEFAULT true,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
-
--- Team members table
-CREATE TABLE team_members (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  team_id UUID REFERENCES teams(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  role VARCHAR(20) DEFAULT 'member' CHECK (role IN ('owner', 'admin', 'member')),
-  joined_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(team_id, user_id)
+  "isActive" BOOLEAN DEFAULT true,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Projects table
-CREATE TABLE projects (
+CREATE TABLE "Projects" (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   description TEXT,
-  repository_url VARCHAR(500) NOT NULL,
-  repository_type VARCHAR(20) DEFAULT 'github' CHECK (repository_type IN ('github', 'gitlab', 'bitbucket')),
-  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'archived')),
-  team_id UUID REFERENCES teams(id) ON DELETE SET NULL,
-  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  "repositoryUrl" VARCHAR(500) NOT NULL,
+  "repositoryType" VARCHAR(20) DEFAULT 'github' CHECK ("repositoryType" IN ('github', 'gitlab', 'bitbucket')),
+  "accessToken" VARCHAR(255) NOT NULL,
+  "defaultBranch" VARCHAR(255) DEFAULT 'main',
+  "isActive" BOOLEAN DEFAULT true,
+  settings JSONB DEFAULT '{}',
+  "UserId" UUID REFERENCES "Users"(id) ON DELETE CASCADE,
+  "TeamId" UUID REFERENCES "Teams"(id) ON DELETE SET NULL,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Bots table
-CREATE TABLE bots (
+CREATE TABLE "Bots" (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   type VARCHAR(50) NOT NULL CHECK (type IN ('dependency_update', 'security_scan', 'module_update', 'custom')),
   status VARCHAR(20) DEFAULT 'idle' CHECK (status IN ('idle', 'running', 'completed', 'error', 'paused')),
-  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
-  config JSONB DEFAULT '{}',
-  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  configuration JSONB DEFAULT '{}',
+  schedule VARCHAR(255), -- cron expression
+  "lastRun" TIMESTAMP WITH TIME ZONE,
+  "nextRun" TIMESTAMP WITH TIME ZONE,
+  "isActive" BOOLEAN DEFAULT true,
+  "ProjectId" UUID REFERENCES "Projects"(id) ON DELETE CASCADE,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Bot runs table
-CREATE TABLE bot_runs (
+CREATE TABLE "BotRuns" (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  bot_id UUID REFERENCES bots(id) ON DELETE CASCADE,
+  "BotId" UUID REFERENCES "Bots"(id) ON DELETE CASCADE,
   status VARCHAR(20) DEFAULT 'running' CHECK (status IN ('running', 'completed', 'failed', 'cancelled')),
-  started_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  completed_at TIMESTAMP WITH TIME ZONE,
-  logs TEXT,
+  "startTime" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  "endTime" TIMESTAMP WITH TIME ZONE,
+  duration INTEGER, -- in milliseconds
+  logs JSONB DEFAULT '[]',
   results JSONB DEFAULT '{}',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  error TEXT,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Git branches table
-CREATE TABLE git_branches (
+CREATE TABLE "GitBranches" (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
+  "ProjectId" UUID REFERENCES "Projects"(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
-  commit_hash VARCHAR(40),
-  is_active BOOLEAN DEFAULT true,
-  created_by UUID REFERENCES users(id) ON DELETE SET NULL,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(project_id, name)
+  "commitHash" VARCHAR(40),
+  "commitMessage" TEXT,
+  "isActive" BOOLEAN DEFAULT true,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- Module updates table
-CREATE TABLE module_updates (
+CREATE TABLE "ModuleUpdates" (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
-  bot_run_id UUID REFERENCES bot_runs(id) ON DELETE SET NULL,
-  module_name VARCHAR(255) NOT NULL,
-  old_version VARCHAR(50),
-  new_version VARCHAR(50),
-  update_type VARCHAR(20) CHECK (update_type IN ('patch', 'minor', 'major')),
-  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'applied', 'rejected')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  "ProjectId" UUID REFERENCES "Projects"(id) ON DELETE CASCADE,
+  "moduleName" VARCHAR(255) NOT NULL,
+  "currentVersion" VARCHAR(50),
+  "targetVersion" VARCHAR(50),
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'in_progress', 'completed', 'failed')),
+  changes JSONB DEFAULT '{}',
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Activity logs table
-CREATE TABLE activity_logs (
-  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
-  user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-  project_id UUID REFERENCES projects(id) ON DELETE SET NULL,
-  bot_id UUID REFERENCES bots(id) ON DELETE SET NULL,
-  action VARCHAR(100) NOT NULL,
-  details JSONB DEFAULT '{}',
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+-- UserTeams junction table
+CREATE TABLE "UserTeams" (
+  "UserId" UUID REFERENCES "Users"(id) ON DELETE CASCADE,
+  "TeamId" UUID REFERENCES "Teams"(id) ON DELETE CASCADE,
+  "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  PRIMARY KEY ("UserId", "TeamId")
 );
 
 -- Indexes for better performance
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_projects_team_id ON projects(team_id);
-CREATE INDEX idx_bots_project_id ON bots(project_id);
-CREATE INDEX idx_bot_runs_bot_id ON bot_runs(bot_id);
-CREATE INDEX idx_activity_logs_user_id ON activity_logs(user_id);
-CREATE INDEX idx_activity_logs_created_at ON activity_logs(created_at);
+CREATE INDEX idx_users_email ON "Users"(email);
+CREATE INDEX idx_projects_user_id ON "Projects"("UserId");
+CREATE INDEX idx_projects_team_id ON "Projects"("TeamId");
+CREATE INDEX idx_bots_project_id ON "Bots"("ProjectId");
+CREATE INDEX idx_bot_runs_bot_id ON "BotRuns"("BotId");
+CREATE INDEX idx_git_branches_project_id ON "GitBranches"("ProjectId");
+CREATE INDEX idx_module_updates_project_id ON "ModuleUpdates"("ProjectId");
 
 -- Row Level Security (RLS) policies
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE teams ENABLE ROW LEVEL SECURITY;
-ALTER TABLE team_members ENABLE ROW LEVEL SECURITY;
-ALTER TABLE projects ENABLE ROW LEVEL SECURITY;
-ALTER TABLE bots ENABLE ROW LEVEL SECURITY;
-ALTER TABLE bot_runs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE git_branches ENABLE ROW LEVEL SECURITY;
-ALTER TABLE module_updates ENABLE ROW LEVEL SECURITY;
-ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Users" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Teams" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Projects" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "Bots" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "BotRuns" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "GitBranches" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "ModuleUpdates" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "UserTeams" ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their own data
-CREATE POLICY "Users can view own profile" ON users FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can view own profile" ON "Users" FOR SELECT USING (auth.uid()::text = id::text);
+CREATE POLICY "Users can update own profile" ON "Users" FOR UPDATE USING (auth.uid()::text = id::text);
 
--- Team members can view team data
-CREATE POLICY "Team members can view teams" ON teams FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM team_members 
-    WHERE team_id = teams.id AND user_id = auth.uid()
-  )
+-- Users can view own projects
+CREATE POLICY "Users can view own projects" ON "Projects" FOR SELECT USING ("UserId"::text = auth.uid()::text);
+CREATE POLICY "Users can create own projects" ON "Projects" FOR INSERT WITH CHECK ("UserId"::text = auth.uid()::text);
+CREATE POLICY "Users can update own projects" ON "Projects" FOR UPDATE USING ("UserId"::text = auth.uid()::text);
+CREATE POLICY "Users can delete own projects" ON "Projects" FOR DELETE USING ("UserId"::text = auth.uid()::text);
+
+-- Users can view own bots
+CREATE POLICY "Users can view own bots" ON "Bots" FOR SELECT USING (
+  "ProjectId" IN (SELECT id FROM "Projects" WHERE "UserId"::text = auth.uid()::text)
+);
+CREATE POLICY "Users can create own bots" ON "Bots" FOR INSERT WITH CHECK (
+  "ProjectId" IN (SELECT id FROM "Projects" WHERE "UserId"::text = auth.uid()::text)
+);
+CREATE POLICY "Users can update own bots" ON "Bots" FOR UPDATE USING (
+  "ProjectId" IN (SELECT id FROM "Projects" WHERE "UserId"::text = auth.uid()::text)
+);
+CREATE POLICY "Users can delete own bots" ON "Bots" FOR DELETE USING (
+  "ProjectId" IN (SELECT id FROM "Projects" WHERE "UserId"::text = auth.uid()::text)
 );
 
--- Projects are visible to team members
-CREATE POLICY "Team members can view projects" ON projects FOR SELECT USING (
-  team_id IS NULL OR EXISTS (
-    SELECT 1 FROM team_members 
-    WHERE team_id = projects.team_id AND user_id = auth.uid()
-  )
-);
+-- Insert sample data
+INSERT INTO "Users" (email, password, "firstName", "lastName", role) VALUES 
+('admin@autobot.com', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj5J5K5K5K5K', 'Admin', 'User', 'admin')
+ON CONFLICT (email) DO NOTHING;
 
--- Bots are visible to project team members
-CREATE POLICY "Team members can view bots" ON bots FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM projects p
-    LEFT JOIN team_members tm ON p.team_id = tm.team_id
-    WHERE p.id = bots.project_id 
-    AND (p.team_id IS NULL OR tm.user_id = auth.uid())
-  )
-);
+INSERT INTO "Teams" (name, description) VALUES 
+('Development Team', 'Main development team')
+ON CONFLICT DO NOTHING;
+
+-- Get the admin user ID for foreign key references
+DO $$
+DECLARE
+    admin_user_id UUID;
+    team_id UUID;
+BEGIN
+    SELECT id INTO admin_user_id FROM "Users" WHERE email = 'admin@autobot.com';
+    SELECT id INTO team_id FROM "Teams" WHERE name = 'Development Team';
+    
+    IF admin_user_id IS NOT NULL AND team_id IS NOT NULL THEN
+        INSERT INTO "Projects" (name, description, "repositoryUrl", "repositoryType", "accessToken", "UserId", "TeamId") VALUES 
+        ('Sample Project', 'A sample project for testing', 'https://github.com/example/sample-project', 'github', 'sample-token', admin_user_id, team_id)
+        ON CONFLICT DO NOTHING;
+        
+        INSERT INTO "Bots" (name, type, configuration, "ProjectId") VALUES 
+        ('Dependency Update Bot', 'module_update', '{"modules": ["package.json"], "autoMerge": false, "createPR": true}', 
+         (SELECT id FROM "Projects" WHERE name = 'Sample Project' LIMIT 1))
+        ON CONFLICT DO NOTHING;
+    END IF;
+END $$;
+
+-- Create updated_at trigger function
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW."updatedAt" = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Create triggers for updated_at
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON "Users" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_teams_updated_at BEFORE UPDATE ON "Teams" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_projects_updated_at BEFORE UPDATE ON "Projects" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_bots_updated_at BEFORE UPDATE ON "Bots" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_bot_runs_updated_at BEFORE UPDATE ON "BotRuns" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_git_branches_updated_at BEFORE UPDATE ON "GitBranches" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_module_updates_updated_at BEFORE UPDATE ON "ModuleUpdates" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_user_teams_updated_at BEFORE UPDATE ON "UserTeams" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
