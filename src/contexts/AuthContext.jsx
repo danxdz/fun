@@ -123,6 +123,7 @@ export const AuthProvider = ({ children }) => {
   const loginWithGitHub = async () => {
     try {
       // Get GitHub OAuth URL from backend
+      console.log('Initiating GitHub OAuth...');
       const response = await apiClient.post('/api/auth/github');
       const { url } = response.data;
       
