@@ -1266,26 +1266,8 @@ app.get('/api/user/profile', async (req, res) => {
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-    
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ error: 'Supabase not configured' });
-    }
-    
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    // Get user from auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError) {
-      return res.status(401).json({ error: authError.message });
-    }
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+    console.log('Get profile: User found:', user.email);
     
     // Get user profile from database
     const { data: profile, error: profileError } = await supabase
@@ -1329,31 +1311,10 @@ app.put('/api/user/profile', async (req, res) => {
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+    console.log('Update profile: User found:', user.email);
     
     const { firstName, lastName, githubUsername, githubAvatar, cursorApiKey, githubToken, preferences } = req.body;
-    
-    // Don't update email - it's managed by Supabase auth
-    // Email updates should go through auth.updateUser() if needed
-    
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ error: 'Supabase not configured' });
-    }
-    
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    // Get user from auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError) {
-      return res.status(401).json({ error: authError.message });
-    }
     
     // Update user profile
     const updateData = {
@@ -1801,26 +1762,8 @@ app.get('/api/bots', async (req, res) => {
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-    
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ error: 'Supabase not configured' });
-    }
-    
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    // Get user from auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError) {
-      return res.status(401).json({ error: authError.message });
-    }
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+    console.log('Get bots: User found:', user.email);
     
     // Get user's bots through their projects
     const { data: bots, error } = await supabase
@@ -1855,31 +1798,13 @@ app.post('/api/bots', async (req, res) => {
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+    console.log('Create bot: User found:', user.email);
     
     const { name, type, description, projectId, teamId, config, schedule } = req.body;
     
     if (!name || !type || !projectId) {
       return res.status(400).json({ error: 'Name, type, and project ID are required' });
-    }
-    
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ error: 'Supabase not configured' });
-    }
-    
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    // Get user from auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError) {
-      return res.status(401).json({ error: authError.message });
     }
     
     // Create bot
@@ -1924,29 +1849,11 @@ app.put('/api/bots/:id', async (req, res) => {
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+    console.log('Update bot: User found:', user.email);
     
     const { id } = req.params;
     const { name, type, description, config, schedule, status } = req.body;
-    
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ error: 'Supabase not configured' });
-    }
-    
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    // Get user from auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError) {
-      return res.status(401).json({ error: authError.message });
-    }
     
     // Update bot
     const updateData = {
@@ -1994,28 +1901,10 @@ app.delete('/api/bots/:id', async (req, res) => {
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+    console.log('Delete bot: User found:', user.email);
     
     const { id } = req.params;
-    
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ error: 'Supabase not configured' });
-    }
-    
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    // Get user from auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError) {
-      return res.status(401).json({ error: authError.message });
-    }
     
     // Soft delete bot
     const { data, error } = await supabase
@@ -2055,26 +1944,8 @@ app.get('/api/teams', async (req, res) => {
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-    
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ error: 'Supabase not configured' });
-    }
-    
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    // Get user from auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError) {
-      return res.status(401).json({ error: authError.message });
-    }
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+    console.log('Get teams: User found:', user.email);
     
     // Get teams (simplified - in real app you'd check team membership)
     const { data: teams, error } = await supabase
@@ -2270,26 +2141,12 @@ app.get('/api/docs', (req, res) => {
 // Delete project endpoint
 app.delete('/api/projects/:projectId', async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
-
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ error: 'Server configuration error' });
-    }
-
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    // Verify user
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    if (authError || !user) {
-      return res.status(401).json({ error: 'Invalid token' });
-    }
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+    console.log('Delete project: User found:', user.email);
 
     const { projectId } = req.params;
     
@@ -2321,31 +2178,13 @@ app.get('/api/project-detail', async (req, res) => {
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+    console.log('Get project detail: User found:', user.email);
     
     const { projectId, action = 'basic' } = req.query;
     
     if (!projectId) {
       return res.status(400).json({ error: 'Project ID is required' });
-    }
-    
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ error: 'Supabase not configured' });
-    }
-    
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    // Get user from auth
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-    
-    if (authError) {
-      return res.status(401).json({ error: authError.message });
     }
     
     // Get project details
