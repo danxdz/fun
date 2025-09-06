@@ -7,7 +7,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import { logger } from './utils/logger.js';
-import { sequelize } from './database/connection.js';
+import { supabase } from './database/connection.js';
 import authRoutes from './routes/auth.js';
 import userRoutes from './routes/users.js';
 import projectRoutes from './routes/projects.js';
@@ -110,30 +110,30 @@ app.get('/api/debug/supabase', async (req, res) => {
   }
 });
 
-// Database connection test
+// Database connection test (now Supabase-only)
 app.get('/api/debug/database', async (req, res) => {
   try {
-    await sequelize.authenticate();
+    // Test Supabase connection
+    const { data, error } = await supabase.from('Users').select('count').limit(1);
     
-    // Test a simple query
-    const [results] = await sequelize.query('SELECT 1 as test');
+    if (error) throw error;
     
     res.json({
-      status: 'Database connection successful',
-      database: sequelize.getDatabaseName(),
-      dialect: sequelize.getDialect(),
-      host: sequelize.getHostname(),
-      port: sequelize.getPort(),
+      status: 'Supabase database connection successful',
+      database: 'supabase',
+      dialect: 'supabase',
+      host: process.env.SUPABASE_URL,
+      port: 443,
       env: process.env.NODE_ENV,
       timestamp: new Date().toISOString()
     });
     
   } catch (error) {
     res.status(500).json({
-      error: 'Database connection failed',
+      error: 'Supabase database connection failed',
       message: error.message,
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined,
-      suggestion: 'Configure database environment variables or use Supabase setup guide'
+      suggestion: 'Check Supabase environment variables and table setup'
     });
   }
 });
@@ -188,20 +188,17 @@ app.use('*', (req, res) => {
 
 const PORT = process.env.PORT || 3001;
 
-// Database connection and server start
+// Supabase connection and server start
 async function startServer() {
   try {
-    // Try to connect to database, but don't fail if it's not available
+    // Test Supabase connection
     try {
-      await sequelize.authenticate();
-      logger.info('Database connection established successfully.');
-      
-      // Sync database models
-      await sequelize.sync({ alter: true });
-      logger.info('Database models synchronized.');
+      const { data, error } = await supabase.from('Users').select('count').limit(1);
+      if (error) throw error;
+      logger.info('Supabase connection established successfully.');
     } catch (dbError) {
-      logger.warn('Database connection failed, running without database:', dbError.message);
-      logger.warn('Some features may not work until database is configured.');
+      logger.warn('Supabase connection failed:', dbError.message);
+      logger.warn('Some features may not work until Supabase is configured.');
     }
     
     server.listen(PORT, () => {
@@ -209,6 +206,7 @@ async function startServer() {
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`Frontend available at: http://localhost:${PORT}`);
       logger.info(`API available at: http://localhost:${PORT}/api`);
+      logger.info(`Using Supabase for database operations`);
     });
   } catch (error) {
     logger.error('Unable to start server:', error);

@@ -36,23 +36,18 @@ This creates all necessary tables, indexes, and sample data.
 For **Railway deployment**, add these environment variables:
 
 ```env
-# Supabase Configuration
+# Supabase Configuration (Required)
 SUPABASE_URL=https://your-project-id.supabase.co
 SUPABASE_ANON_KEY=sb_publishable_...
 SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
-
-# Database Configuration (PostgreSQL connection)
-DB_HOST=db.your-project-id.supabase.co
-DB_PORT=5432
-DB_NAME=postgres
-DB_USER=postgres
-DB_PASSWORD=your-database-password
 
 # Application Configuration
 NODE_ENV=production
 PORT=3001
 JWT_SECRET=your-random-secret-string
 ```
+
+**Note**: No PostgreSQL connection variables needed! The app now uses Supabase for all database operations.
 
 For **local development**, create a `.env` file in your project root with the same variables.
 
