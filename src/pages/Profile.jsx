@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext.jsx';
-import { UserIcon, EnvelopeIcon, KeyIcon } from '@heroicons/react/24/outline';
+import { UserIcon, EnvelopeIcon, KeyIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
 export default function Profile() {
-  const { user, updateProfile, changePassword } = useAuth();
+  const { user, updateProfile, changePassword, deleteAccount } = useAuth();
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -19,6 +19,8 @@ export default function Profile() {
     newPassword: '',
     confirmPassword: ''
   });
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
@@ -52,6 +54,22 @@ export default function Profile() {
     if (result.success) {
       setMessage('Password changed successfully!');
       setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } else {
+      setMessage(result.error);
+    }
+    
+    setLoading(false);
+  };
+
+  const handleDeleteAccount = async () => {
+    setLoading(true);
+    setMessage('');
+
+    const result = await deleteAccount();
+    
+    if (result.success) {
+      setMessage('Account deleted successfully. You will be redirected to the login page.');
+      // The AuthContext will handle clearing the user state
     } else {
       setMessage(result.error);
     }
@@ -93,6 +111,17 @@ export default function Profile() {
           >
             <KeyIcon className="h-4 w-4 inline mr-2" />
             Change Password
+          </button>
+          <button
+            onClick={() => setActiveTab('danger')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'danger'
+                ? 'border-red-500 text-red-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            <ExclamationTriangleIcon className="h-4 w-4 inline mr-2" />
+            Danger Zone
           </button>
         </nav>
       </div>
@@ -213,6 +242,61 @@ export default function Profile() {
               </button>
             </div>
           </form>
+        </div>
+      )}
+
+      {/* Danger Zone */}
+      {activeTab === 'danger' && (
+        <div className="bg-white shadow rounded-lg p-6">
+          <div className="border-l-4 border-red-400 bg-red-50 p-4">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">
+                  Delete Account
+                </h3>
+                <div className="mt-2 text-sm text-red-700">
+                  <p>
+                    Once you delete your account, there is no going back. Please be certain.
+                    This action will permanently delete your account and all associated data.
+                  </p>
+                </div>
+                <div className="mt-4">
+                  {!showDeleteConfirm ? (
+                    <button
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                    >
+                      Delete Account
+                    </button>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-red-800">
+                        Are you absolutely sure? This action cannot be undone.
+                      </p>
+                      <div className="flex space-x-3">
+                        <button
+                          onClick={handleDeleteAccount}
+                          disabled={loading}
+                          className="bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white px-4 py-2 rounded-md text-sm font-medium"
+                        >
+                          {loading ? 'Deleting...' : 'Yes, Delete My Account'}
+                        </button>
+                        <button
+                          onClick={() => setShowDeleteConfirm(false)}
+                          className="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-md text-sm font-medium"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

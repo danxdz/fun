@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await apiClient.post('/api/auth', { email, password });
+      const response = await apiClient.post('/api/auth/login', { email, password });
       const { token: newToken, user: userData } = response.data;
       
       localStorage.setItem('token', newToken);
@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const response = await apiClient.post('/api/auth', userData);
+      const response = await apiClient.post('/api/auth/register', userData);
       const { token: newToken, user: userInfo } = response.data;
       
       localStorage.setItem('token', newToken);
@@ -111,6 +111,22 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const deleteAccount = async () => {
+    try {
+      await apiClient.delete('/api/user/profile');
+      // Clear local state after successful deletion
+      localStorage.removeItem('token');
+      setToken(null);
+      setUser(null);
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.response?.data?.error || 'Account deletion failed' 
+      };
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -119,6 +135,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     updateProfile,
     changePassword,
+    deleteAccount,
     isAuthenticated: !!user
   };
 
