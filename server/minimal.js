@@ -381,7 +381,7 @@ app.post('/api/auth/refresh', async (req, res) => {
 // GitHub OAuth login endpoint - Direct GitHub OAuth for real tokens
 app.post('/api/auth/github', async (req, res) => {
   try {
-    const clientId = process.env.GITHUB_CLIENT_ID;
+    const clientId = process.env.GITHUB_CLIENT_ID || 'Ov23liFUwEe9ESktoMM2';
     const redirectUri = `${req.headers.origin || 'https://web-production-8747.up.railway.app'}/auth/callback`;
     
     if (!clientId) {
@@ -433,7 +433,7 @@ app.get('/auth/callback', async (req, res) => {
       console.log('GitHub OAuth callback with code:', code.substring(0, 10) + '...');
       
       // Exchange code for GitHub access token
-      const clientId = process.env.GITHUB_CLIENT_ID;
+      const clientId = process.env.GITHUB_CLIENT_ID || 'Ov23liFUwEe9ESktoMM2';
       const clientSecret = process.env.GITHUB_CLIENT_SECRET;
       
       if (!clientId || !clientSecret) {
