@@ -3,11 +3,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-import { Sequelize } from 'sequelize';
-import dotenv from 'dotenv';
-
-dotenv.config();
-
 // Use SQLite for development, PostgreSQL for production
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
