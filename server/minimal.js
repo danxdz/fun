@@ -366,6 +366,72 @@ app.get('/api/dashboard', async (req, res) => {
   }
 });
 
+// Delete user profile endpoint
+app.delete('/api/user/profile', async (req, res) => {
+  try {
+    console.log('Delete profile request received');
+    
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      return res.status(500).json({ error: 'Supabase service role key not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+    
+    // First, get the current user to verify they exist
+    const { data: { user }, error: getUserError } = await supabase.auth.getUser(token);
+    
+    if (getUserError) {
+      return res.status(401).json({ error: getUserError.message });
+    }
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    console.log('Deleting user profile for:', user.email);
+    
+    // Delete the user account
+    const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
+    
+    if (deleteError) {
+      console.error('Delete user error:', deleteError);
+      return res.status(500).json({ error: deleteError.message });
+    }
+    
+    console.log('User profile deleted successfully for:', user.email);
+    
+    res.json({
+      message: 'User profile deleted successfully',
+      deletedUser: {
+        id: user.id,
+        email: user.email
+      },
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Delete profile error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Serve static files
 app.use(express.static('dist'));
 
