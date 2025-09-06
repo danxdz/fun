@@ -1767,7 +1767,7 @@ app.post('/api/bots', async (req, res) => {
     
     const { user, supabase } = await verifyTokenAndGetUser(token);
 
-    const { name, type, description, projectId, teamId, config, schedule } = req.body;
+    const { name, type, description, projectId, config, schedule } = req.body;
     
     if (!name || !type || !projectId) {
       return res.status(400).json({ error: 'Name, type, and project ID are required' });
@@ -1779,14 +1779,14 @@ app.post('/api/bots', async (req, res) => {
       .insert({
         name: sanitizeInput(name),
         type: sanitizeInput(type),
-        description: sanitizeInput(description || ''),
         ProjectId: projectId,
-        TeamId: teamId || null,
-        UserId: user.id,
-        config: config || {},
+        configuration: {
+          ...(config || {}),
+          description: sanitizeInput(description || '')
+        },
         schedule: schedule || null,
-        status: 'inactive',
-        lastRun: null,
+        status: 'idle',
+        isActive: true,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       })
@@ -2021,7 +2021,6 @@ app.get('/api/docs', (req, res) => {
             type: 'string (required)',
             description: 'string',
             projectId: 'string (required)',
-            teamId: 'string (optional)',
             config: 'object',
             schedule: 'string (optional)'
           },
