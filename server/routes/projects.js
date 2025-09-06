@@ -1,7 +1,7 @@
 import express from 'express';
 import { body, validationResult } from 'express-validator';
 import { authenticateToken } from '../middleware/auth.js';
-import { Project, Bot, GitBranch, ModuleUpdate } from '../models/index.js';
+import { supabase } from '../database/connection.js';
 import { logger } from '../utils/logger.js';
 
 const router = express.Router();

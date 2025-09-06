@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { User } from '../models/index.js';
+import { supabase } from '../database/connection.js';
 
 export const authenticateToken = async (req, res, next) => {
   try {
