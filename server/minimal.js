@@ -1255,6 +1255,8 @@ app.post('/api/projects', async (req, res) => {
     
     const { action, name, description, repositoryUrl, repositoryType, accessToken, defaultBranch, teamId } = req.body;
     
+    console.log('Project creation request:', { action, name, repositoryUrl, hasAccessToken: !!accessToken });
+    
     // Handle GitHub import action
     if (action === 'import-github') {
       if (!name || !repositoryUrl) {
@@ -1284,21 +1286,29 @@ app.post('/api/projects', async (req, res) => {
     }
     
     // Create project
+    const projectData = {
+      name,
+      description: description || '',
+      repositoryUrl,
+      repositoryType: repositoryType || 'github',
+      defaultBranch: defaultBranch || 'main',
+      UserId: user.id,
+      TeamId: teamId || null,
+      settings: {},
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    
+    // Only add accessToken if it's provided (not for imports)
+    if (accessToken) {
+      projectData.accessToken = accessToken;
+    }
+    
+    console.log('Creating project with data:', projectData);
+    
     const { data, error } = await supabase
       .from('Projects')
-      .insert({
-        name,
-        description: description || '',
-        repositoryUrl,
-        repositoryType: repositoryType || 'github',
-        accessToken,
-        defaultBranch: defaultBranch || 'main',
-        UserId: user.id,
-        TeamId: teamId || null,
-        settings: {},
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      })
+      .insert(projectData)
       .select()
       .single();
     
@@ -1306,6 +1316,8 @@ app.post('/api/projects', async (req, res) => {
       console.error('Project creation error:', error);
       return res.status(500).json({ error: error.message });
     }
+    
+    console.log('Project created successfully:', data);
     
     res.status(201).json({
       message: 'Project created successfully',
