@@ -1759,6 +1759,45 @@ app.get('/api/bots', async (req, res) => {
   }
 });
 
+// Get bot runs
+app.get('/api/bot-runs', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+
+    const { botId } = req.query;
+    
+    let query = supabase
+      .from('BotRuns')
+      .select(`
+        *,
+        Bots!inner(name, type, ProjectId, Projects!inner(UserId))
+      `)
+      .eq('Bots.Projects.UserId', user.id)
+      .order('startTime', { ascending: false });
+    
+    if (botId) {
+      query = query.eq('BotId', botId);
+    }
+    
+    const { data: runs, error } = await query;
+    
+    if (error) {
+      console.error('Bot runs fetch error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    
+    res.json({ runs });
+    
+  } catch (error) {
+    console.error('Get bot runs error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 app.post('/api/bots', async (req, res) => {
   try {
     const token = req.headers.authorization?.replace('Bearer ', '') || 
@@ -1770,7 +1809,26 @@ app.post('/api/bots', async (req, res) => {
     const { name, type, description, projectId, config, schedule } = req.body;
     
     if (!name || !type || !projectId) {
-      return res.status(400).json({ error: 'Name, type, and project ID are required' });
+      return res.status(400).json({ 
+        error: 'Name, type, and project ID are required',
+        received: { name, type, projectId }
+      });
+    }
+    
+    // Validate that the project belongs to the user
+    const { data: project, error: projectError } = await supabase
+      .from('Projects')
+      .select('id, name, UserId')
+      .eq('id', projectId)
+      .eq('UserId', user.id)
+      .single();
+    
+    if (projectError || !project) {
+      return res.status(400).json({ 
+        error: 'Project not found or does not belong to user',
+        projectId,
+        userId: user.id
+      });
     }
     
     // Create bot
