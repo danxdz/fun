@@ -1811,6 +1811,11 @@ app.post('/api/bots', async (req, res) => {
     if (!name || !type || !projectId) {
       return res.status(400).json({ 
         error: 'Name, type, and project ID are required',
+        details: {
+          name: name ? 'provided' : 'missing',
+          type: type ? 'provided' : 'missing', 
+          projectId: projectId ? 'provided' : 'missing'
+        },
         received: { name, type, projectId }
       });
     }

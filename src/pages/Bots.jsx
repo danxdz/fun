@@ -295,12 +295,31 @@ function CreateBotModal({ onClose, onSuccess }) {
     setLoading(true);
     setError('');
 
+    // Validate required fields
+    if (!botData.name.trim()) {
+      setError('Bot name is required');
+      setLoading(false);
+      return;
+    }
+    
+    if (!botData.projectId) {
+      setError('Please select a project');
+      setLoading(false);
+      return;
+    }
+
     try {
       await apiClient.post('/api/bots', botData);
       onSuccess();
     } catch (error) {
       console.error('Failed to create bot:', error);
-      setError(error.response?.data?.error || 'Failed to create bot');
+      const errorMessage = error.response?.data?.error || 'Failed to create bot';
+      setError(errorMessage);
+      
+      // If the error mentions missing projects, provide helpful guidance
+      if (errorMessage.includes('Project not found') || errorMessage.includes('does not belong to user')) {
+        setError('No projects available. Please create a project first before creating a bot.');
+      }
     } finally {
       setLoading(false);
     }
@@ -311,7 +330,14 @@ function CreateBotModal({ onClose, onSuccess }) {
       <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
         <div className="mt-3">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-medium text-gray-900">Create New Bot</h3>
+            <div>
+              <h3 className="text-lg font-medium text-gray-900">Create New Bot</h3>
+              {projects.length === 0 && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Need a project first? <Link to="/projects" className="text-blue-600 hover:text-blue-800">Go to Projects</Link>
+                </p>
+              )}
+            </div>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600"
@@ -366,14 +392,22 @@ function CreateBotModal({ onClose, onSuccess }) {
                 onChange={(e) => setBotData({ ...botData, projectId: e.target.value })}
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                 required
+                disabled={projects.length === 0}
               >
-                <option value="">Select a project</option>
+                <option value="">
+                  {projects.length === 0 ? 'No projects available' : 'Select a project'}
+                </option>
                 {projects.map((project) => (
                   <option key={project.id} value={project.id}>
                     {project.name}
                   </option>
                 ))}
               </select>
+              {projects.length === 0 && (
+                <p className="mt-1 text-xs text-red-600">
+                  You need to create a project first. Go to the Projects page to create one.
+                </p>
+              )}
             </div>
 
             <div>
@@ -421,10 +455,10 @@ function CreateBotModal({ onClose, onSuccess }) {
               </button>
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || projects.length === 0}
                 className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
               >
-                {loading ? 'Creating...' : 'Create Bot'}
+                {loading ? 'Creating...' : projects.length === 0 ? 'No Projects Available' : 'Create Bot'}
               </button>
             </div>
           </form>
