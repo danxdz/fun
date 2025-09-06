@@ -216,7 +216,7 @@ function CreateProjectModal({ onClose, onSuccess }) {
 
     try {
       console.log('Importing repository:', repo);
-      const response = await axios.post('/api/projects', {
+      const response = await apiClient.post('/api/projects', {
         action: 'import-github',
         repositoryUrl: repo.url,
         name: repo.name,
