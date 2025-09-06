@@ -517,6 +517,7 @@ app.get('/auth/callback', async (req, res) => {
           lastName: user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
           githubUsername: user.user_metadata?.user_name || '',
           githubAvatar: user.user_metadata?.avatar_url || '',
+          githubToken: user.user_metadata?.provider_token || '', // Store GitHub token for API calls
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
@@ -1327,8 +1328,9 @@ app.post('/api/projects', async (req, res) => {
     if (repositoryUrl) {
       projectData.repositoryUrl = repositoryUrl;
     } else if (action === 'create-github') {
-      // For new repos, provide a placeholder URL that can be updated later
-      projectData.repositoryUrl = `https://github.com/${user.user_metadata?.user_name || 'user'}/${name}`;
+      // For new repos, we'll create a real GitHub repository
+      // First create the project record, then create the GitHub repo
+      projectData.repositoryUrl = ''; // Will be updated after GitHub repo creation
     }
     
     // Only add accessToken if it's provided (not for imports)
@@ -1353,11 +1355,86 @@ app.post('/api/projects', async (req, res) => {
     
     // Return appropriate response based on action
     if (action === 'create-github') {
-      res.status(201).json({
-        message: 'Project created successfully',
-        project: data,
-        setupSuccess: true // Indicate that the project was created (though GitHub repo creation would need additional API calls)
-      });
+      // Try to create a real GitHub repository
+      try {
+        // Get user's GitHub token from database
+        const { data: userProfile, error: profileError } = await supabase
+          .from('Users')
+          .select('githubToken, githubUsername')
+          .eq('id', user.id)
+          .single();
+        
+        if (profileError || !userProfile?.githubToken) {
+          console.log('No GitHub token available, returning project without GitHub repo');
+          return res.status(201).json({
+            message: 'Project created successfully (GitHub repository creation requires GitHub token)',
+            project: data,
+            setupSuccess: false,
+            note: 'Please ensure you logged in with GitHub to create repositories'
+          });
+        }
+        
+        // Create GitHub repository using GitHub API
+        const githubResponse = await fetch('https://api.github.com/user/repos', {
+          method: 'POST',
+          headers: {
+            'Authorization': `token ${userProfile.githubToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: name,
+            description: description || '',
+            private: false, // Default to public
+            auto_init: true // Initialize with README
+          })
+        });
+        
+        if (githubResponse.ok) {
+          const githubRepo = await githubResponse.json();
+          console.log('GitHub repository created:', githubRepo.html_url);
+          
+          // Update project with real repository URL
+          const { error: updateError } = await supabase
+            .from('Projects')
+            .update({ repositoryUrl: githubRepo.html_url })
+            .eq('id', data.id);
+          
+          if (updateError) {
+            console.error('Failed to update project with GitHub URL:', updateError);
+          }
+          
+          res.status(201).json({
+            message: 'Project and GitHub repository created successfully!',
+            project: { ...data, repositoryUrl: githubRepo.html_url },
+            setupSuccess: true,
+            githubRepo: {
+              name: githubRepo.name,
+              url: githubRepo.html_url,
+              cloneUrl: githubRepo.clone_url
+            }
+          });
+        } else {
+          const errorData = await githubResponse.json();
+          console.error('GitHub API error:', errorData);
+          
+          res.status(201).json({
+            message: 'Project created successfully, but GitHub repository creation failed',
+            project: data,
+            setupSuccess: false,
+            error: errorData.message || 'GitHub API error'
+          });
+        }
+      } catch (githubError) {
+        console.error('GitHub repository creation error:', githubError);
+        
+        res.status(201).json({
+          message: 'Project created successfully, but GitHub repository creation failed',
+          project: data,
+          setupSuccess: false,
+          error: githubError.message
+        });
+      }
     } else {
       res.status(201).json({
         message: 'Project created successfully',
