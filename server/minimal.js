@@ -504,23 +504,35 @@ app.get('/auth/callback', async (req, res) => {
     if (token && user) {
       // Add user to database if they don't exist
       try {
+        console.log('GitHub OAuth user data:', {
+          id: user.id,
+          email: user.email,
+          user_metadata: user.user_metadata
+        });
+        
+        const userData = {
+          id: user.id,
+          email: user.email,
+          firstName: user.user_metadata?.full_name?.split(' ')[0] || '',
+          lastName: user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
+          githubUsername: user.user_metadata?.user_name || '',
+          githubAvatar: user.user_metadata?.avatar_url || '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        };
+        
+        console.log('User data to save:', userData);
+        
         const { error: dbError } = await supabase
           .from('Users')
-          .upsert({
-            id: user.id,
-            email: user.email,
-            firstName: user.user_metadata?.full_name?.split(' ')[0] || '',
-            lastName: user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
-            githubUsername: user.user_metadata?.user_name || '',
-            githubAvatar: user.user_metadata?.avatar_url || '',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          }, {
+          .upsert(userData, {
             onConflict: 'id'
           });
         
         if (dbError) {
           console.error('Database upsert error:', dbError);
+        } else {
+          console.log('User data saved successfully');
         }
       } catch (dbError) {
         console.error('Database error:', dbError);
