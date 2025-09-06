@@ -393,7 +393,8 @@ app.post('/api/auth/github', async (req, res) => {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'github',
       options: {
-        redirectTo: `${req.headers.origin || 'https://web-production-8747.up.railway.app'}/auth/callback`
+        redirectTo: `${req.headers.origin || 'https://web-production-8747.up.railway.app'}/auth/callback`,
+        scopes: 'repo,public_repo,user:email'
       }
     });
     
