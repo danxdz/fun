@@ -81,6 +81,8 @@ function PrivateRoute({ children }) {
 }
 
 function App() {
+  console.log('App component starting to render...');
+  
   try {
     return (
       <QueryClientProvider client={queryClient}>
@@ -90,6 +92,9 @@ function App() {
               {/* Debug Banner */}
               <div className="bg-red-500 text-white p-2 text-center text-sm font-bold">
                 🚨 DEBUG MODE - App is rendering successfully
+              </div>
+              <div className="bg-blue-500 text-white p-2 text-center text-sm">
+                ✅ React Query and Auth Provider loaded
               </div>
               <Routes>
               <Route path="/login" element={<Login />} />
@@ -115,10 +120,16 @@ function App() {
   } catch (error) {
     console.error('App component error:', error);
     return (
-      <div style={{ padding: '20px', color: 'red' }}>
-        <h1>App Error</h1>
-        <p>{error.message}</p>
-        <pre>{error.stack}</pre>
+      <div style={{ padding: '20px', color: 'red', backgroundColor: 'white' }}>
+        <h1>🚨 App Error</h1>
+        <p><strong>Error:</strong> {error.message}</p>
+        <details>
+          <summary>Stack Trace</summary>
+          <pre style={{ fontSize: '12px', overflow: 'auto' }}>{error.stack}</pre>
+        </details>
+        <button onClick={() => window.location.reload()} style={{ marginTop: '10px', padding: '10px' }}>
+          Reload Page
+        </button>
       </div>
     );
   }
