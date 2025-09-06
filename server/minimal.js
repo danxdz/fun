@@ -322,7 +322,7 @@ app.post('/api/auth/login', async (req, res) => {
     
     res.json({
       user: data.user,
-      token: data.session?.access_token,
+      token: data.session ? data.session.access_token : null,
       session: data.session,
       message: 'Login successful'
     });
@@ -393,7 +393,7 @@ app.post('/api/auth/register', async (req, res) => {
     
     res.json({
       user: data.user,
-      token: data.session?.access_token,
+      token: data.session ? data.session.access_token : null,
       session: data.session,
       message: 'Registration successful'
     });
@@ -440,7 +440,7 @@ app.post('/api/auth', async (req, res) => {
       
       res.json({
         user: data.user,
-        token: data.session?.access_token,
+        token: data.session ? data.session.access_token : null,
         session: data.session,
         message: 'Login successful'
       });
@@ -483,7 +483,7 @@ app.post('/api/auth', async (req, res) => {
       
       res.json({
         user: data.user,
-        token: data.session?.access_token,
+        token: data.session ? data.session.access_token : null,
         session: data.session,
         message: 'Registration successful'
       });
@@ -536,7 +536,7 @@ app.post('/api/auth', async (req, res) => {
         
         return res.json({
           user: data.user,
-          token: data.session?.access_token,
+          token: data.session ? data.session.access_token : null,
           session: data.session,
           message: 'Registration successful'
         });
@@ -555,7 +555,7 @@ app.post('/api/auth', async (req, res) => {
       
       res.json({
         user: data.user,
-        token: data.session?.access_token,
+        token: data.session ? data.session.access_token : null,
         session: data.session,
         message: 'Login successful'
       });
