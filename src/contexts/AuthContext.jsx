@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import apiClient from '../config/axios';
 
 const AuthContext = createContext();
 
@@ -19,9 +19,9 @@ export const AuthProvider = ({ children }) => {
   // Configure axios defaults
   useEffect(() => {
     if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
     } else {
-      delete axios.defaults.headers.common['Authorization'];
+      delete apiClient.defaults.headers.common['Authorization'];
     }
   }, [token]);
 
@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       if (token) {
         try {
-          const response = await axios.get('/api/me');
+          const response = await apiClient.get('/api/me');
           setUser(response.data.user);
         } catch (error) {
           console.error('Auth check failed:', error);
@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await axios.post('/api/auth', { email, password });
+      const response = await apiClient.post('/api/auth', { email, password });
       const { token: newToken, user: userData } = response.data;
       
       localStorage.setItem('token', newToken);
@@ -63,7 +63,7 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (userData) => {
     try {
-      const response = await axios.post('/api/auth', userData);
+      const response = await apiClient.post('/api/auth', userData);
       const { token: newToken, user: userInfo } = response.data;
       
       localStorage.setItem('token', newToken);
@@ -83,12 +83,12 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
-    delete axios.defaults.headers.common['Authorization'];
+    delete apiClient.defaults.headers.common['Authorization'];
   };
 
   const updateProfile = async (profileData) => {
     try {
-      const response = await axios.put('/api/users/profile', profileData);
+      const response = await apiClient.put('/api/user/profile', profileData);
       setUser(response.data.user);
       return { success: true };
     } catch (error) {
@@ -101,7 +101,7 @@ export const AuthProvider = ({ children }) => {
 
   const changePassword = async (currentPassword, newPassword) => {
     try {
-      await axios.put('/api/users/password', { currentPassword, newPassword });
+      await apiClient.put('/api/users/password', { currentPassword, newPassword });
       return { success: true };
     } catch (error) {
       return { 
