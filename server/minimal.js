@@ -80,7 +80,9 @@ app.get('/api/debug/supabase', async (req, res) => {
 // Basic auth endpoints (minimal implementation)
 app.post('/api/auth', async (req, res) => {
   try {
-    const { email, password, action } = req.body;
+    const { email, password, action, type } = req.body;
+    
+    console.log('Auth request received:', { email: !!email, password: !!password, action, type });
     
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
@@ -96,7 +98,10 @@ app.post('/api/auth', async (req, res) => {
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    if (action === 'login') {
+    // Determine action from various possible parameters
+    const authAction = action || type || 'login'; // Default to login
+    
+    if (authAction === 'login' || authAction === 'signin') {
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -112,7 +117,7 @@ app.post('/api/auth', async (req, res) => {
         message: 'Login successful'
       });
       
-    } else if (action === 'register') {
+    } else if (authAction === 'register' || authAction === 'signup') {
       const { data, error } = await supabase.auth.signUp({
         email,
         password
@@ -129,10 +134,26 @@ app.post('/api/auth', async (req, res) => {
       });
       
     } else {
-      res.status(400).json({ error: 'Invalid action. Use "login" or "register"' });
+      // If no action specified, try login by default
+      console.log('No action specified, defaulting to login');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+      
+      if (error) {
+        return res.status(401).json({ error: error.message });
+      }
+      
+      res.json({
+        user: data.user,
+        session: data.session,
+        message: 'Login successful'
+      });
     }
     
   } catch (error) {
+    console.error('Auth error:', error);
     res.status(500).json({ error: error.message });
   }
 });
