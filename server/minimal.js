@@ -1437,13 +1437,13 @@ app.get('/api/docs', (req, res) => {
       login: {
         url: 'POST /api/auth/login',
         body: { email: 'user@example.com', password: 'password123' },
-        response: { user: {...}, token: 'jwt-token-here' }
+        response: { user: 'user-object', token: 'jwt-token-here' }
       },
       createProject: {
         url: 'POST /api/projects',
         headers: { Authorization: 'Bearer jwt-token-here' },
         body: { name: 'My Project', repositoryUrl: 'https://github.com/user/repo', accessToken: 'github-token' },
-        response: { project: {...} }
+        response: { project: 'project-object' }
       }
     }
   };
