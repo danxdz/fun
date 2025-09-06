@@ -28,6 +28,10 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Debug banner for Layout */}
+      <div className="bg-orange-500 text-white p-2 text-center text-sm font-bold">
+        🎯 Layout component rendered successfully! User: {user?.githubUsername || user?.email || 'Unknown'}
+      </div>
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-50 lg:hidden ${sidebarOpen ? 'block' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
@@ -117,12 +121,12 @@ export default function Layout() {
                   <div className="flex items-center space-x-3">
                     <div className="h-8 w-8 rounded-full bg-primary-600 flex items-center justify-center">
                       <span className="text-sm font-medium text-white">
-                        {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
+                        {user?.firstName?.charAt(0) || user?.githubUsername?.charAt(0) || user?.email?.charAt(0) || 'U'}
                       </span>
                     </div>
                     <div className="hidden lg:block">
                       <div className="text-sm font-medium text-gray-900">
-                        {user?.firstName} {user?.lastName}
+                        {user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.githubUsername || user?.email || 'User'}
                       </div>
                       <div className="text-xs text-gray-500">{user?.email}</div>
                     </div>
