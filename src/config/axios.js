@@ -2,13 +2,8 @@ import axios from 'axios';
 
 // Get the base URL for API calls
 const getBaseURL = () => {
-  // In development, use relative URLs (proxy will handle it)
-  if (import.meta.env.DEV) {
-    return '';
-  }
-  
-  // In production, use the full Railway URL
-  return 'https://web-production-8747.up.railway.app';
+  // Always use relative URLs since frontend and backend are served from same domain
+  return '';
 };
 
 // Create axios instance with base configuration
