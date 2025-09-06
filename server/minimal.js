@@ -333,6 +333,48 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// Token refresh endpoint
+app.post('/api/auth/refresh', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    const token = authHeader?.replace('Bearer ', '');
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Try to refresh the session
+    const { data, error } = await supabase.auth.refreshSession({
+      refresh_token: token
+    });
+    
+    if (error) {
+      console.error('Token refresh error:', error);
+      return res.status(401).json({ error: 'Token refresh failed' });
+    }
+    
+    res.json({
+      token: data.session?.access_token,
+      user: data.user,
+      message: 'Token refreshed successfully'
+    });
+    
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // GitHub OAuth login endpoint (GET for initiation)
 app.post('/api/auth/github', async (req, res) => {
   try {

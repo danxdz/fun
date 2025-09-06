@@ -16,6 +16,26 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
 
+  // Token refresh function
+  const refreshToken = async () => {
+    try {
+      console.log('AuthContext: Attempting token refresh...');
+      const response = await apiClient.post('/api/auth/refresh');
+      const { token: newToken } = response.data;
+      
+      if (newToken) {
+        localStorage.setItem('token', newToken);
+        setToken(newToken);
+        console.log('AuthContext: Token refreshed successfully');
+        return true;
+      }
+    } catch (error) {
+      console.error('AuthContext: Token refresh failed:', error);
+      logout();
+      return false;
+    }
+  };
+
   // Token is handled by axios interceptor in src/config/axios.js
 
   // Check if user is authenticated on mount
