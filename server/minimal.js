@@ -1951,6 +1951,53 @@ app.get('/api/docs', (req, res) => {
   res.json(apiDocs);
 });
 
+// Delete project endpoint
+app.delete('/api/projects/:projectId', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '');
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Server configuration error' });
+    }
+
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Verify user
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+
+    const { projectId } = req.params;
+    
+    // Delete the project (only if it belongs to the user)
+    const { error: deleteError } = await supabase
+      .from('Projects')
+      .delete()
+      .eq('id', projectId)
+      .eq('UserId', user.id);
+
+    if (deleteError) {
+      console.error('Project deletion error:', deleteError);
+      return res.status(500).json({ error: 'Failed to delete project' });
+    }
+
+    console.log('Project deleted successfully:', projectId);
+    res.json({ message: 'Project deleted successfully' });
+
+  } catch (error) {
+    console.error('Delete project error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get project detail endpoint
 app.get('/api/project-detail', async (req, res) => {
   try {

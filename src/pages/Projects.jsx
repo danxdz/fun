@@ -1,17 +1,35 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
-import { PlusIcon, FolderIcon, StarIcon, CodeBracketIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+import { PlusIcon, FolderIcon, StarIcon, CodeBracketIcon, ExclamationTriangleIcon, TrashIcon } from '@heroicons/react/24/outline';
 import apiClient from '../config/axios';
 
 export default function Projects() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [deletingProject, setDeletingProject] = useState(null);
   
   const { data: projectsData, isLoading, refetch } = useQuery('projects', () =>
     apiClient.get('/api/projects').then(res => res.data)
   );
 
   const projects = projectsData?.projects || [];
+
+  const handleDeleteProject = async (projectId, projectName) => {
+    if (!window.confirm(`Are you sure you want to delete the project "${projectName}"? This action cannot be undone.`)) {
+      return;
+    }
+
+    setDeletingProject(projectId);
+    try {
+      await apiClient.delete(`/api/projects/${projectId}`);
+      await refetch(); // Refresh the projects list
+    } catch (error) {
+      console.error('Failed to delete project:', error);
+      alert('Failed to delete project. Please try again.');
+    } finally {
+      setDeletingProject(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -94,13 +112,21 @@ export default function Projects() {
                 )}
               </div>
 
-              <div className="mt-6 flex justify-end">
+              <div className="mt-6 flex justify-between items-center">
                 <Link
                   to={`/projects/${project.id}`}
                   className="text-sm text-primary-600 hover:text-primary-500 font-medium"
                 >
                   View Details →
                 </Link>
+                <button
+                  onClick={() => handleDeleteProject(project.id, project.name)}
+                  disabled={deletingProject === project.id}
+                  className="inline-flex items-center px-2 py-1 border border-red-300 text-xs font-medium rounded text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <TrashIcon className="h-3 w-3 mr-1" />
+                  {deletingProject === project.id ? 'Deleting...' : 'Delete'}
+                </button>
               </div>
             </div>
           ))}
