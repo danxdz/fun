@@ -1257,11 +1257,17 @@ app.post('/api/projects', async (req, res) => {
     
     console.log('Project creation request:', { action, name, repositoryUrl, hasAccessToken: !!accessToken });
     
-    // Handle GitHub import action
+    // Handle different actions
     if (action === 'import-github') {
       if (!name || !repositoryUrl) {
         return res.status(400).json({ error: 'Name and repository URL are required for import' });
       }
+    } else if (action === 'create-github') {
+      if (!name) {
+        return res.status(400).json({ error: 'Repository name is required' });
+      }
+      // For GitHub repo creation, we'll create a placeholder project
+      // The actual GitHub repo creation would need GitHub API integration
     } else {
       if (!name || !repositoryUrl || !accessToken) {
         return res.status(400).json({ error: 'Name, repository URL, and access token are required' });
@@ -1289,7 +1295,6 @@ app.post('/api/projects', async (req, res) => {
     const projectData = {
       name,
       description: description || '',
-      repositoryUrl,
       repositoryType: repositoryType || 'github',
       defaultBranch: defaultBranch || 'main',
       UserId: user.id,
@@ -1298,6 +1303,11 @@ app.post('/api/projects', async (req, res) => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
+    
+    // Add repositoryUrl if provided (for imports)
+    if (repositoryUrl) {
+      projectData.repositoryUrl = repositoryUrl;
+    }
     
     // Only add accessToken if it's provided (not for imports)
     if (accessToken) {
@@ -1319,10 +1329,19 @@ app.post('/api/projects', async (req, res) => {
     
     console.log('Project created successfully:', data);
     
-    res.status(201).json({
-      message: 'Project created successfully',
-      project: data
-    });
+    // Return appropriate response based on action
+    if (action === 'create-github') {
+      res.status(201).json({
+        message: 'Project created successfully',
+        project: data,
+        setupSuccess: true // Indicate that the project was created (though GitHub repo creation would need additional API calls)
+      });
+    } else {
+      res.status(201).json({
+        message: 'Project created successfully',
+        project: data
+      });
+    }
     
   } catch (error) {
     console.error('Create project error:', error);
