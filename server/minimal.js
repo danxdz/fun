@@ -1118,6 +1118,57 @@ app.get('/api/projects', async (req, res) => {
       return res.status(401).json({ error: authError.message });
     }
     
+    // Check if requesting GitHub repositories
+    if (req.query.action === 'github-repos') {
+      try {
+        // Get user's GitHub username from their profile
+        const { data: userProfile } = await supabase
+          .from('Users')
+          .select('githubUsername')
+          .eq('id', user.id)
+          .single();
+        
+        if (!userProfile?.githubUsername) {
+          return res.status(400).json({ error: 'GitHub username not found in profile' });
+        }
+        
+        // Fetch repositories from GitHub API
+        const githubResponse = await fetch(`https://api.github.com/users/${userProfile.githubUsername}/repos?sort=updated&per_page=50`, {
+          headers: {
+            'Accept': 'application/vnd.github.v3+json',
+            'User-Agent': 'Autobot-Manager'
+          }
+        });
+        
+        if (!githubResponse.ok) {
+          throw new Error(`GitHub API error: ${githubResponse.status}`);
+        }
+        
+        const repositories = await githubResponse.json();
+        
+        // Format repositories for frontend
+        const formattedRepos = repositories.map(repo => ({
+          id: repo.id,
+          name: repo.name,
+          fullName: repo.full_name,
+          description: repo.description || '',
+          url: repo.html_url,
+          cloneUrl: repo.clone_url,
+          language: repo.language || 'Unknown',
+          stars: repo.stargazers_count,
+          forks: repo.forks_count,
+          updatedAt: repo.updated_at,
+          isPrivate: repo.private
+        }));
+        
+        return res.json({ repositories: formattedRepos });
+        
+      } catch (githubError) {
+        console.error('GitHub API error:', githubError);
+        return res.status(500).json({ error: 'Failed to fetch GitHub repositories' });
+      }
+    }
+    
     // Get user's projects
     const { data: projects, error } = await supabase
       .from('Projects')
