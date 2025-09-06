@@ -13,7 +13,7 @@
 ### 🌐 Frontend Only (Demo Mode)
 **Perfect for trying out the interface and exploring features**
 
-[![Deploy Frontend with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/danxdz/fun)
+[![Deploy Frontend with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/danxdz/fun){:target="_blank"}
 
 *Deploys the React frontend with demo data - no server needed!*
 
@@ -21,16 +21,16 @@
 **Complete SaaS application with real bot functionality**
 
 #### Deploy Full Stack to Railway
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/new?template=https://github.com/danxdz/fun)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/danxdz/fun){:target="_blank"}
 
 #### Deploy Full Stack to Render
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy/schema-new?template=https://github.com/danxdz/fun)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy/schema-new?template=https://github.com/danxdz/fun){:target="_blank"}
 
 #### Deploy Full Stack to Heroku
-[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/danxdz/fun)
+[![Deploy to Heroku](https://www.herokucdn.com/deploy/button.svg)](https://heroku.com/deploy?template=https://github.com/danxdz/fun){:target="_blank"}
 
 #### Deploy Full Stack to DigitalOcean App Platform
-[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/danxdz/fun)
+[![Deploy to DigitalOcean](https://www.deploytodo.com/do-btn-blue.svg)](https://cloud.digitalocean.com/apps/new?repo=https://github.com/danxdz/fun){:target="_blank"}
 
 ### 🐳 Docker Deployment
 ```bash
@@ -111,6 +111,7 @@ npm run start:dev
 ```
 
 📖 **Detailed Setup Guide**: [SETUP-FULL-STACK.md](SETUP-FULL-STACK.md)
+📖 **Supabase Setup Guide**: [SUPABASE-SETUP.md](SUPABASE-SETUP.md)
 
 ### Prerequisites
 - Node.js 18+
