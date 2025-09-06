@@ -485,11 +485,15 @@ app.get('/auth/callback', async (req, res) => {
       const { createClient } = await import('@supabase/supabase-js');
       const supabase = createClient(supabaseUrl, supabaseKey);
       
+      // Generate a UUID for the user (since GitHub ID is numeric)
+      const crypto = await import('crypto');
+      const userId = crypto.randomUUID();
+      
       // Generate a JWT token for our app
       const jwt = await import('jsonwebtoken');
       const appToken = jwt.default.sign(
         { 
-          userId: githubUser.id.toString(),
+          userId: userId,
           email: githubUser.email,
           githubUsername: githubUser.login,
           githubToken: githubToken
@@ -500,7 +504,7 @@ app.get('/auth/callback', async (req, res) => {
       
       // Save user to database
       const userData = {
-        id: githubUser.id.toString(),
+        id: userId,
         email: githubUser.email || `${githubUser.login}@github.local`,
         firstName: githubUser.name?.split(' ')[0] || '',
         lastName: githubUser.name?.split(' ').slice(1).join(' ') || '',
@@ -1036,8 +1040,19 @@ app.get('/api/me', async (req, res) => {
       });
     }
     
+    // Verify our custom JWT token
+    const jwt = await import('jsonwebtoken');
+    let decoded;
+    
+    try {
+      decoded = jwt.default.verify(token, process.env.JWT_SECRET || 'fallback-secret');
+    } catch (jwtError) {
+      return res.status(401).json({ error: 'Invalid token' });
+    }
+    
+    // Get user from our database using the userId from JWT
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY; // Use service role to bypass RLS
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
     if (!supabaseUrl || !supabaseKey) {
       return res.status(500).json({ error: 'Supabase not configured' });
@@ -1046,32 +1061,18 @@ app.get('/api/me', async (req, res) => {
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    const { data: { user }, error } = await supabase.auth.getUser(token);
-    
-    if (error) {
-      return res.status(401).json({ error: error.message });
-    }
-    
-    // Fetch complete user profile from Users table
-    const { data: userProfile, error: profileError } = await supabase
+    const { data: user, error } = await supabase
       .from('Users')
       .select('*')
-      .eq('id', user.id)
+      .eq('id', decoded.userId)
       .single();
     
-    if (profileError) {
-      console.log('Profile fetch error (user might not exist in Users table yet):', profileError);
-      // Return auth user data if profile doesn't exist yet
-      res.json({ user });
-    } else {
-      // Merge auth user data with profile data
-      const completeUser = {
-        ...user,
-        ...userProfile
-      };
-      console.log('Complete user data:', { id: completeUser.id, email: completeUser.email, githubUsername: completeUser.githubUsername });
-      res.json({ user: completeUser });
+    if (error || !user) {
+      return res.status(401).json({ error: 'User not found' });
     }
+    
+    console.log('Complete user data:', { id: user.id, email: user.email, githubUsername: user.githubUsername });
+    res.json({ user });
     
   } catch (error) {
     res.status(500).json({ error: error.message });
