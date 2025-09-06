@@ -189,15 +189,18 @@ function CreateProjectModal({ onClose, onSuccess }) {
     setError('');
 
     try {
-      await axios.post('/api/projects', {
+      console.log('Importing repository:', repo);
+      const response = await axios.post('/api/projects', {
         action: 'import-github',
         repositoryUrl: repo.url,
         name: repo.name,
         description: repo.description
       });
-      
+      console.log('Import response:', response.data);
       onSuccess();
     } catch (error) {
+      console.error('Import error:', error);
+      console.error('Error response:', error.response?.data);
       setError(error.response?.data?.error || 'Failed to import repository');
     } finally {
       setLoading(false);
