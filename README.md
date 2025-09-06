@@ -1,7 +1,7 @@
 # AutoBot Manager 🤖
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-green.svg)](https://nodejs.org/)
 [![React](https://img.shields.io/badge/React-18+-blue.svg)](https://reactjs.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-12+-blue.svg)](https://www.postgresql.org/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-blue.svg)](https://www.docker.com/)
@@ -110,11 +110,11 @@ npm run setup
 npm run start:dev
 ```
 
-📖 **Detailed Setup Guide**: [SETUP-FULL-STACK.md](SETUP-FULL-STACK.md)
-📖 **Supabase Setup Guide**: [SUPABASE-SETUP.md](SUPABASE-SETUP.md)
+📖 **Full Stack Setup**: [SETUP-FULL-STACK.md](SETUP-FULL-STACK.md)  
+📖 **Supabase Database Setup**: [SUPABASE-SETUP.md](SUPABASE-SETUP.md)
 
 ### Prerequisites
-- Node.js 18+
+- Node.js 20+
 - Supabase account (for full stack)
 - Git
 

@@ -1,97 +1,74 @@
 # Supabase Setup Guide for AutoBot Manager
 
-This guide will help you set up Supabase for the AutoBot Manager application.
+Quick setup guide for Supabase database configuration.
 
-## 🚀 Quick Setup
+## 🚀 Quick Setup (5 minutes)
 
 ### 1. Create Supabase Project
 
-1. Go to [supabase.com](https://supabase.com)
-2. Sign up/Login with your account
-3. Click "New Project"
-4. Choose your organization
-5. Enter project details:
-   - **Name**: `autobot-manager` (or your preferred name)
-   - **Database Password**: Choose a strong password (save this!)
+1. Go to [supabase.com](https://supabase.com) and sign in
+2. Click **"New Project"**
+3. Enter project details:
+   - **Name**: `autobot-manager`
+   - **Database Password**: Create a strong password (save this!)
    - **Region**: Choose closest to your users
-6. Click "Create new project"
+4. Click **"Create new project"**
 
-### 2. Get Your Project Credentials
-
-Once your project is created:
+### 2. Get Your Credentials
 
 1. Go to **Settings** → **API**
 2. Copy these values:
-   - **Project URL** (looks like: `https://your-project-id.supabase.co`)
-   - **Anon/Public Key** (starts with `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`)
-   - **Service Role Key** (starts with `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...`)
+   - **Project URL**: `https://your-project-id.supabase.co`
+   - **Anon Key**: `sb_publishable_...` (public key)
+   - **Service Role Key**: `sb_secret_...` (private key)
 
 ### 3. Set Up Database Tables
 
 1. Go to **SQL Editor** in your Supabase dashboard
-2. Click "New Query"
-3. Copy and paste the entire contents of `supabase-setup.sql` from this repository
-4. Click "Run" to execute the SQL
+2. Click **"New Query"**
+3. Copy and paste the contents of `supabase-clean-setup.sql` from this repository
+4. Click **"Run"** to execute the SQL
 
-This will create all necessary tables, indexes, and sample data.
+This creates all necessary tables, indexes, and sample data.
 
 ### 4. Configure Environment Variables
 
-For **local development**, create a `.env` file in your project root:
+For **Railway deployment**, add these environment variables:
 
 ```env
 # Supabase Configuration
 SUPABASE_URL=https://your-project-id.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+SUPABASE_ANON_KEY=sb_publishable_...
+SUPABASE_SERVICE_ROLE_KEY=sb_secret_...
 
-# Database Configuration (for direct PostgreSQL connection)
+# Database Configuration (PostgreSQL connection)
 DB_HOST=db.your-project-id.supabase.co
 DB_PORT=5432
 DB_NAME=postgres
 DB_USER=postgres
 DB_PASSWORD=your-database-password
 
-# JWT Secret (generate a random string)
-JWT_SECRET=your-very-secure-random-string-here
-
 # Application Configuration
-NODE_ENV=development
+NODE_ENV=production
 PORT=3001
-FRONTEND_URL=http://localhost:5173
+JWT_SECRET=your-random-secret-string
 ```
 
-For **production deployment**, set these environment variables in your hosting platform:
+For **local development**, create a `.env` file in your project root with the same variables.
 
-#### Railway
+#### Railway Setup
 1. Go to your Railway project dashboard
 2. Click on your service
 3. Go to **Variables** tab
-4. Add each environment variable
+4. Add each environment variable above
+5. Railway will auto-redeploy
 
-#### Render
-1. Go to your Render dashboard
-2. Select your service
-3. Go to **Environment** tab
-4. Add each environment variable
+## 🎯 Testing Your Setup
 
-#### Heroku
-1. Go to your Heroku app dashboard
-2. Go to **Settings** tab
-3. Click **Reveal Config Vars**
-4. Add each environment variable
-
-### 5. Configure Authentication (Optional)
-
-If you want to use Supabase Auth instead of custom JWT:
-
-1. Go to **Authentication** → **Settings**
-2. Configure your site URL:
-   - **Site URL**: `https://your-domain.com` (for production)
-   - **Site URL**: `http://localhost:5173` (for development)
-3. Add redirect URLs:
-   - `https://your-domain.com/auth/callback`
-   - `http://localhost:5173/auth/callback`
+After setup, test these endpoints:
+- `https://your-app.railway.app/api/health` - Basic health check
+- `https://your-app.railway.app/api/debug/supabase` - Supabase connection test
+- `https://your-app.railway.app/api/debug/database` - Database connection test
 
 ## 🔧 Advanced Configuration
 
