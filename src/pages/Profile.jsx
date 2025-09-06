@@ -35,7 +35,14 @@ export default function Profile() {
     if (result.success) {
       setMessage('Profile updated successfully!');
     } else {
-      setMessage(result.error);
+      let errorMessage = result.error;
+      if (result.details) {
+        errorMessage += ` (Details: ${result.details})`;
+      }
+      if (result.hint) {
+        errorMessage += ` (Hint: ${result.hint})`;
+      }
+      setMessage(errorMessage);
     }
     
     setLoading(false);

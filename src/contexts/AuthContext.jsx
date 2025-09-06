@@ -105,13 +105,18 @@ export const AuthProvider = ({ children }) => {
 
   const updateProfile = async (profileData) => {
     try {
+      console.log('Updating profile with data:', profileData);
       const response = await apiClient.put('/api/user/profile', profileData);
       setUser(response.data.user);
       return { success: true };
     } catch (error) {
+      console.error('Profile update error:', error);
+      console.error('Error response:', error.response?.data);
       return { 
         success: false, 
-        error: error.response?.data?.error || 'Profile update failed' 
+        error: error.response?.data?.error || 'Profile update failed',
+        details: error.response?.data?.details || '',
+        hint: error.response?.data?.hint || ''
       };
     }
   };

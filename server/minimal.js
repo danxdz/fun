@@ -1024,7 +1024,13 @@ app.put('/api/user/profile', async (req, res) => {
     if (error) {
       console.error('Profile update error:', error);
       console.error('Error details:', JSON.stringify(error, null, 2));
-      return res.status(500).json({ error: error.message });
+      console.error('Update data that failed:', updateData);
+      return res.status(500).json({ 
+        error: error.message,
+        details: error.details || 'No additional details',
+        hint: error.hint || 'No hint available',
+        code: error.code || 'No error code'
+      });
     }
     
     console.log('Profile update success:', data);
