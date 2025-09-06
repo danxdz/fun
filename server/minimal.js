@@ -12,8 +12,66 @@ console.log('Environment loaded. PORT:', process.env.PORT);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
+// Security middleware
+app.use((req, res, next) => {
+  // CORS headers
+  res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+  
+  // Security headers
+  res.header('X-Content-Type-Options', 'nosniff');
+  res.header('X-Frame-Options', 'DENY');
+  res.header('X-XSS-Protection', '1; mode=block');
+  
+  if (req.method === 'OPTIONS') {
+    res.sendStatus(200);
+  } else {
+    next();
+  }
+});
+
+// Rate limiting (simple implementation)
+const rateLimitMap = new Map();
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
+const RATE_LIMIT_MAX_REQUESTS = 100; // 100 requests per window
+
+app.use((req, res, next) => {
+  const clientId = req.ip || req.headers['x-forwarded-for'] || 'unknown';
+  const now = Date.now();
+  
+  if (!rateLimitMap.has(clientId)) {
+    rateLimitMap.set(clientId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+  } else {
+    const clientData = rateLimitMap.get(clientId);
+    
+    if (now > clientData.resetTime) {
+      // Reset window
+      rateLimitMap.set(clientId, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    } else if (clientData.count >= RATE_LIMIT_MAX_REQUESTS) {
+      return res.status(429).json({ error: 'Too many requests, please try again later' });
+    } else {
+      clientData.count++;
+    }
+  }
+  
+  next();
+});
+
 // Basic middleware
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Input validation helper
+const validateEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const sanitizeInput = (input) => {
+  if (typeof input !== 'string') return input;
+  return input.trim().replace(/[<>]/g, '');
+};
 
 // Simple health check
 app.get('/api/health', (req, res) => {
@@ -565,6 +623,131 @@ app.get('/api/dashboard', async (req, res) => {
   }
 });
 
+// Get user profile
+app.get('/api/user/profile', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get user from auth
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError) {
+      return res.status(401).json({ error: authError.message });
+    }
+    
+    // Get user profile from database
+    const { data: profile, error: profileError } = await supabase
+      .from('Users')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+    
+    if (profileError) {
+      console.error('Profile fetch error:', profileError);
+      // Return auth user data if profile not found
+      return res.json({
+        id: user.id,
+        email: user.email,
+        firstName: '',
+        lastName: '',
+        role: 'user',
+        isActive: true,
+        preferences: {},
+        createdAt: user.created_at,
+        updatedAt: user.updated_at,
+        authUser: user
+      });
+    }
+    
+    res.json({
+      ...profile,
+      authUser: user
+    });
+    
+  } catch (error) {
+    console.error('Get profile error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update user profile
+app.put('/api/user/profile', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const { firstName, lastName, preferences } = req.body;
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get user from auth
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError) {
+      return res.status(401).json({ error: authError.message });
+    }
+    
+    // Update user profile
+    const updateData = {
+      updatedAt: new Date().toISOString()
+    };
+    
+    if (firstName !== undefined) updateData.firstName = firstName;
+    if (lastName !== undefined) updateData.lastName = lastName;
+    if (preferences !== undefined) updateData.preferences = preferences;
+    
+    const { data, error } = await supabase
+      .from('Users')
+      .update(updateData)
+      .eq('id', user.id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Profile update error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    
+    res.json({
+      message: 'Profile updated successfully',
+      user: data
+    });
+    
+  } catch (error) {
+    console.error('Update profile error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Delete user profile endpoint
 app.delete('/api/user/profile', async (req, res) => {
   try {
@@ -629,6 +812,181 @@ app.delete('/api/user/profile', async (req, res) => {
     
   } catch (error) {
     console.error('Delete profile error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Projects endpoints
+app.get('/api/projects', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get user from auth
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError) {
+      return res.status(401).json({ error: authError.message });
+    }
+    
+    // Get user's projects
+    const { data: projects, error } = await supabase
+      .from('Projects')
+      .select(`
+        *,
+        Teams(name, description),
+        Bots(id, name, type, status, lastRun)
+      `)
+      .eq('UserId', user.id)
+      .eq('isActive', true)
+      .order('createdAt', { ascending: false });
+    
+    if (error) {
+      console.error('Projects fetch error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    
+    res.json({
+      projects: projects || [],
+      count: projects ? projects.length : 0
+    });
+    
+  } catch (error) {
+    console.error('Get projects error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.post('/api/projects', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const { name, description, repositoryUrl, repositoryType, accessToken, defaultBranch, teamId } = req.body;
+    
+    if (!name || !repositoryUrl || !accessToken) {
+      return res.status(400).json({ error: 'Name, repository URL, and access token are required' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get user from auth
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError) {
+      return res.status(401).json({ error: authError.message });
+    }
+    
+    // Create project
+    const { data, error } = await supabase
+      .from('Projects')
+      .insert({
+        name,
+        description: description || '',
+        repositoryUrl,
+        repositoryType: repositoryType || 'github',
+        accessToken,
+        defaultBranch: defaultBranch || 'main',
+        UserId: user.id,
+        TeamId: teamId || null,
+        settings: {},
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      })
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Project creation error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    
+    res.status(201).json({
+      message: 'Project created successfully',
+      project: data
+    });
+    
+  } catch (error) {
+    console.error('Create project error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Teams endpoints
+app.get('/api/teams', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    if (!token) {
+      return res.status(401).json({ error: 'No token provided' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get user from auth
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError) {
+      return res.status(401).json({ error: authError.message });
+    }
+    
+    // Get teams (simplified - in real app you'd check team membership)
+    const { data: teams, error } = await supabase
+      .from('Teams')
+      .select('*')
+      .eq('isActive', true)
+      .order('createdAt', { ascending: false });
+    
+    if (error) {
+      console.error('Teams fetch error:', error);
+      return res.status(500).json({ error: error.message });
+    }
+    
+    res.json({
+      teams: teams || [],
+      count: teams ? teams.length : 0
+    });
+    
+  } catch (error) {
+    console.error('Get teams error:', error);
     res.status(500).json({ error: error.message });
   }
 });
