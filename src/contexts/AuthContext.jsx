@@ -120,6 +120,19 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithGitHub = async () => {
+    try {
+      // Redirect to GitHub OAuth
+      window.location.href = '/api/auth/github';
+      return { success: true };
+    } catch (error) {
+      return { 
+        success: false, 
+        error: error.message || 'GitHub login failed' 
+      };
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -129,6 +142,7 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     changePassword,
     deleteAccount,
+    loginWithGitHub,
     isAuthenticated: !!user
   };
 

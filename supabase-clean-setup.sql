@@ -21,6 +21,8 @@ CREATE TABLE "Users" (
     email VARCHAR(255) UNIQUE NOT NULL,
     "firstName" VARCHAR(255) DEFAULT '',
     "lastName" VARCHAR(255) DEFAULT '',
+    "githubUsername" VARCHAR(255) DEFAULT '',
+    "githubAvatar" TEXT DEFAULT '',
     role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('admin', 'user', 'viewer')),
     "isActive" BOOLEAN DEFAULT true,
     "lastLogin" TIMESTAMP WITH TIME ZONE,

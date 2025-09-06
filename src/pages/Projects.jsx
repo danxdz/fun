@@ -2,13 +2,13 @@ import React, { useState } from 'react';
 import { useQuery } from 'react-query';
 import { Link } from 'react-router-dom';
 import { PlusIcon, FolderIcon, StarIcon, CodeBracketIcon, ExclamationTriangleIcon } from '@heroicons/react/24/outline';
-import axios from 'axios';
+import apiClient from '../config/axios';
 
 export default function Projects() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   
   const { data: projectsData, isLoading, refetch } = useQuery('projects', () =>
-    axios.get('/api/projects').then(res => res.data)
+    apiClient.get('/api/projects').then(res => res.data)
   );
 
   const projects = projectsData?.projects || [];
@@ -148,7 +148,7 @@ function CreateProjectModal({ onClose, onSuccess }) {
   const loadGithubRepos = async () => {
     setLoadingRepos(true);
     try {
-      const response = await axios.get('/api/projects?action=github-repos');
+      const response = await apiClient.get('/api/projects?action=github-repos');
       setGithubRepos(response.data.repositories);
     } catch (error) {
       console.error('Failed to load GitHub repos:', error);
@@ -163,7 +163,7 @@ function CreateProjectModal({ onClose, onSuccess }) {
     setError('');
 
     try {
-      const response = await axios.post('/api/projects', {
+      const response = await apiClient.post('/api/projects', {
         action: 'create-github',
         ...formData
       });

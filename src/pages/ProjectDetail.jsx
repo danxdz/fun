@@ -11,14 +11,14 @@ import {
   LinkIcon
 } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../config/axios';
 
 export default function ProjectDetail() {
   const { projectId } = useParams();
   const [showGithubInfo, setShowGithubInfo] = useState(false);
 
   const { data: projectData, isLoading } = useQuery(['project-detail', projectId], () =>
-    axios.get(`/api/project-detail?projectId=${projectId}&action=${showGithubInfo ? 'github-info' : 'basic'}`).then(res => res.data)
+    apiClient.get(`/api/project-detail?projectId=${projectId}&action=${showGithubInfo ? 'github-info' : 'basic'}`).then(res => res.data)
   );
 
   if (isLoading) {

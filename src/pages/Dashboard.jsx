@@ -10,12 +10,12 @@ import {
   StarIcon,
   CodeBracketIcon
 } from '@heroicons/react/24/outline';
-import axios from 'axios';
+import apiClient from '../config/axios';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, PieChart, Pie, Cell } from 'recharts';
 
 export default function Dashboard() {
   const { data: dashboardData, isLoading } = useQuery('dashboard', () =>
-    axios.get('/api/dashboard').then(res => res.data)
+    apiClient.get('/api/dashboard').then(res => res.data)
   );
 
   if (isLoading) {

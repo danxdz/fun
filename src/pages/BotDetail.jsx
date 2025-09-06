@@ -11,18 +11,18 @@ import {
   DocumentTextIcon
 } from '@heroicons/react/24/outline';
 import { Link } from 'react-router-dom';
-import axios from 'axios';
+import apiClient from '../config/axios';
 
 export default function BotDetail() {
   const { botId } = useParams();
   const [selectedRun, setSelectedRun] = useState(null);
 
   const { data: botData, isLoading: botLoading } = useQuery(['bot', botId], () =>
-    axios.get('/api/bots').then(res => res.data.bots.find(bot => bot.id === botId))
+    apiClient.get('/api/bots').then(res => res.data.bots.find(bot => bot.id === botId))
   );
 
   const { data: runsData, isLoading: runsLoading } = useQuery(['bot-runs', botId], () =>
-    axios.get(`/api/bot-runs?botId=${botId}`).then(res => res.data)
+    apiClient.get(`/api/bot-runs?botId=${botId}`).then(res => res.data)
   );
 
   const bot = botData;

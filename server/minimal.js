@@ -333,6 +333,131 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// GitHub OAuth login endpoint
+app.post('/api/auth/github', async (req, res) => {
+  try {
+    const { code } = req.body;
+    
+    console.log('GitHub OAuth request received:', { code: !!code });
+    
+    if (!code) {
+      return res.status(400).json({ error: 'GitHub authorization code required' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    const { data, error } = await supabase.auth.signInWithOAuth({
+      provider: 'github',
+      options: {
+        redirectTo: `${req.headers.origin || 'https://web-production-8747.up.railway.app'}/auth/callback`
+      }
+    });
+    
+    if (error) {
+      return res.status(401).json({ error: error.message });
+    }
+    
+    res.json({
+      url: data.url,
+      message: 'Redirect to GitHub for authentication'
+    });
+    
+  } catch (error) {
+    console.error('GitHub OAuth error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// GitHub OAuth callback endpoint
+app.get('/auth/callback', async (req, res) => {
+  try {
+    const { code } = req.query;
+    
+    if (!code) {
+      return res.status(400).send('Authorization code missing');
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).send('Server configuration error');
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    
+    if (error) {
+      console.error('OAuth callback error:', error);
+      return res.status(401).send('Authentication failed');
+    }
+    
+    // Store token in localStorage via JavaScript
+    const token = data.session?.access_token;
+    const user = data.user;
+    
+    if (token && user) {
+      // Add user to database if they don't exist
+      try {
+        const { error: dbError } = await supabase
+          .from('Users')
+          .upsert({
+            id: user.id,
+            email: user.email,
+            firstName: user.user_metadata?.full_name?.split(' ')[0] || '',
+            lastName: user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
+            githubUsername: user.user_metadata?.user_name || '',
+            githubAvatar: user.user_metadata?.avatar_url || '',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          }, {
+            onConflict: 'id'
+          });
+        
+        if (dbError) {
+          console.error('Database upsert error:', dbError);
+        }
+      } catch (dbError) {
+        console.error('Database error:', dbError);
+      }
+      
+      // Redirect to frontend with token
+      return res.send(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Authentication Successful</title>
+        </head>
+        <body>
+          <script>
+            localStorage.setItem('token', '${token}');
+            localStorage.setItem('user', JSON.stringify(${JSON.stringify(user)}));
+            window.location.href = '/dashboard';
+          </script>
+          <p>Authentication successful! Redirecting...</p>
+        </body>
+        </html>
+      `);
+    }
+    
+    res.status(401).send('Authentication failed');
+    
+  } catch (error) {
+    console.error('OAuth callback error:', error);
+    res.status(500).send('Server error');
+  }
+});
+
 // Register endpoint
 app.post('/api/auth/register', async (req, res) => {
   try {

@@ -10,13 +10,13 @@ import {
   ExclamationTriangleIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
-import axios from 'axios';
+import apiClient from '../config/axios';
 
 export default function Bots() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loading, setLoading] = useState(false);
   const { data: botsData, isLoading, refetch } = useQuery('bots', () =>
-    axios.get('/api/bots').then(res => res.data)
+    apiClient.get('/api/bots').then(res => res.data)
   );
 
   const bots = botsData?.bots || [];
@@ -24,7 +24,7 @@ export default function Bots() {
   const handleStartBot = async (botId) => {
     setLoading(true);
     try {
-      await axios.post('/api/bots', {
+      await apiClient.post('/api/bots', {
         action: 'start',
         botId: botId
       });
@@ -40,7 +40,7 @@ export default function Bots() {
   const handleStopBot = async (botId) => {
     setLoading(true);
     try {
-      await axios.post('/api/bots', {
+      await apiClient.post('/api/bots', {
         action: 'stop',
         botId: botId
       });

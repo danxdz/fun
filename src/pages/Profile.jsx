@@ -11,7 +11,9 @@ export default function Profile() {
   const [profileData, setProfileData] = useState({
     firstName: user?.firstName || '',
     lastName: user?.lastName || '',
-    email: user?.email || ''
+    email: user?.email || '',
+    githubUsername: user?.githubUsername || '',
+    githubAvatar: user?.githubAvatar || ''
   });
 
   const [passwordData, setPasswordData] = useState({
@@ -179,6 +181,52 @@ export default function Profile() {
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
               />
             </div>
+            
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <div>
+                <label htmlFor="githubUsername" className="block text-sm font-medium text-gray-700">
+                  GitHub Username
+                </label>
+                <input
+                  type="text"
+                  id="githubUsername"
+                  value={profileData.githubUsername}
+                  onChange={(e) => setProfileData({ ...profileData, githubUsername: e.target.value })}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  placeholder="your-github-username"
+                />
+              </div>
+              <div>
+                <label htmlFor="githubAvatar" className="block text-sm font-medium text-gray-700">
+                  GitHub Avatar URL
+                </label>
+                <input
+                  type="url"
+                  id="githubAvatar"
+                  value={profileData.githubAvatar}
+                  onChange={(e) => setProfileData({ ...profileData, githubAvatar: e.target.value })}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  placeholder="https://avatars.githubusercontent.com/u/..."
+                />
+              </div>
+            </div>
+            
+            {profileData.githubAvatar && (
+              <div className="flex items-center space-x-4">
+                <img
+                  src={profileData.githubAvatar}
+                  alt="GitHub Avatar"
+                  className="h-16 w-16 rounded-full"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+                <div>
+                  <p className="text-sm text-gray-600">GitHub Avatar Preview</p>
+                  <p className="text-xs text-gray-500">This will be displayed in your profile</p>
+                </div>
+              </div>
+            )}
             <div className="flex justify-end">
               <button
                 type="submit"
