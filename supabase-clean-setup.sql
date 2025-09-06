@@ -15,13 +15,12 @@ DROP TABLE IF EXISTS "Users" CASCADE;
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create Users table
+-- Create Users table (compatible with Supabase Auth)
 CREATE TABLE "Users" (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    "firstName" VARCHAR(255) NOT NULL,
-    "lastName" VARCHAR(255) NOT NULL,
+    "firstName" VARCHAR(255) DEFAULT '',
+    "lastName" VARCHAR(255) DEFAULT '',
     role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('admin', 'user', 'viewer')),
     "isActive" BOOLEAN DEFAULT true,
     "lastLogin" TIMESTAMP WITH TIME ZONE,
@@ -163,9 +162,9 @@ CREATE POLICY "Users can delete own bots" ON "Bots" FOR DELETE USING (
     "ProjectId" IN (SELECT id FROM "Projects" WHERE "UserId"::text = auth.uid()::text)
 );
 
--- Insert sample data
-INSERT INTO "Users" (email, password, "firstName", "lastName", role) VALUES 
-('admin@autobot.com', '$2a$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj5J5K5K5K5K', 'Admin', 'User', 'admin')
+-- Insert sample data (no password field - handled by Supabase Auth)
+INSERT INTO "Users" (email, "firstName", "lastName", role) VALUES 
+('admin@autobot.com', 'Admin', 'User', 'admin')
 ON CONFLICT (email) DO NOTHING;
 
 INSERT INTO "Teams" (name, description) VALUES 

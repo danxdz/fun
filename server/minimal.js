@@ -291,6 +291,32 @@ app.post('/api/auth', async (req, res) => {
           return res.status(400).json({ error: error.message });
         }
         
+        // If user was created successfully, add them to the Users table
+        if (data.user) {
+          try {
+            console.log('Adding user to database (referer detection):', data.user.email);
+            
+            const { error: dbError } = await supabase
+              .from('Users')
+              .insert({
+                id: data.user.id,
+                email: data.user.email,
+                firstName: '',
+                lastName: '',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              });
+            
+            if (dbError) {
+              console.error('Database insert error (referer detection):', dbError);
+            } else {
+              console.log('User added to database successfully (referer detection)');
+            }
+          } catch (dbError) {
+            console.error('Database error (referer detection):', dbError);
+          }
+        }
+        
         return res.json({
           user: data.user,
           session: data.session,
