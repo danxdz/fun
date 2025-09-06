@@ -12,9 +12,12 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
+  console.log('AuthProvider: Initializing...');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
+  
+  console.log('AuthProvider: Initial state - user:', user, 'loading:', loading, 'token:', token ? 'present' : 'missing');
 
   // Token refresh function
   const refreshToken = async () => {

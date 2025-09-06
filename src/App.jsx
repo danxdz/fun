@@ -14,6 +14,53 @@ import BotDetail from './pages/BotDetail.jsx';
 import Profile from './pages/Profile.jsx';
 import './App.css';
 
+// Error Boundary Component
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Error caught by boundary:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-red-50 flex items-center justify-center">
+          <div className="max-w-md w-full bg-white shadow-lg rounded-lg p-6">
+            <div className="text-center">
+              <h2 className="text-xl font-bold text-red-600 mb-4">🚨 Application Error</h2>
+              <p className="text-gray-700 mb-4">
+                Something went wrong. Please refresh the page or contact support.
+              </p>
+              <details className="text-left text-sm text-gray-600 mb-4">
+                <summary className="cursor-pointer font-medium">Error Details</summary>
+                <pre className="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
+                  {this.state.error?.toString()}
+                </pre>
+              </details>
+              <button
+                onClick={() => window.location.reload()}
+                className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+              >
+                Refresh Page
+              </button>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -42,6 +89,10 @@ function App() {
         <AuthProvider>
           <Router>
             <div className="App">
+              {/* Debug Banner */}
+              <div className="bg-red-500 text-white p-2 text-center text-sm font-bold">
+                🚨 DEBUG MODE - App is rendering successfully
+              </div>
               <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -75,4 +126,13 @@ function App() {
   }
 }
 
-export default App;
+// Wrap App with ErrorBoundary
+function AppWithErrorBoundary() {
+  return (
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
+  );
+}
+
+export default AppWithErrorBoundary;
