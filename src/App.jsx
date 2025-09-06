@@ -110,11 +110,17 @@ function App() {
               <div className="bg-blue-500 text-white p-2 text-center text-sm">
                 ✅ Router and AuthProvider loaded
               </div>
+              <div className="bg-green-500 text-white p-2 text-center text-sm">
+                ✅ Routes defined, rendering Routes component...
+              </div>
               <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/" element={
                 <PrivateRoute>
+                  <div className="bg-purple-500 text-white p-4 text-center">
+                    🎯 PrivateRoute rendered successfully! Now rendering Layout...
+                  </div>
                   <Layout />
                 </PrivateRoute>
               }>
