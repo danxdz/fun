@@ -334,7 +334,7 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 // GitHub OAuth login endpoint (GET for initiation)
-app.get('/api/auth/github', async (req, res) => {
+app.post('/api/auth/github', async (req, res) => {
   try {
     console.log('GitHub OAuth initiation request received');
     
