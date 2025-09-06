@@ -1589,9 +1589,8 @@ app.post('/api/projects', async (req, res) => {
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
-    if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
-    }
+    const { user, supabase } = await verifyTokenAndGetUser(token);
+    console.log('Project creation: User found:', user.email);
     
     const { action, name, description, repositoryUrl, repositoryType, accessToken, defaultBranch, teamId } = req.body;
     
@@ -1787,7 +1786,11 @@ app.post('/api/projects', async (req, res) => {
     
   } catch (error) {
     console.error('Create project error:', error);
-    res.status(500).json({ error: error.message });
+    if (error.message === 'No token provided' || error.message === 'Invalid token' || error.message === 'User not found') {
+      res.status(401).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 
