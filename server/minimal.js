@@ -475,7 +475,7 @@ app.get('/auth/callback', async (req, res) => {
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(supabaseUrl, supabaseKey);
     
-    let token, user;
+    let token, user, session;
     
     if (code) {
       // Authorization code flow
@@ -488,6 +488,7 @@ app.get('/auth/callback', async (req, res) => {
       
       token = data.session?.access_token;
       user = data.user;
+      session = data.session; // Store session data for GitHub token
     } else if (access_token) {
       // Implicit flow - get user info from token
       const { data, error } = await supabase.auth.getUser(access_token);
@@ -499,6 +500,7 @@ app.get('/auth/callback', async (req, res) => {
       
       token = access_token;
       user = data.user;
+      session = null; // No session data in implicit flow
     }
     
     if (token && user) {
@@ -507,8 +509,13 @@ app.get('/auth/callback', async (req, res) => {
         console.log('GitHub OAuth user data:', {
           id: user.id,
           email: user.email,
-          user_metadata: user.user_metadata
+          user_metadata: user.user_metadata,
+          app_metadata: user.app_metadata
         });
+        
+        // Check if we have a GitHub token in the session
+        console.log('Session data:', session);
+        console.log('Provider token:', session?.provider_token);
         
         const userData = {
           id: user.id,
@@ -517,7 +524,7 @@ app.get('/auth/callback', async (req, res) => {
           lastName: user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || '',
           githubUsername: user.user_metadata?.user_name || '',
           githubAvatar: user.user_metadata?.avatar_url || '',
-          githubToken: user.user_metadata?.provider_token || '', // Store GitHub token for API calls
+          githubToken: session?.provider_token || '', // Get GitHub token from session
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
@@ -1364,17 +1371,43 @@ app.post('/api/projects', async (req, res) => {
           .eq('id', user.id)
           .single();
         
-        if (profileError || !userProfile?.githubToken) {
+        console.log('User profile for GitHub repo creation:', userProfile);
+        console.log('Profile error:', profileError);
+        
+        if (profileError) {
+          console.error('Failed to fetch user profile:', profileError);
+          return res.status(201).json({
+            message: 'Project created successfully, but failed to fetch user profile for GitHub repo creation',
+            project: data,
+            setupSuccess: false,
+            error: 'Database error'
+          });
+        }
+        
+        if (!userProfile?.githubToken) {
           console.log('No GitHub token available, returning project without GitHub repo');
           return res.status(201).json({
             message: 'Project created successfully (GitHub repository creation requires GitHub token)',
             project: data,
             setupSuccess: false,
-            note: 'Please ensure you logged in with GitHub to create repositories'
+            note: 'Please ensure you logged in with GitHub to create repositories',
+            debug: 'No GitHub token found in user profile'
           });
         }
         
+        console.log('GitHub token found, proceeding with repository creation...');
+        
         // Create GitHub repository using GitHub API
+        const repoData = {
+          name: name,
+          description: description || '',
+          private: false, // Default to public
+          auto_init: true // Initialize with README
+        };
+        
+        console.log('Creating GitHub repository with data:', repoData);
+        console.log('Using GitHub token:', userProfile.githubToken ? 'Present' : 'Missing');
+        
         const githubResponse = await fetch('https://api.github.com/user/repos', {
           method: 'POST',
           headers: {
@@ -1382,13 +1415,10 @@ app.post('/api/projects', async (req, res) => {
             'Accept': 'application/vnd.github.v3+json',
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            name: name,
-            description: description || '',
-            private: false, // Default to public
-            auto_init: true // Initialize with README
-          })
+          body: JSON.stringify(repoData)
         });
+        
+        console.log('GitHub API response status:', githubResponse.status);
         
         if (githubResponse.ok) {
           const githubRepo = await githubResponse.json();
