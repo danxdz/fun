@@ -112,29 +112,24 @@ const queryClient = new QueryClient({
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   
-  console.log('PrivateRoute: user:', user, 'loading:', loading);
-  
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-white">
         <div className="bg-black text-white p-4 rounded">
-          🔄 Loading authentication... User: {user ? 'present' : 'missing'}
+          🔄 Loading authentication...
         </div>
       </div>
     );
   }
   
   if (!user) {
-    console.log('PrivateRoute: No user, redirecting to login');
     return <Navigate to="/login" />;
   }
   
-  console.log('PrivateRoute: User authenticated, rendering children');
   return children;
 }
 
 function App() {
-  console.log('App component starting to render...');
   
   const [stopRendering, setStopRendering] = React.useState(false);
   
@@ -171,23 +166,7 @@ function App() {
         <AuthProvider>
           <Router>
             <div className="App">
-              {/* Emergency Stop Button */}
-              <div className="fixed top-4 right-4 z-50">
-                <button
-                  onClick={() => setStopRendering(true)}
-                  className="bg-red-600 text-white px-3 py-1 rounded text-sm font-bold hover:bg-red-700 shadow-lg"
-                >
-                  ⏹️ STOP
-                </button>
-              </div>
               
-              {/* Debug Banner */}
-              <div className="bg-red-500 text-white p-2 text-center text-sm font-bold">
-                🚨 DEBUG MODE - App is rendering successfully
-              </div>
-              <div className="bg-black text-white p-2 text-center text-sm">
-                ✅ React Query and Auth Provider loaded
-              </div>
               <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />

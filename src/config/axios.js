@@ -42,7 +42,6 @@ apiClient.interceptors.response.use(
       
       // For our custom JWT tokens, we don't have refresh tokens
       // If we get a 401, the token is invalid/expired, so redirect to login
-      console.error('Authentication failed - redirecting to login');
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       window.location.href = '/login';

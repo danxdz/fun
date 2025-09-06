@@ -1,13 +1,9 @@
-console.log('Starting minimal server...');
-console.log('Current working directory:', process.cwd());
-console.log('Node version:', process.version);
+// Starting AutoBot Manager Server
 
 import express from 'express';
 import dotenv from 'dotenv';
 
-console.log('Loading environment variables...');
 dotenv.config();
-console.log('Environment loaded. PORT:', process.env.PORT);
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -91,14 +87,7 @@ const logRequest = (req, res, next) => {
       contentLength: res.get('content-length') || '0'
     };
     
-    // Log based on status code
-    if (res.statusCode >= 400) {
-      console.error('❌ Request Error:', logData);
-    } else if (res.statusCode >= 300) {
-      console.warn('⚠️ Request Redirect:', logData);
-    } else {
-      console.log('✅ Request Success:', logData);
-    }
+    // Request logged for monitoring
     
     originalSend.call(this, data);
   };
@@ -334,9 +323,7 @@ app.get('/api/debug/supabase', async (req, res) => {
 app.post('/api/auth/login', async (req, res) => {
   try {
     const { email, password } = req.body;
-    
-    console.log('Login request received:', { email: !!email, password: !!password });
-    
+
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
     }
@@ -430,9 +417,7 @@ app.post('/api/auth/github', async (req, res) => {
     
     // Direct GitHub OAuth URL with proper scopes
     const githubAuthUrl = `https://github.com/login/oauth/authorize?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=repo,public_repo,user:email&state=${state}`;
-    
-    console.log('Redirecting to GitHub OAuth:', githubAuthUrl);
-    
+
     res.json({ 
       url: githubAuthUrl,
       message: 'Redirect to GitHub for authentication with real token'
@@ -492,8 +477,7 @@ app.get('/auth/callback', async (req, res) => {
       });
       
       const tokenData = await tokenResponse.json();
-      console.log('GitHub token response:', tokenData);
-      
+
       if (tokenData.error) {
         throw new Error(`GitHub token error: ${tokenData.error_description}`);
       }
@@ -510,8 +494,7 @@ app.get('/auth/callback', async (req, res) => {
       });
       
       const githubUser = await userResponse.json();
-      console.log('GitHub user info:', githubUser);
-      
+
       if (!githubUser.id) {
         throw new Error('Failed to get GitHub user info');
       }
@@ -551,9 +534,7 @@ app.get('/auth/callback', async (req, res) => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
-      
-      console.log('Saving user data:', userData);
-      
+
       const { error: dbError } = await supabase
         .from('Users')
         .upsert(userData, { onConflict: 'email' });
@@ -561,7 +542,7 @@ app.get('/auth/callback', async (req, res) => {
       if (dbError) {
         console.error('Database error:', dbError);
       } else {
-        console.log('User saved successfully with real GitHub token');
+        
       }
       
       // Redirect to frontend with token
@@ -689,7 +670,7 @@ app.get('/auth/callback', async (req, res) => {
             };
             
             if (accessToken) {
-              console.log('Setting token and user data from URL fragment...');
+              
               localStorage.setItem('token', accessToken);
               localStorage.setItem('user', JSON.stringify(userData));
               console.log('Token set:', localStorage.getItem('token') ? 'YES' : 'NO');
@@ -751,21 +732,9 @@ app.get('/auth/callback', async (req, res) => {
     if (token && user) {
       // Add user to database if they don't exist
       try {
-        console.log('GitHub OAuth user data:', {
-          id: user.id,
-          email: user.email,
-          user_metadata: user.user_metadata,
-          app_metadata: user.app_metadata
-        });
-        
+
         // Check if we have a GitHub token in the session
-        console.log('Session data:', session);
-        console.log('Provider token:', session?.provider_token);
-        console.log('Provider refresh token:', session?.provider_refresh_token);
-        console.log('Session provider:', session?.provider);
-        console.log('Session app metadata:', session?.app_metadata);
-        console.log('Session user metadata:', session?.user_metadata);
-        
+
         // Try to extract GitHub token from various sources
         let githubToken = '';
         
@@ -776,7 +745,7 @@ app.get('/auth/callback', async (req, res) => {
           
           // Check if this is the known invalid token
           if (githubToken.includes('ABCDLBQ0RGuSKGL9TJ1S_VxhjPQ0AOwAhXHaBnmMWDfVqdFB820O0KFmTXlVNQEVC7YBKQRGuCTseaP1')) {
-            console.log('Detected invalid placeholder token, clearing it');
+            
             githubToken = '';
           }
         }
@@ -787,7 +756,7 @@ app.get('/auth/callback', async (req, res) => {
           
           // Check if this is the known invalid token
           if (githubToken.includes('ABCDLBQ0RGuSKGL9TJ1S_VxhjPQ0AOwAhXHaBnmMWDfVqdFB820O0KFmTXlVNQEVC7YBKQRGuCTseaP1')) {
-            console.log('Detected invalid placeholder token, clearing it');
+            
             githubToken = '';
           }
         }
@@ -798,7 +767,7 @@ app.get('/auth/callback', async (req, res) => {
           
           // Check if this is the known invalid token
           if (githubToken.includes('ABCDLBQ0RGuSKGL9TJ1S_VxhjPQ0AOwAhXHaBnmMWDfVqdFB820O0KFmTXlVNQEVC7YBKQRGuCTseaP1')) {
-            console.log('Detected invalid placeholder token, clearing it');
+            
             githubToken = '';
           }
         }
@@ -809,16 +778,10 @@ app.get('/auth/callback', async (req, res) => {
           console.log('Using access_token as GitHub token:', githubToken.substring(0, 10) + '...');
         }
         else {
-          console.log('No GitHub token found in any expected location');
-          console.log('Available data sources:');
-          console.log('- session:', session ? 'present' : 'missing');
-          console.log('- user.user_metadata:', user.user_metadata ? 'present' : 'missing');
-          console.log('- user.app_metadata:', user.app_metadata ? 'present' : 'missing');
-          console.log('- access_token:', access_token ? 'present' : 'missing');
-          
+
           // Clear any existing invalid token
           githubToken = '';
-          console.log('Clearing invalid GitHub token - user needs to enter a valid one manually');
+          
         }
         
         const userData = {
@@ -832,9 +795,7 @@ app.get('/auth/callback', async (req, res) => {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
         };
-        
-        console.log('User data to save:', userData);
-        
+
         const { error: dbError } = await supabase
           .from('Users')
           .upsert(userData, {
@@ -844,7 +805,7 @@ app.get('/auth/callback', async (req, res) => {
         if (dbError) {
           console.error('Database upsert error:', dbError);
         } else {
-          console.log('User data saved successfully');
+          
         }
       } catch (dbError) {
         console.error('Database error:', dbError);
@@ -859,7 +820,7 @@ app.get('/auth/callback', async (req, res) => {
         </head>
         <body>
           <script>
-            console.log('Setting token and user data...');
+            
             localStorage.setItem('token', '${token}');
             localStorage.setItem('user', JSON.stringify(${JSON.stringify(user)}));
             console.log('Token set:', localStorage.getItem('token') ? 'YES' : 'NO');
@@ -890,9 +851,7 @@ app.get('/auth/callback', async (req, res) => {
 app.post('/api/auth/register', async (req, res) => {
   try {
     const { email, password } = req.body;
-    
-    console.log('Register request received:', { email: !!email, password: !!password });
-    
+
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
     }
@@ -919,8 +878,7 @@ app.post('/api/auth/register', async (req, res) => {
     // If user was created successfully, add them to the Users table
     if (data.user) {
       try {
-        console.log('Adding user to database:', data.user.email);
-        
+
         const { error: dbError } = await supabase
           .from('Users')
           .insert({
@@ -936,7 +894,7 @@ app.post('/api/auth/register', async (req, res) => {
           console.error('Database insert error:', dbError);
           // Don't fail registration if DB insert fails, just log it
         } else {
-          console.log('User added to database successfully');
+          
         }
       } catch (dbError) {
         console.error('Database error:', dbError);
@@ -961,9 +919,7 @@ app.post('/api/auth/register', async (req, res) => {
 app.post('/api/auth', async (req, res) => {
   try {
     const { email, password, action, type } = req.body;
-    
-    console.log('Legacy auth request received:', { email: !!email, password: !!password, action, type });
-    
+
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
     }
@@ -1046,12 +1002,10 @@ app.post('/api/auth', async (req, res) => {
       // Check if this might be a registration attempt by looking at the request
       const userAgent = req.headers['user-agent'] || '';
       const referer = req.headers.referer || '';
-      
-      console.log('No action specified, checking context:', { userAgent, referer });
-      
+
       // If the referer contains 'register', assume it's a registration
       if (referer.includes('register') || referer.includes('signup')) {
-        console.log('Detected registration attempt from referer');
+        
         const { data, error } = await supabase.auth.signUp({
           email,
           password
@@ -1096,7 +1050,7 @@ app.post('/api/auth', async (req, res) => {
       }
       
       // Default to login attempt
-      console.log('Defaulting to login attempt');
+      
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password
@@ -1123,18 +1077,11 @@ app.post('/api/auth', async (req, res) => {
 // Get current user
 app.get('/api/me', async (req, res) => {
   try {
-    console.log('Me request headers:', {
-      authorization: req.headers.authorization,
-      'x-api-key': req.headers['x-api-key'],
-      cookie: req.headers.cookie
-    });
-    
+
     const token = req.headers.authorization?.replace('Bearer ', '') || 
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
-    
-    console.log('Extracted token for /me:', token ? 'present' : 'missing');
-    
+
     if (!token) {
       return res.status(401).json({ 
         error: 'No token provided',
@@ -1149,7 +1096,7 @@ app.get('/api/me', async (req, res) => {
     
     try {
       decoded = jwt.default.verify(token, process.env.JWT_SECRET || 'fallback-secret');
-      console.log('JWT decoded successfully:', { userId: decoded.userId, githubUsername: decoded.githubUsername });
+      
     } catch (jwtError) {
       console.error('JWT verification failed:', jwtError.message);
       return res.status(401).json({ error: 'Invalid token' });
@@ -1176,10 +1123,7 @@ app.get('/api/me', async (req, res) => {
       console.error('User lookup failed:', { error, userId: decoded.userId });
       return res.status(401).json({ error: 'User not found' });
     }
-    
-    console.log('User found in database:', { id: user.id, email: user.email, githubUsername: user.githubUsername });
-    
-    console.log('Complete user data:', { id: user.id, email: user.email, githubUsername: user.githubUsername });
+
     res.json({ user });
     
   } catch (error) {
@@ -1190,19 +1134,11 @@ app.get('/api/me', async (req, res) => {
 // Dashboard endpoint
 app.get('/api/dashboard', async (req, res) => {
   try {
-    console.log('Dashboard request headers:', {
-      authorization: req.headers.authorization,
-      'x-api-key': req.headers['x-api-key'],
-      cookie: req.headers.cookie,
-      'content-type': req.headers['content-type']
-    });
-    
+
     const token = req.headers.authorization?.replace('Bearer ', '') || 
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
-    
-    console.log('Extracted token:', token ? 'present' : 'missing');
-    
+
     if (!token) {
       return res.status(401).json({ 
         error: 'No token provided',
@@ -1217,7 +1153,7 @@ app.get('/api/dashboard', async (req, res) => {
     
     try {
       decoded = jwt.default.verify(token, process.env.JWT_SECRET || 'fallback-secret');
-      console.log('Dashboard JWT decoded successfully:', { userId: decoded.userId, githubUsername: decoded.githubUsername });
+      
     } catch (jwtError) {
       console.error('Dashboard JWT verification failed:', jwtError.message);
       return res.status(401).json({ error: 'Invalid token' });
@@ -1244,9 +1180,7 @@ app.get('/api/dashboard', async (req, res) => {
       console.error('Dashboard user lookup failed:', { error, userId: decoded.userId });
       return res.status(401).json({ error: 'User not found' });
     }
-    
-    console.log('Dashboard user found:', { id: user.id, email: user.email, githubUsername: user.githubUsername });
-    
+
     // Return basic dashboard data
     res.json({
       user,
@@ -1267,8 +1201,7 @@ app.get('/api/user/profile', async (req, res) => {
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
     const { user, supabase } = await verifyTokenAndGetUser(token);
-    console.log('Get profile: User found:', user.email);
-    
+
     // Get user profile from database
     const { data: profile, error: profileError } = await supabase
       .from('Users')
@@ -1312,8 +1245,7 @@ app.put('/api/user/profile', async (req, res) => {
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
     const { user, supabase } = await verifyTokenAndGetUser(token);
-    console.log('Update profile: User found:', user.email);
-    
+
     const { firstName, lastName, githubUsername, githubAvatar, cursorApiKey, githubToken, preferences } = req.body;
     
     // Update user profile
@@ -1328,10 +1260,7 @@ app.put('/api/user/profile', async (req, res) => {
     if (cursorApiKey !== undefined) updateData.cursorApiKey = cursorApiKey;
     if (githubToken !== undefined) updateData.githubToken = githubToken;
     if (preferences !== undefined) updateData.preferences = preferences;
-    
-    console.log('Profile update data:', updateData);
-    console.log('User ID:', user.id);
-    
+
     // Use upsert instead of update to handle case where user doesn't exist yet
     const { data, error } = await supabase
       .from('Users')
@@ -1356,9 +1285,7 @@ app.put('/api/user/profile', async (req, res) => {
         code: error.code || 'No error code'
       });
     }
-    
-    console.log('Profile update success:', data);
-    
+
     res.json({
       message: 'Profile updated successfully',
       user: data
@@ -1373,8 +1300,7 @@ app.put('/api/user/profile', async (req, res) => {
 // Delete user profile endpoint
 app.delete('/api/user/profile', async (req, res) => {
   try {
-    console.log('Delete profile request received');
-    
+
     const token = req.headers.authorization?.replace('Bearer ', '') || 
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
@@ -1410,9 +1336,7 @@ app.delete('/api/user/profile', async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
-    
-    console.log('Deleting user profile for:', user.email);
-    
+
     // Delete the user account
     const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id);
     
@@ -1420,9 +1344,7 @@ app.delete('/api/user/profile', async (req, res) => {
       console.error('Delete user error:', deleteError);
       return res.status(500).json({ error: deleteError.message });
     }
-    
-    console.log('User profile deleted successfully for:', user.email);
-    
+
     res.json({
       message: 'User profile deleted successfully',
       deletedUser: {
@@ -1446,30 +1368,25 @@ app.get('/api/projects', async (req, res) => {
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
     const { user, supabase } = await verifyTokenAndGetUser(token);
-    console.log('Projects: User found:', user.email);
-    
+
     // Check if requesting GitHub repositories
     if (req.query.action === 'github-repos') {
       try {
-        console.log('GitHub repos request for user:', user.id);
-        
+
         // Get user's GitHub username from their profile
         const { data: userProfile, error: profileError } = await supabase
           .from('Users')
           .select('githubUsername, email')
           .eq('id', user.id)
           .single();
-        
-        console.log('User profile data:', userProfile);
-        console.log('Profile error:', profileError);
-        
+
         if (profileError) {
           console.error('Profile fetch error:', profileError);
           return res.status(500).json({ error: 'Failed to fetch user profile' });
         }
         
         if (!userProfile?.githubUsername) {
-          console.log('No GitHub username found, user needs to update profile');
+          
           return res.status(400).json({ 
             error: 'GitHub username not found in profile. Please update your profile with your GitHub username.' 
           });
@@ -1551,12 +1468,9 @@ app.post('/api/projects', async (req, res) => {
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
     const { user, supabase } = await verifyTokenAndGetUser(token);
-    console.log('Project creation: User found:', user.email);
-    
+
     const { action, name, description, repositoryUrl, repositoryType, accessToken, defaultBranch, teamId } = req.body;
-    
-    console.log('Project creation request:', { action, name, repositoryUrl, hasAccessToken: !!accessToken });
-    
+
     // Handle different actions
     if (action === 'import-github') {
       if (!name || !repositoryUrl) {
@@ -1600,9 +1514,7 @@ app.post('/api/projects', async (req, res) => {
     if (accessToken) {
       projectData.accessToken = accessToken;
     }
-    
-    console.log('Creating project with data:', projectData);
-    
+
     const { data, error } = await supabase
       .from('Projects')
       .insert(projectData)
@@ -1613,9 +1525,7 @@ app.post('/api/projects', async (req, res) => {
       console.error('Project creation error:', error);
       return res.status(500).json({ error: error.message });
     }
-    
-    console.log('Project created successfully:', data);
-    
+
     // Return appropriate response based on action
     if (action === 'create-github') {
       // Try to create a real GitHub repository
@@ -1626,10 +1536,7 @@ app.post('/api/projects', async (req, res) => {
           .select('githubToken, githubUsername')
           .eq('id', user.id)
           .single();
-        
-        console.log('User profile for GitHub repo creation:', userProfile);
-        console.log('Profile error:', profileError);
-        
+
         if (profileError) {
           console.error('Failed to fetch user profile:', profileError);
           return res.status(201).json({
@@ -1641,7 +1548,7 @@ app.post('/api/projects', async (req, res) => {
         }
         
         if (!userProfile?.githubToken) {
-          console.log('No GitHub token available, returning project without GitHub repo');
+          
           return res.status(201).json({
             message: 'Project created successfully, but GitHub repository creation is not available yet',
             project: data,
@@ -1650,9 +1557,7 @@ app.post('/api/projects', async (req, res) => {
             suggestion: 'Use "Import from GitHub" to link existing repositories to this project'
           });
         }
-        
-        console.log('GitHub token found, proceeding with repository creation...');
-        
+
         // Create GitHub repository using GitHub API
         const repoData = {
           name: name,
@@ -1660,10 +1565,7 @@ app.post('/api/projects', async (req, res) => {
           private: false, // Default to public
           auto_init: true // Initialize with README
         };
-        
-        console.log('Creating GitHub repository with data:', repoData);
-        console.log('Using GitHub token:', userProfile.githubToken ? 'Present' : 'Missing');
-        
+
         const githubResponse = await fetch('https://api.github.com/user/repos', {
           method: 'POST',
           headers: {
@@ -1673,13 +1575,10 @@ app.post('/api/projects', async (req, res) => {
           },
           body: JSON.stringify(repoData)
         });
-        
-        console.log('GitHub API response status:', githubResponse.status);
-        
+
         if (githubResponse.ok) {
           const githubRepo = await githubResponse.json();
-          console.log('GitHub repository created:', githubRepo.html_url);
-          
+
           // Update project with real repository URL
           const { error: updateError } = await supabase
             .from('Projects')
@@ -1746,8 +1645,7 @@ app.get('/api/bots', async (req, res) => {
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
     const { user, supabase } = await verifyTokenAndGetUser(token);
-    console.log('Get bots: User found:', user.email);
-    
+
     // Get user's bots through their projects
     const { data: bots, error } = await supabase
       .from('Bots')
@@ -1782,8 +1680,7 @@ app.post('/api/bots', async (req, res) => {
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
     const { user, supabase } = await verifyTokenAndGetUser(token);
-    console.log('Create bot: User found:', user.email);
-    
+
     const { name, type, description, projectId, teamId, config, schedule } = req.body;
     
     if (!name || !type || !projectId) {
@@ -1833,8 +1730,7 @@ app.put('/api/bots/:id', async (req, res) => {
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
     const { user, supabase } = await verifyTokenAndGetUser(token);
-    console.log('Update bot: User found:', user.email);
-    
+
     const { id } = req.params;
     const { name, type, description, config, schedule, status } = req.body;
     
@@ -1885,8 +1781,7 @@ app.delete('/api/bots/:id', async (req, res) => {
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
     const { user, supabase } = await verifyTokenAndGetUser(token);
-    console.log('Delete bot: User found:', user.email);
-    
+
     const { id } = req.params;
     
     // Soft delete bot
@@ -1928,8 +1823,7 @@ app.get('/api/teams', async (req, res) => {
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
     const { user, supabase } = await verifyTokenAndGetUser(token);
-    console.log('Get teams: User found:', user.email);
-    
+
     // Get teams (simplified - in real app you'd check team membership)
     const { data: teams, error } = await supabase
       .from('Teams')
@@ -2129,7 +2023,6 @@ app.delete('/api/projects/:projectId', async (req, res) => {
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
     const { user, supabase } = await verifyTokenAndGetUser(token);
-    console.log('Delete project: User found:', user.email);
 
     const { projectId } = req.params;
     
@@ -2145,7 +2038,6 @@ app.delete('/api/projects/:projectId', async (req, res) => {
       return res.status(500).json({ error: 'Failed to delete project' });
     }
 
-    console.log('Project deleted successfully:', projectId);
     res.json({ message: 'Project deleted successfully' });
 
   } catch (error) {
@@ -2162,8 +2054,7 @@ app.get('/api/project-detail', async (req, res) => {
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
     const { user, supabase } = await verifyTokenAndGetUser(token);
-    console.log('Get project detail: User found:', user.email);
-    
+
     const { projectId, action = 'basic' } = req.query;
     
     if (!projectId) {
@@ -2186,9 +2077,7 @@ app.get('/api/project-detail', async (req, res) => {
     if (projectError || !project) {
       return res.status(404).json({ error: 'Project not found' });
     }
-    
-    console.log('Project detail fetched:', { projectId, action, projectName: project.name });
-    
+
     res.json({
       project,
       action,
@@ -2222,12 +2111,10 @@ app.get('*', (req, res, next) => {
 });
 
 // Start server
-console.log('About to start server on port:', PORT);
+
 app.listen(PORT, '0.0.0.0', () => {
-  console.log(`✅ Minimal server running on port ${PORT}`);
-  console.log(`✅ Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`✅ Listening on all interfaces (0.0.0.0:${PORT})`);
-  console.log(`✅ Health check available at: http://0.0.0.0:${PORT}/api/health`);
+  console.log(`🚀 AutoBot Manager running on port ${PORT}`);
+  console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
 
 // Add error handling

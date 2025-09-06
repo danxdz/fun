@@ -12,12 +12,9 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }) => {
-  console.log('AuthProvider: Initializing...');
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
-  
-  console.log('AuthProvider: Initial state - user:', user, 'loading:', loading, 'token:', token ? 'present' : 'missing');
 
   // No token refresh needed for custom JWT tokens
 
@@ -26,16 +23,11 @@ export const AuthProvider = ({ children }) => {
   // Check if user is authenticated on mount
   useEffect(() => {
     const checkAuth = async () => {
-      console.log('AuthContext: Checking authentication...');
-      console.log('AuthContext: Token exists:', !!token);
       if (token) {
         try {
-          console.log('AuthContext: Making API call to /api/me...');
           const response = await apiClient.get('/api/me');
-          console.log('AuthContext: API response:', response.data);
           setUser(response.data.user);
         } catch (error) {
-          console.error('AuthContext: Auth check failed:', error);
           logout();
         }
       }
