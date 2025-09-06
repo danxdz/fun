@@ -77,12 +77,96 @@ app.get('/api/debug/supabase', async (req, res) => {
   }
 });
 
-// Basic auth endpoints (minimal implementation)
+// Login endpoint
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    console.log('Login request received:', { email: !!email, password: !!password });
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    
+    if (error) {
+      return res.status(401).json({ error: error.message });
+    }
+    
+    res.json({
+      user: data.user,
+      session: data.session,
+      message: 'Login successful'
+    });
+    
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Register endpoint
+app.post('/api/auth/register', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    
+    console.log('Register request received:', { email: !!email, password: !!password });
+    
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password required' });
+    }
+    
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password
+    });
+    
+    if (error) {
+      return res.status(400).json({ error: error.message });
+    }
+    
+    res.json({
+      user: data.user,
+      session: data.session,
+      message: 'Registration successful'
+    });
+    
+  } catch (error) {
+    console.error('Register error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Legacy auth endpoint (for backward compatibility)
 app.post('/api/auth', async (req, res) => {
   try {
     const { email, password, action, type } = req.body;
     
-    console.log('Auth request received:', { email: !!email, password: !!password, action, type });
+    console.log('Legacy auth request received:', { email: !!email, password: !!password, action, type });
     
     if (!email || !password) {
       return res.status(400).json({ error: 'Email and password required' });
@@ -99,7 +183,7 @@ app.post('/api/auth', async (req, res) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Determine action from various possible parameters
-    const authAction = action || type || 'login'; // Default to login
+    const authAction = action || type;
     
     if (authAction === 'login' || authAction === 'signin') {
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -134,21 +218,10 @@ app.post('/api/auth', async (req, res) => {
       });
       
     } else {
-      // If no action specified, try login by default
-      console.log('No action specified, defaulting to login');
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-      
-      if (error) {
-        return res.status(401).json({ error: error.message });
-      }
-      
-      res.json({
-        user: data.user,
-        session: data.session,
-        message: 'Login successful'
+      return res.status(400).json({ 
+        error: 'Please specify action: "login" or "register"',
+        received: { action, type, email: !!email, password: !!password },
+        availableEndpoints: ['/api/auth/login', '/api/auth/register']
       });
     }
     
