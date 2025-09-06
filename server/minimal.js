@@ -271,10 +271,24 @@ app.post('/api/auth', async (req, res) => {
 // Get current user
 app.get('/api/me', async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+    console.log('Me request headers:', {
+      authorization: req.headers.authorization,
+      'x-api-key': req.headers['x-api-key'],
+      cookie: req.headers.cookie
+    });
+    
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    console.log('Extracted token for /me:', token ? 'present' : 'missing');
     
     if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
+      return res.status(401).json({ 
+        error: 'No token provided',
+        receivedHeaders: Object.keys(req.headers),
+        authHeader: req.headers.authorization
+      });
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -303,10 +317,25 @@ app.get('/api/me', async (req, res) => {
 // Dashboard endpoint
 app.get('/api/dashboard', async (req, res) => {
   try {
-    const token = req.headers.authorization?.replace('Bearer ', '');
+    console.log('Dashboard request headers:', {
+      authorization: req.headers.authorization,
+      'x-api-key': req.headers['x-api-key'],
+      cookie: req.headers.cookie,
+      'content-type': req.headers['content-type']
+    });
+    
+    const token = req.headers.authorization?.replace('Bearer ', '') || 
+                  req.headers['x-api-key'] ||
+                  req.headers.cookie?.match(/token=([^;]+)/)?.[1];
+    
+    console.log('Extracted token:', token ? 'present' : 'missing');
     
     if (!token) {
-      return res.status(401).json({ error: 'No token provided' });
+      return res.status(401).json({ 
+        error: 'No token provided',
+        receivedHeaders: Object.keys(req.headers),
+        authHeader: req.headers.authorization
+      });
     }
     
     const supabaseUrl = process.env.SUPABASE_URL;
