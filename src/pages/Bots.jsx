@@ -284,16 +284,25 @@ function CreateBotModal({ onClose, onSuccess }) {
     config: {}
   });
 
-  const { data: projectsData } = useQuery('projects', () =>
+  const { data: projectsData, isLoading: projectsLoading } = useQuery('projects', () =>
     apiClient.get('/api/projects').then(res => res.data)
   );
 
   const projects = projectsData?.projects || [];
+  
+  // Debug logging
+  console.log('Projects data:', projectsData);
+  console.log('Projects array:', projects);
+  console.log('Projects loading:', projectsLoading);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    // Debug logging
+    console.log('Bot data being submitted:', botData);
+    console.log('Available projects:', projects);
 
     // Validate required fields
     if (!botData.name.trim()) {
@@ -309,10 +318,13 @@ function CreateBotModal({ onClose, onSuccess }) {
     }
 
     try {
-      await apiClient.post('/api/bots', botData);
+      console.log('Sending bot creation request with data:', botData);
+      const response = await apiClient.post('/api/bots', botData);
+      console.log('Bot creation successful:', response.data);
       onSuccess();
     } catch (error) {
       console.error('Failed to create bot:', error);
+      console.error('Error response:', error.response?.data);
       const errorMessage = error.response?.data?.error || 'Failed to create bot';
       setError(errorMessage);
       
@@ -392,10 +404,10 @@ function CreateBotModal({ onClose, onSuccess }) {
                 onChange={(e) => setBotData({ ...botData, projectId: e.target.value })}
                 className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
                 required
-                disabled={projects.length === 0}
+                disabled={projectsLoading || projects.length === 0}
               >
                 <option value="">
-                  {projects.length === 0 ? 'No projects available' : 'Select a project'}
+                  {projectsLoading ? 'Loading projects...' : projects.length === 0 ? 'No projects available' : 'Select a project'}
                 </option>
                 {projects.map((project) => (
                   <option key={project.id} value={project.id}>
