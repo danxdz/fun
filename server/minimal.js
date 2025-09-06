@@ -487,7 +487,7 @@ app.get('/auth/callback', async (req, res) => {
       
       // Generate a JWT token for our app
       const jwt = await import('jsonwebtoken');
-      const appToken = jwt.sign(
+      const appToken = jwt.default.sign(
         { 
           userId: githubUser.id.toString(),
           email: githubUser.email,
