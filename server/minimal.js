@@ -442,7 +442,7 @@ app.get('/auth/callback', async (req, res) => {
       console.log('GitHub OAuth callback with code:', code.substring(0, 10) + '...');
       
       // Exchange code for GitHub access token
-      const clientId = process.env.GITHUB_CLIENT_ID;
+      const clientId = process.env.GITHUB_CLIENT_ID || 'Ov23liFUwEe9ESktoMM2';
       const clientSecret = process.env.GITHUB_CLIENT_SECRET;
       
       if (!clientId || !clientSecret) {
