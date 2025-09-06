@@ -19,9 +19,12 @@ const navigation = [
 ];
 
 export default function Layout() {
+  console.log('Layout component rendering...');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { user, logout } = useAuth();
   const location = useLocation();
+  
+  console.log('Layout: user:', user, 'location:', location.pathname);
 
   return (
     <div className="min-h-screen bg-gray-50">

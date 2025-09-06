@@ -73,11 +73,25 @@ const queryClient = new QueryClient({
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
   
+  console.log('PrivateRoute: user:', user, 'loading:', loading);
+  
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="bg-yellow-500 text-white p-4 rounded">
+          🔄 Loading authentication... User: {user ? 'present' : 'missing'}
+        </div>
+      </div>
+    );
   }
   
-  return user ? children : <Navigate to="/login" />;
+  if (!user) {
+    console.log('PrivateRoute: No user, redirecting to login');
+    return <Navigate to="/login" />;
+  }
+  
+  console.log('PrivateRoute: User authenticated, rendering children');
+  return children;
 }
 
 function App() {
