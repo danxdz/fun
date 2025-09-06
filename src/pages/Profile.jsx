@@ -9,8 +9,8 @@ import {
   XCircleIcon,
   EyeIcon,
   EyeSlashIcon,
-  GithubIcon,
-  CursorIcon
+  CodeBracketIcon,
+  ComputerDesktopIcon
 } from '@heroicons/react/24/outline';
 
 export default function Profile() {
@@ -281,7 +281,7 @@ export default function Profile() {
                 <div className="bg-gray-50 rounded-lg p-6">
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="p-2 bg-gray-800 rounded-lg">
-                      <GithubIcon className="h-6 w-6 text-white" />
+                      <CodeBracketIcon className="h-6 w-6 text-white" />
                     </div>
                     <div>
                       <h3 className="text-lg font-medium text-gray-900">GitHub Integration</h3>
@@ -338,7 +338,7 @@ export default function Profile() {
                 <div className="bg-gray-50 rounded-lg p-6">
                   <div className="flex items-center space-x-3 mb-4">
                     <div className="p-2 bg-blue-600 rounded-lg">
-                      <CursorIcon className="h-6 w-6 text-white" />
+                      <ComputerDesktopIcon className="h-6 w-6 text-white" />
                     </div>
                     <div>
                       <h3 className="text-lg font-medium text-gray-900">Cursor API Key</h3>
