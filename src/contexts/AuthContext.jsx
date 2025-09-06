@@ -122,13 +122,17 @@ export const AuthProvider = ({ children }) => {
 
   const loginWithGitHub = async () => {
     try {
-      // Redirect to GitHub OAuth
-      window.location.href = '/api/auth/github';
+      // Get GitHub OAuth URL from backend
+      const response = await apiClient.get('/api/auth/github');
+      const { url } = response.data;
+      
+      // Redirect to GitHub OAuth URL
+      window.location.href = url;
       return { success: true };
     } catch (error) {
       return { 
         success: false, 
-        error: error.message || 'GitHub login failed' 
+        error: error.response?.data?.error || error.message || 'GitHub login failed' 
       };
     }
   };
