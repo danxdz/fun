@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery } from 'react-query';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { 
   PlusIcon, 
   CogIcon, 
@@ -14,6 +14,9 @@ import {
 import apiClient from '../config/axios';
 
 export default function Bots() {
+  const [searchParams] = useSearchParams();
+  const preSelectedProjectId = searchParams.get('projectId');
+  
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showLogsModal, setShowLogsModal] = useState(false);
   const [selectedBotLogs, setSelectedBotLogs] = useState(null);
@@ -279,6 +282,7 @@ export default function Bots() {
       {/* Create Bot Modal */}
       {showCreateModal && (
         <CreateBotModal
+          preSelectedProjectId={preSelectedProjectId}
           onClose={() => setShowCreateModal(false)}
           onSuccess={() => {
             setShowCreateModal(false);
@@ -301,14 +305,14 @@ export default function Bots() {
   );
 }
 
-function CreateBotModal({ onClose, onSuccess }) {
+function CreateBotModal({ onClose, onSuccess, preSelectedProjectId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [botData, setBotData] = useState({
     name: '',
     type: 'module_update',
     description: '',
-    projectId: '',
+    projectId: preSelectedProjectId || '',
     schedule: '',
     config: {}
   });
@@ -415,12 +419,19 @@ function CreateBotModal({ onClose, onSuccess }) {
             <div>
               <label htmlFor="projectId" className="block text-sm font-medium text-gray-700">
                 Project
+                {preSelectedProjectId && (
+                  <span className="ml-2 text-xs text-green-600 font-normal">
+                    (Pre-selected from project page)
+                  </span>
+                )}
               </label>
               <select
                 id="projectId"
                 value={botData.projectId}
                 onChange={(e) => setBotData({ ...botData, projectId: e.target.value })}
-                className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                className={`mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm ${
+                  preSelectedProjectId ? 'bg-green-50 border-green-300' : ''
+                }`}
                 required
                 disabled={projectsLoading || projects.length === 0}
               >

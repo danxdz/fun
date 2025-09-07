@@ -269,7 +269,7 @@ export default function ProjectDetail() {
               <p className="mt-1 text-sm text-gray-500">Create automation bots for this project.</p>
               <div className="mt-4">
                 <Link
-                  to="/bots"
+                  to={`/bots?projectId=${projectId}`}
                   className="inline-flex items-center px-3 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700"
                 >
                   Create Bot
