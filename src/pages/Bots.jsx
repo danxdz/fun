@@ -97,7 +97,7 @@ export default function Bots() {
     setLoading(true);
     try {
       const response = await apiClient.get(`/api/bot-runs?botId=${botId}`);
-      setSelectedBotLogs(response.data.botRuns || []);
+      setSelectedBotLogs(response.data.runs || []);
       setShowLogsModal(true);
     } catch (error) {
       console.error('Failed to fetch bot logs:', error);
