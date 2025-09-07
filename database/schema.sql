@@ -36,7 +36,7 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE TABLE "Users" (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   email VARCHAR(255) UNIQUE NOT NULL,
-  password VARCHAR(255) NOT NULL,
+  password VARCHAR(255),
   "firstName" VARCHAR(100) NOT NULL,
   "lastName" VARCHAR(100) NOT NULL,
   role VARCHAR(20) DEFAULT 'user' CHECK (role IN ('admin', 'user', 'viewer')),
@@ -268,6 +268,12 @@ TRUNCATE TABLE "Users" CASCADE;
 */
 
 -- ========================================
+*/
+
+-- MIGRATION: Fix password constraint for OAuth users
+-- Run this if you have an existing database with password NOT NULL constraint
+-- ALTER TABLE "Users" ALTER COLUMN password DROP NOT NULL;
+
 -- VERIFICATION QUERIES
 -- ========================================
 

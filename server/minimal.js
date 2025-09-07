@@ -108,7 +108,7 @@ function encrypt(text) {
   if (!text) return text;
   
   const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipher(ALGORITHM, ENCRYPTION_KEY);
+  const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
   cipher.setAAD(Buffer.from('autobot-manager', 'utf8'));
   
   let encrypted = cipher.update(text, 'utf8', 'hex');
@@ -130,7 +130,7 @@ function decrypt(encryptedText) {
     const authTag = Buffer.from(parts[1], 'hex');
     const encrypted = parts[2];
     
-    const decipher = crypto.createDecipher(ALGORITHM, ENCRYPTION_KEY);
+    const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
     decipher.setAAD(Buffer.from('autobot-manager', 'utf8'));
     decipher.setAuthTag(authTag);
     
