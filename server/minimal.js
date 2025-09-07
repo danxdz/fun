@@ -98,6 +98,52 @@ const logRequest = (req, res, next) => {
 // Apply logging middleware
 app.use(logRequest);
 
+// Encryption utilities for sensitive data
+const crypto = require('crypto');
+
+const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
+const ALGORITHM = 'aes-256-gcm';
+
+function encrypt(text) {
+  if (!text) return text;
+  
+  const iv = crypto.randomBytes(16);
+  const cipher = crypto.createCipher(ALGORITHM, ENCRYPTION_KEY);
+  cipher.setAAD(Buffer.from('autobot-manager', 'utf8'));
+  
+  let encrypted = cipher.update(text, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  
+  const authTag = cipher.getAuthTag();
+  
+  return iv.toString('hex') + ':' + authTag.toString('hex') + ':' + encrypted;
+}
+
+function decrypt(encryptedText) {
+  if (!encryptedText) return encryptedText;
+  
+  try {
+    const parts = encryptedText.split(':');
+    if (parts.length !== 3) return encryptedText; // Not encrypted, return as-is
+    
+    const iv = Buffer.from(parts[0], 'hex');
+    const authTag = Buffer.from(parts[1], 'hex');
+    const encrypted = parts[2];
+    
+    const decipher = crypto.createDecipher(ALGORITHM, ENCRYPTION_KEY);
+    decipher.setAAD(Buffer.from('autobot-manager', 'utf8'));
+    decipher.setAuthTag(authTag);
+    
+    let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+    decrypted += decipher.final('utf8');
+    
+    return decrypted;
+  } catch (error) {
+    console.error('Decryption error:', error);
+    return encryptedText; // Return as-is if decryption fails
+  }
+}
+
 // Helper function to verify custom JWT and get user
 async function verifyTokenAndGetUser(token) {
   if (!token) {
@@ -132,7 +178,14 @@ async function verifyTokenAndGetUser(token) {
     throw new Error('User not found');
   }
   
-  return { user, supabase };
+  // Decrypt sensitive data before returning
+  const decryptedUser = {
+    ...user,
+    githubToken: decrypt(user.githubToken),
+    cursorApiKey: decrypt(user.cursorApiKey)
+  };
+  
+  return { user: decryptedUser, supabase };
 }
 
 // Simple health check
@@ -143,6 +196,80 @@ app.get('/api/health', (req, res) => {
     uptime: process.uptime(),
     environment: process.env.NODE_ENV || 'development'
   });
+});
+
+// Admin endpoint to encrypt existing sensitive data
+app.post('/api/admin/encrypt-existing-data', async (req, res) => {
+  try {
+    // This is a one-time migration endpoint
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    
+    if (!supabaseUrl || !supabaseKey) {
+      return res.status(500).json({ error: 'Supabase not configured' });
+    }
+    
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    
+    // Get all users with sensitive data
+    const { data: users, error } = await supabase
+      .from('Users')
+      .select('id, githubToken, cursorApiKey')
+      .or('githubToken.not.is.null,cursorApiKey.not.is.null');
+    
+    if (error) {
+      console.error('Error fetching users:', error);
+      return res.status(500).json({ error: 'Failed to fetch users' });
+    }
+    
+    let encryptedCount = 0;
+    let skippedCount = 0;
+    
+    for (const user of users) {
+      const updateData = {};
+      let needsUpdate = false;
+      
+      // Check if githubToken needs encryption
+      if (user.githubToken && !user.githubToken.includes(':')) {
+        updateData.githubToken = encrypt(user.githubToken);
+        needsUpdate = true;
+      }
+      
+      // Check if cursorApiKey needs encryption
+      if (user.cursorApiKey && !user.cursorApiKey.includes(':')) {
+        updateData.cursorApiKey = encrypt(user.cursorApiKey);
+        needsUpdate = true;
+      }
+      
+      if (needsUpdate) {
+        const { error: updateError } = await supabase
+          .from('Users')
+          .update(updateData)
+          .eq('id', user.id);
+        
+        if (updateError) {
+          console.error(`Error encrypting user ${user.id}:`, updateError);
+        } else {
+          encryptedCount++;
+        }
+      } else {
+        skippedCount++;
+      }
+    }
+    
+    res.json({
+      message: 'Encryption migration completed',
+      totalUsers: users.length,
+      encryptedCount,
+      skippedCount,
+      note: 'Existing sensitive data has been encrypted'
+    });
+    
+  } catch (error) {
+    console.error('Encryption migration error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 // Comprehensive system test endpoint
@@ -522,7 +649,7 @@ app.get('/auth/callback', async (req, res) => {
         { expiresIn: '7d' }
       );
       
-      // Save user to database
+      // Save user to database (encrypt sensitive data)
       const userData = {
         id: userId,
         email: githubUser.email || `${githubUser.login}@github.local`,
@@ -530,7 +657,7 @@ app.get('/auth/callback', async (req, res) => {
         lastName: githubUser.name?.split(' ').slice(1).join(' ') || '',
         githubUsername: githubUser.login,
         githubAvatar: githubUser.avatar_url,
-        githubToken: githubToken, // Real GitHub token!
+        githubToken: encrypt(githubToken), // 🔒 ENCRYPTED GitHub token
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
@@ -1284,10 +1411,15 @@ app.get('/api/user/profile', async (req, res) => {
       });
     }
     
-    res.json({
+    // Decrypt sensitive data before returning
+    const decryptedProfile = {
       ...profile,
+      githubToken: decrypt(profile.githubToken),
+      cursorApiKey: decrypt(profile.cursorApiKey),
       authUser: user
-    });
+    };
+    
+    res.json(decryptedProfile);
     
   } catch (error) {
     console.error('Get profile error:', error);
@@ -1306,7 +1438,7 @@ app.put('/api/user/profile', async (req, res) => {
 
     const { firstName, lastName, githubUsername, githubAvatar, cursorApiKey, githubToken, preferences } = req.body;
     
-    // Update user profile
+    // Update user profile (encrypt sensitive data)
     const updateData = {
       updatedAt: new Date().toISOString()
     };
@@ -1315,8 +1447,8 @@ app.put('/api/user/profile', async (req, res) => {
     if (lastName !== undefined) updateData.lastName = lastName;
     if (githubUsername !== undefined) updateData.githubUsername = githubUsername;
     if (githubAvatar !== undefined) updateData.githubAvatar = githubAvatar;
-    if (cursorApiKey !== undefined) updateData.cursorApiKey = cursorApiKey;
-    if (githubToken !== undefined) updateData.githubToken = githubToken;
+    if (cursorApiKey !== undefined) updateData.cursorApiKey = encrypt(cursorApiKey); // 🔒 ENCRYPTED
+    if (githubToken !== undefined) updateData.githubToken = encrypt(githubToken); // 🔒 ENCRYPTED
     if (preferences !== undefined) updateData.preferences = preferences;
 
     // Use upsert instead of update to handle case where user doesn't exist yet
