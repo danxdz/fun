@@ -15,6 +15,10 @@ CREATE TABLE "Users" (
   "isActive" BOOLEAN DEFAULT true,
   "lastLogin" TIMESTAMP WITH TIME ZONE,
   preferences JSONB DEFAULT '{}',
+  "githubToken" TEXT DEFAULT '',
+  "githubUsername" VARCHAR(255) DEFAULT '',
+  "githubAvatar" TEXT DEFAULT '',
+  "cursorApiKey" TEXT DEFAULT '',
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   "updatedAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -40,6 +44,8 @@ CREATE TABLE "Projects" (
   "defaultBranch" VARCHAR(255) DEFAULT 'main',
   "isActive" BOOLEAN DEFAULT true,
   settings JSONB DEFAULT '{}',
+  status VARCHAR(20) DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'archived')),
+  "githubData" JSONB DEFAULT '{}',
   "UserId" UUID REFERENCES "Users"(id) ON DELETE CASCADE,
   "TeamId" UUID REFERENCES "Teams"(id) ON DELETE SET NULL,
   "createdAt" TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -54,6 +60,7 @@ CREATE TABLE "Bots" (
   status VARCHAR(20) DEFAULT 'idle' CHECK (status IN ('idle', 'running', 'completed', 'error', 'paused')),
   configuration JSONB DEFAULT '{}',
   schedule VARCHAR(255), -- cron expression
+  description TEXT DEFAULT '',
   "lastRun" TIMESTAMP WITH TIME ZONE,
   "nextRun" TIMESTAMP WITH TIME ZONE,
   "isActive" BOOLEAN DEFAULT true,
@@ -113,8 +120,10 @@ CREATE TABLE "UserTeams" (
 
 -- Indexes for better performance
 CREATE INDEX idx_users_email ON "Users"(email);
+CREATE INDEX idx_users_github_username ON "Users"("githubUsername");
 CREATE INDEX idx_projects_user_id ON "Projects"("UserId");
 CREATE INDEX idx_projects_team_id ON "Projects"("TeamId");
+CREATE INDEX idx_projects_status ON "Projects"("status");
 CREATE INDEX idx_bots_project_id ON "Bots"("ProjectId");
 CREATE INDEX idx_bot_runs_bot_id ON "BotRuns"("BotId");
 CREATE INDEX idx_git_branches_project_id ON "GitBranches"("ProjectId");
