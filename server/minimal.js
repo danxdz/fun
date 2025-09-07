@@ -2246,7 +2246,7 @@ async function checkModuleUpdates(bot, logs) {
     const { data: project, error: projectError } = await supabase
       .from('Projects')
       .select('*')
-      .eq('id', bot.projectId)
+      .eq('id', bot.ProjectId)
       .single();
     
     if (projectError || !project) {
@@ -2366,7 +2366,7 @@ async function runSecurityScan(bot, logs) {
     const { data: project, error: projectError } = await supabase
       .from('Projects')
       .select('*')
-      .eq('id', bot.projectId)
+      .eq('id', bot.ProjectId)
       .single();
     
     if (projectError || !project) {
@@ -2505,7 +2505,7 @@ async function checkDependencyUpdates(bot, logs) {
     const { data: project, error: projectError } = await supabase
       .from('Projects')
       .select('*')
-      .eq('id', bot.projectId)
+      .eq('id', bot.ProjectId)
       .single();
     
     if (projectError || !project) {
@@ -2631,7 +2631,7 @@ async function runCustomBot(bot, logs) {
     const { data: project, error: projectError } = await supabase
       .from('Projects')
       .select('*')
-      .eq('id', bot.projectId)
+      .eq('id', bot.ProjectId)
       .single();
     
     if (projectError || !project) {
