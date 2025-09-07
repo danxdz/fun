@@ -1797,7 +1797,8 @@ app.post('/api/projects', async (req, res) => {
     
     const { user, supabase } = await verifyTokenAndGetUser(token);
 
-    const { action, name, description, repositoryUrl, repositoryType, accessToken, defaultBranch, teamId } = req.body;
+    const { action, name, description, repositoryType, accessToken, defaultBranch, teamId } = req.body;
+    let repositoryUrl = req.body.repositoryUrl;
 
     // Handle different actions
     if (action === 'import-github') {
