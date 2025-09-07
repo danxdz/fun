@@ -639,8 +639,16 @@ app.get('/auth/callback', async (req, res) => {
       const { createClient } = await import('@supabase/supabase-js');
       const supabase = createClient(supabaseUrl, supabaseKey);
       
-      // Generate a UUID for the user (since GitHub ID is numeric)
-      const userId = crypto.randomUUID();
+      // Check if user already exists by email
+      const userEmail = githubUser.email || `${githubUser.login}@github.local`;
+      const { data: existingUser } = await supabase
+        .from('Users')
+        .select('id')
+        .eq('email', userEmail)
+        .single();
+      
+      // Use existing user ID or generate new one
+      const userId = existingUser?.id || crypto.randomUUID();
       
       // Generate a JWT token for our app
       const jwt = await import('jsonwebtoken');
@@ -658,15 +666,19 @@ app.get('/auth/callback', async (req, res) => {
       // Save user to database (encrypt sensitive data)
       const userData = {
         id: userId,
-        email: githubUser.email || `${githubUser.login}@github.local`,
+        email: userEmail,
         firstName: githubUser.name?.split(' ')[0] || '',
         lastName: githubUser.name?.split(' ').slice(1).join(' ') || '',
         githubUsername: githubUser.login,
         githubAvatar: githubUser.avatar_url,
         githubToken: encrypt(githubToken), // 🔒 ENCRYPTED GitHub token
-        createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
+
+      // Only set createdAt for new users
+      if (!existingUser) {
+        userData.createdAt = new Date().toISOString();
+      }
 
       const { error: dbError } = await supabase
         .from('Users')
