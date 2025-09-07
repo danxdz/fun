@@ -1,9 +1,9 @@
+/* Import our global styles */
+@import './styles/global.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import our global styles */
-@import './styles/global.css';
 
 /* Override root styles for our app */
 #root {
