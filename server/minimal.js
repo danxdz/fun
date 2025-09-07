@@ -752,7 +752,7 @@ app.get('/auth/callback', async (req, res) => {
       // Get GitHub user info
       const userResponse = await fetch('https://api.github.com/user', {
         headers: {
-          'Authorization': `token ${finalToken}`,
+          'Authorization': `token ${githubToken}`,
           'Accept': 'application/vnd.github.v3+json',
         },
       });
