@@ -335,6 +335,42 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Debug endpoint to check token decryption
+app.get('/debug/token', async (req, res) => {
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    
+    const { data: users, error } = await supabase
+      .from('Users')
+      .select('id, email, githubToken')
+      .limit(1);
+    
+    if (error || !users || users.length === 0) {
+      return res.json({ error: 'No users found', details: error });
+    }
+    
+    const user = users[0];
+    const decryptedToken = decrypt(user.githubToken);
+    
+    res.json({
+      userId: user.id,
+      email: user.email,
+      hasToken: !!user.githubToken,
+      tokenLength: user.githubToken ? user.githubToken.length : 0,
+      tokenPreview: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None',
+      decryptedLength: decryptedToken ? decryptedToken.length : 0,
+      decryptedPreview: decryptedToken ? decryptedToken.substring(0, 20) + '...' : 'None',
+      encryptionKeySet: !!process.env.ENCRYPTION_KEY
+    });
+  } catch (error) {
+    res.json({ error: error.message });
+  }
+});
+
 // Admin endpoint to encrypt existing sensitive data
 app.post('/api/admin/encrypt-existing-data', async (req, res) => {
   try {
