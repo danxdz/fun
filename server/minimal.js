@@ -1808,8 +1808,42 @@ app.post('/api/projects', async (req, res) => {
       if (!name) {
         return res.status(400).json({ error: 'Repository name is required' });
       }
-      // For GitHub repo creation, we'll create a placeholder project
-      // The actual GitHub repo creation would need GitHub API integration
+      
+      // Create GitHub repository using user's GitHub token
+      const githubToken = decrypt(user.githubToken);
+      if (!githubToken) {
+        return res.status(400).json({ error: 'GitHub token not available. Please re-authenticate.' });
+      }
+      
+      try {
+        // Create GitHub repository
+        const githubResponse = await fetch('https://api.github.com/user/repos', {
+          method: 'POST',
+          headers: {
+            'Authorization': `token ${githubToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            name: name,
+            description: description || '',
+            private: false, // You can make this configurable
+            auto_init: true // Initialize with README
+          })
+        });
+        
+        if (!githubResponse.ok) {
+          const error = await githubResponse.json();
+          throw new Error(`GitHub API error: ${error.message}`);
+        }
+        
+        const githubRepo = await githubResponse.json();
+        repositoryUrl = githubRepo.html_url;
+        
+      } catch (error) {
+        console.error('GitHub repository creation error:', error);
+        return res.status(500).json({ error: `Failed to create GitHub repository: ${error.message}` });
+      }
     } else {
       if (!name || !repositoryUrl || !accessToken) {
         return res.status(400).json({ error: 'Name, repository URL, and access token are required' });
@@ -1829,13 +1863,9 @@ app.post('/api/projects', async (req, res) => {
       updatedAt: new Date().toISOString()
     };
     
-    // Add repositoryUrl if provided (for imports) or placeholder for new repos
+    // Add repositoryUrl if provided (for imports) or from GitHub creation
     if (repositoryUrl) {
       projectData.repositoryUrl = repositoryUrl;
-    } else if (action === 'create-github') {
-      // For new repos, we'll create a real GitHub repository
-      // First create the project record, then create the GitHub repo
-      projectData.repositoryUrl = ''; // Will be updated after GitHub repo creation
     }
     
     // Only add accessToken if it's provided (not for imports)
