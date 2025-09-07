@@ -124,7 +124,10 @@ function decrypt(encryptedText) {
   
   try {
     const parts = encryptedText.split(':');
-    if (parts.length !== 3) return encryptedText; // Not encrypted, return as-is
+    if (parts.length !== 3) {
+      // Not in new format, might be old format or plain text
+      return encryptedText;
+    }
     
     const iv = Buffer.from(parts[0], 'hex');
     const authTag = Buffer.from(parts[1], 'hex');
@@ -139,9 +142,8 @@ function decrypt(encryptedText) {
     
     return decrypted;
   } catch (error) {
-    console.error('Decryption error:', error);
     // If decryption fails, it might be old format or plain text
-    // Try to return as-is, or return empty string for sensitive data
+    // Return empty string for sensitive data to avoid exposing old tokens
     if (encryptedText.includes(':')) {
       return ''; // Return empty for encrypted data that can't be decrypted
     }
