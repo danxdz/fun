@@ -2379,6 +2379,12 @@ async function executeBotLogic(bot, botRunId, supabase) {
         logs.push('Code generation completed');
         break;
         
+      case 'app_generator':
+        logs.push('Running app generation...');
+        results.appGeneration = await runAppGenerator(bot, logs);
+        logs.push('App generation completed');
+        break;
+        
       default:
         throw new Error(`Unknown bot type: ${bot.type}`);
     }
@@ -3149,6 +3155,240 @@ function parseGeneratedCode(generatedCode) {
   }
   
   return files;
+}
+
+async function runAppGenerator(bot, logs) {
+  logs.push('🏗️ Running app generator bot...');
+  
+  try {
+    // Create supabase client
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    
+    // Get project details
+    const { data: project, error: projectError } = await supabase
+      .from('Projects')
+      .select('*')
+      .eq('id', bot.ProjectId)
+      .single();
+    
+    if (projectError || !project) {
+      throw new Error('Project not found');
+    }
+    
+    // Get user's GitHub token and Cursor API key
+    const { data: user, error: userError } = await supabase
+      .from('Users')
+      .select('githubToken, cursorApiKey')
+      .eq('id', project.UserId)
+      .single();
+    
+    if (userError || !user) {
+      throw new Error('User not found');
+    }
+    
+    const githubToken = decrypt(user.githubToken);
+    const cursorApiKey = decrypt(user.cursorApiKey);
+    
+    if (!githubToken) {
+      throw new Error('GitHub token not available');
+    }
+    
+    if (!cursorApiKey) {
+      throw new Error('Cursor API key not available');
+    }
+    
+    // Extract repo owner and name from URL
+    const repoMatch = project.repositoryUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+    if (!repoMatch) {
+      throw new Error('Invalid GitHub repository URL');
+    }
+    
+    const [, owner, repo] = repoMatch;
+    logs.push(`🏗️ Generating app for: ${owner}/${repo}`);
+    
+    // Get the app generation configuration from bot
+    const config = bot.configuration || {};
+    const {
+      templateId = 'portfolio',
+      frameworkId = 'nextjs',
+      stylingId = 'tailwind',
+      appName = repo,
+      description = 'Generated app',
+      features = [],
+      customizations = {}
+    } = config;
+    
+    logs.push(`📋 Template: ${templateId}, Framework: ${frameworkId}, Styling: ${stylingId}`);
+    
+    // Import template system
+    const { generateAppStructure, APP_TEMPLATES, FRAMEWORKS, STYLING_OPTIONS } = await import('./templates.js');
+    
+    // Generate app structure
+    const appStructure = generateAppStructure(templateId, frameworkId, stylingId, customizations);
+    
+    logs.push(`📦 Generated structure with ${appStructure.structure.components.length} components`);
+    
+    // Generate the complete app using Cursor API
+    const appPrompt = generateAppPrompt(appStructure, appName, description, features);
+    logs.push('🤖 Generating complete app with Cursor API...');
+    
+    const generatedCode = await generateCodeWithCursor(appPrompt, '', cursorApiKey);
+    
+    // Parse and create files
+    const files = parseGeneratedCode(generatedCode);
+    logs.push(`📄 Generated ${files.length} files`);
+    
+    const results = {
+      executedAt: new Date().toISOString(),
+      repository: `${owner}/${repo}`,
+      template: templateId,
+      framework: frameworkId,
+      styling: stylingId,
+      appName,
+      filesCreated: [],
+      filesUpdated: []
+    };
+    
+    // Create/update files in GitHub
+    for (const file of files) {
+      try {
+        logs.push(`📝 Creating file: ${file.path}`);
+        
+        // Check if file exists
+        const existingContent = await getGitHubFileContent(owner, repo, file.path, githubToken);
+        
+        if (existingContent) {
+          // Update existing file
+          const updateResult = await updateGitHubFile(
+            owner, 
+            repo, 
+            file.path, 
+            file.content, 
+            `Bot: Generated ${templateId} app - ${file.path}`,
+            file.sha || '',
+            githubToken
+          );
+          results.filesUpdated.push({
+            path: file.path,
+            commit: updateResult.commit.sha
+          });
+          logs.push(`✅ Updated: ${file.path}`);
+        } else {
+          // Create new file
+          const createResult = await createGitHubFile(
+            owner, 
+            repo, 
+            file.path, 
+            file.content, 
+            `Bot: Generated ${templateId} app - ${file.path}`,
+            githubToken
+          );
+          results.filesCreated.push({
+            path: file.path,
+            commit: createResult.commit.sha
+          });
+          logs.push(`✅ Created: ${file.path}`);
+        }
+      } catch (error) {
+        logs.push(`❌ Error with file ${file.path}: ${error.message}`);
+      }
+    }
+    
+    // Create package.json if not already created
+    if (!files.find(f => f.path === 'package.json')) {
+      const packageJson = generatePackageJson(appStructure, appName, description);
+      try {
+        await createGitHubFile(
+          owner,
+          repo,
+          'package.json',
+          packageJson,
+          `Bot: Generated package.json for ${templateId} app`,
+          githubToken
+        );
+        results.filesCreated.push({
+          path: 'package.json',
+          commit: 'generated'
+        });
+        logs.push('✅ Created: package.json');
+      } catch (error) {
+        logs.push(`❌ Error creating package.json: ${error.message}`);
+      }
+    }
+    
+    logs.push(`🎉 App generation complete! Created ${results.filesCreated.length} files, updated ${results.filesUpdated.length} files`);
+    
+    return results;
+    
+  } catch (error) {
+    logs.push(`❌ Error in app generation: ${error.message}`);
+    throw error;
+  }
+}
+
+function generateAppPrompt(appStructure, appName, description, features) {
+  const { template, framework, styling, structure } = appStructure;
+  
+  return `Create a complete ${template.name} application using ${framework.name} and ${styling.name}.
+
+App Details:
+- Name: ${appName}
+- Description: ${description}
+- Template: ${template.name} (${template.description})
+- Framework: ${framework.name}
+- Styling: ${styling.name}
+
+Required Components:
+${structure.components.map(comp => `- ${comp}`).join('\n')}
+
+Required Pages:
+${structure.pages.map(page => `- ${page}`).join('\n')}
+
+Dependencies to include:
+${structure.dependencies.map(dep => `- ${dep}`).join('\n')}
+
+Please generate a complete, production-ready application with:
+1. All components properly implemented
+2. Responsive design
+3. Modern best practices
+4. Proper file structure
+5. Configuration files
+6. README with setup instructions
+
+Generate the complete file structure with all necessary files.`;
+}
+
+function generatePackageJson(appStructure, appName, description) {
+  const { framework, structure } = appStructure;
+  
+  return JSON.stringify({
+    name: appName.toLowerCase().replace(/\s+/g, '-'),
+    version: '1.0.0',
+    description: description,
+    private: true,
+    scripts: {
+      dev: framework.id === 'nextjs' ? 'next dev' : 
+           framework.id === 'vite' ? 'vite' : 
+           framework.id === 'react' ? 'react-scripts start' : 'npm start',
+      build: framework.id === 'nextjs' ? 'next build' : 
+             framework.id === 'vite' ? 'vite build' : 
+             framework.id === 'react' ? 'react-scripts build' : 'npm run build',
+      start: framework.id === 'nextjs' ? 'next start' : 
+             framework.id === 'react' ? 'react-scripts start' : 'npm start'
+    },
+    dependencies: structure.dependencies.reduce((acc, dep) => {
+      acc[dep] = 'latest';
+      return acc;
+    }, {}),
+    devDependencies: structure.stylingDependencies.reduce((acc, dep) => {
+      acc[dep] = 'latest';
+      return acc;
+    }, {})
+  }, null, 2);
 }
 
 // Stop bot endpoint

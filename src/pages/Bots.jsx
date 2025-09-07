@@ -414,6 +414,7 @@ function CreateBotModal({ onClose, onSuccess, preSelectedProjectId }) {
                 <option value="security_scan">🔒 Security Scan Bot</option>
                 <option value="custom">⚙️ Custom Bot</option>
                 <option value="code_generator">🚀 Code Generator Bot</option>
+                <option value="app_generator">🏗️ App Generator Bot</option>
               </select>
             </div>
 
@@ -473,6 +474,125 @@ function CreateBotModal({ onClose, onSuccess, preSelectedProjectId }) {
                 />
                 <p className="mt-1 text-xs text-gray-500">
                   Describe what code you want the bot to generate and commit to your repository.
+                </p>
+              </div>
+            )}
+
+            {botData.type === 'app_generator' && (
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="templateId" className="block text-sm font-medium text-gray-700">
+                    App Template
+                  </label>
+                  <select
+                    id="templateId"
+                    value={botData.config?.templateId || 'portfolio'}
+                    onChange={(e) => setBotData({ 
+                      ...botData, 
+                      config: { 
+                        ...botData.config, 
+                        templateId: e.target.value 
+                      } 
+                    })}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  >
+                    <option value="portfolio">💼 Portfolio Website</option>
+                    <option value="ecommerce">🛒 E-commerce Store</option>
+                    <option value="saas">📊 SaaS Dashboard</option>
+                    <option value="blog">📝 Blog Platform</option>
+                    <option value="landing">🚀 Landing Page</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="frameworkId" className="block text-sm font-medium text-gray-700">
+                    Framework
+                  </label>
+                  <select
+                    id="frameworkId"
+                    value={botData.config?.frameworkId || 'nextjs'}
+                    onChange={(e) => setBotData({ 
+                      ...botData, 
+                      config: { 
+                        ...botData.config, 
+                        frameworkId: e.target.value 
+                      } 
+                    })}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  >
+                    <option value="nextjs">⚡ Next.js</option>
+                    <option value="react">⚛️ React</option>
+                    <option value="vue">💚 Vue.js</option>
+                    <option value="angular">🅰️ Angular</option>
+                    <option value="vite">⚡ Vite</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="stylingId" className="block text-sm font-medium text-gray-700">
+                    Styling Framework
+                  </label>
+                  <select
+                    id="stylingId"
+                    value={botData.config?.stylingId || 'tailwind'}
+                    onChange={(e) => setBotData({ 
+                      ...botData, 
+                      config: { 
+                        ...botData.config, 
+                        stylingId: e.target.value 
+                      } 
+                    })}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  >
+                    <option value="tailwind">🎨 Tailwind CSS</option>
+                    <option value="material-ui">🎭 Material UI</option>
+                    <option value="bootstrap">🎪 Bootstrap</option>
+                    <option value="styled-components">💅 Styled Components</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label htmlFor="appName" className="block text-sm font-medium text-gray-700">
+                    App Name
+                  </label>
+                  <input
+                    type="text"
+                    id="appName"
+                    value={botData.config?.appName || ''}
+                    onChange={(e) => setBotData({ 
+                      ...botData, 
+                      config: { 
+                        ...botData.config, 
+                        appName: e.target.value 
+                      } 
+                    })}
+                    placeholder="My Awesome App"
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="appDescription" className="block text-sm font-medium text-gray-700">
+                    App Description
+                  </label>
+                  <textarea
+                    id="appDescription"
+                    value={botData.config?.description || ''}
+                    onChange={(e) => setBotData({ 
+                      ...botData, 
+                      config: { 
+                        ...botData.config, 
+                        description: e.target.value 
+                      } 
+                    })}
+                    placeholder="A modern web application built with..."
+                    rows={2}
+                    className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                  />
+                </div>
+
+                <p className="mt-1 text-xs text-gray-500">
+                  🎉 This will generate a complete, production-ready application with all components, pages, and configuration files!
                 </p>
               </div>
             )}
