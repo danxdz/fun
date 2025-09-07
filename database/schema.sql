@@ -84,7 +84,7 @@ CREATE TABLE "Projects" (
 CREATE TABLE "Bots" (
   id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
-  type VARCHAR(50) NOT NULL CHECK (type IN ('dependency_update', 'security_scan', 'module_update', 'custom')),
+  type VARCHAR(50) NOT NULL CHECK (type IN ('dependency_update', 'security_scan', 'module_update', 'custom', 'code_generator')),
   status VARCHAR(20) DEFAULT 'idle' CHECK (status IN ('idle', 'running', 'completed', 'error', 'paused')),
   configuration JSONB DEFAULT '{}',
   schedule VARCHAR(255), -- cron expression
