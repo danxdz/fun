@@ -1,6 +1,34 @@
 -- AutoBot Manager Database Schema
 -- Run this in your Supabase SQL editor
 
+-- ========================================
+-- FRESH START - RESET DATABASE
+-- ========================================
+-- Uncomment the lines below to completely reset the database
+-- WARNING: This will delete ALL data!
+
+/*
+-- Drop all tables in correct order (respecting foreign keys)
+DROP TABLE IF EXISTS "UserTeams" CASCADE;
+DROP TABLE IF EXISTS "ModuleUpdates" CASCADE;
+DROP TABLE IF EXISTS "GitBranches" CASCADE;
+DROP TABLE IF EXISTS "BotRuns" CASCADE;
+DROP TABLE IF EXISTS "Bots" CASCADE;
+DROP TABLE IF EXISTS "Projects" CASCADE;
+DROP TABLE IF EXISTS "Teams" CASCADE;
+DROP TABLE IF EXISTS "Users" CASCADE;
+
+-- Drop functions
+DROP FUNCTION IF EXISTS update_updated_at_column() CASCADE;
+
+-- Drop extensions (optional - will be recreated below)
+-- DROP EXTENSION IF EXISTS "uuid-ossp";
+*/
+
+-- ========================================
+-- DATABASE SETUP
+-- ========================================
+
 -- Enable UUID extension
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -211,3 +239,48 @@ CREATE TRIGGER update_bot_runs_updated_at BEFORE UPDATE ON "BotRuns" FOR EACH RO
 CREATE TRIGGER update_git_branches_updated_at BEFORE UPDATE ON "GitBranches" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_module_updates_updated_at BEFORE UPDATE ON "ModuleUpdates" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_user_teams_updated_at BEFORE UPDATE ON "UserTeams" FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- ========================================
+-- USAGE INSTRUCTIONS
+-- ========================================
+
+-- FOR FRESH DATABASE SETUP:
+-- 1. Uncomment the "FRESH START" section above (lines 10-26)
+-- 2. Run the entire script
+-- 3. Comment out the "FRESH START" section again
+
+-- FOR EXISTING DATABASE:
+-- 1. Keep the "FRESH START" section commented out
+-- 2. Run the entire script
+-- 3. Tables will be created if they don't exist
+
+-- FOR RESET WITHOUT DROPPING:
+-- Use this instead of the FRESH START section:
+/*
+TRUNCATE TABLE "UserTeams" CASCADE;
+TRUNCATE TABLE "ModuleUpdates" CASCADE;
+TRUNCATE TABLE "GitBranches" CASCADE;
+TRUNCATE TABLE "BotRuns" CASCADE;
+TRUNCATE TABLE "Bots" CASCADE;
+TRUNCATE TABLE "Projects" CASCADE;
+TRUNCATE TABLE "Teams" CASCADE;
+TRUNCATE TABLE "Users" CASCADE;
+*/
+
+-- ========================================
+-- VERIFICATION QUERIES
+-- ========================================
+
+-- Check if all tables exist:
+SELECT table_name 
+FROM information_schema.tables 
+WHERE table_schema = 'public' 
+  AND table_name IN ('Users', 'Teams', 'Projects', 'Bots', 'BotRuns', 'GitBranches', 'ModuleUpdates', 'UserTeams')
+ORDER BY table_name;
+
+-- Check if all indexes exist:
+SELECT indexname 
+FROM pg_indexes 
+WHERE schemaname = 'public' 
+  AND indexname LIKE 'idx_%'
+ORDER BY indexname;
