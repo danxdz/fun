@@ -68,7 +68,7 @@ CREATE TABLE "Projects" (
   description TEXT,
   "repositoryUrl" VARCHAR(500) NOT NULL,
   "repositoryType" VARCHAR(20) DEFAULT 'github' CHECK ("repositoryType" IN ('github', 'gitlab', 'bitbucket')),
-  "accessToken" VARCHAR(255) NOT NULL,
+  "accessToken" VARCHAR(255),
   "defaultBranch" VARCHAR(255) DEFAULT 'main',
   "isActive" BOOLEAN DEFAULT true,
   settings JSONB DEFAULT '{}',
@@ -270,9 +270,10 @@ TRUNCATE TABLE "Users" CASCADE;
 -- ========================================
 */
 
--- MIGRATION: Fix password constraint for OAuth users
--- Run this if you have an existing database with password NOT NULL constraint
+-- MIGRATION: Fix constraints for OAuth users
+-- Run these if you have an existing database with NOT NULL constraints
 -- ALTER TABLE "Users" ALTER COLUMN password DROP NOT NULL;
+-- ALTER TABLE "Projects" ALTER COLUMN "accessToken" DROP NOT NULL;
 
 -- VERIFICATION QUERIES
 -- ========================================
