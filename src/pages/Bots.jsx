@@ -413,6 +413,7 @@ function CreateBotModal({ onClose, onSuccess, preSelectedProjectId }) {
                 <option value="dependency_update">🔧 Dependency Update Bot</option>
                 <option value="security_scan">🔒 Security Scan Bot</option>
                 <option value="custom">⚙️ Custom Bot</option>
+                <option value="code_generator">🚀 Code Generator Bot</option>
               </select>
             </div>
 
@@ -450,6 +451,31 @@ function CreateBotModal({ onClose, onSuccess, preSelectedProjectId }) {
                 </p>
               )}
             </div>
+
+            {botData.type === 'code_generator' && (
+              <div>
+                <label htmlFor="codeRequest" className="block text-sm font-medium text-gray-700">
+                  Code Generation Request
+                </label>
+                <textarea
+                  id="codeRequest"
+                  value={botData.config?.codeRequest || ''}
+                  onChange={(e) => setBotData({ 
+                    ...botData, 
+                    config: { 
+                      ...botData.config, 
+                      codeRequest: e.target.value 
+                    } 
+                  })}
+                  placeholder="Create a React login form with validation"
+                  rows={3}
+                  className="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 sm:text-sm"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  Describe what code you want the bot to generate and commit to your repository.
+                </p>
+              </div>
+            )}
 
             <div>
               <label htmlFor="schedule" className="block text-sm font-medium text-gray-700">

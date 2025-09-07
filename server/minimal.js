@@ -151,6 +151,126 @@ function decrypt(encryptedText) {
   }
 }
 
+// GitHub file creation functions
+async function createGitHubFile(owner, repo, path, content, message, githubToken) {
+  try {
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${githubToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: message,
+        content: Buffer.from(content).toString('base64')
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`GitHub API error: ${error.message}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('GitHub file creation error:', error);
+    throw error;
+  }
+}
+
+async function updateGitHubFile(owner, repo, path, content, message, sha, githubToken) {
+  try {
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `token ${githubToken}`,
+        'Accept': 'application/vnd.github.v3+json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        message: message,
+        content: Buffer.from(content).toString('base64'),
+        sha: sha
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`GitHub API error: ${error.message}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('GitHub file update error:', error);
+    throw error;
+  }
+}
+
+async function getGitHubFileContent(owner, repo, path, githubToken) {
+  try {
+    const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+      headers: {
+        'Authorization': `token ${githubToken}`,
+        'Accept': 'application/vnd.github.v3+json'
+      }
+    });
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null; // File doesn't exist
+      }
+      const error = await response.json();
+      throw new Error(`GitHub API error: ${error.message}`);
+    }
+
+    const data = await response.json();
+    return Buffer.from(data.content, 'base64').toString('utf8');
+  } catch (error) {
+    console.error('GitHub file read error:', error);
+    throw error;
+  }
+}
+
+// Cursor API integration for code generation
+async function generateCodeWithCursor(prompt, context, cursorApiKey) {
+  try {
+    const response = await fetch('https://api.cursor.sh/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${cursorApiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: `You are an expert software developer. Generate clean, production-ready code based on the user's request. Consider the existing codebase context and follow best practices.`
+          },
+          {
+            role: 'user',
+            content: `Context: ${context}\n\nRequest: ${prompt}\n\nPlease generate the complete code files needed.`
+          }
+        ],
+        max_tokens: 4000,
+        temperature: 0.1
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Cursor API error: ${error.error?.message || 'Unknown error'}`);
+    }
+
+    const data = await response.json();
+    return data.choices[0].message.content;
+  } catch (error) {
+    console.error('Cursor API error:', error);
+    throw error;
+  }
+}
+
 // Helper function to verify custom JWT and get user
 async function verifyTokenAndGetUser(token) {
   if (!token) {
@@ -2216,6 +2336,12 @@ async function executeBotLogic(bot, botRunId, supabase) {
         logs.push('Custom bot execution completed');
         break;
         
+      case 'code_generator':
+        logs.push('Running code generation...');
+        results.codeGeneration = await runCodeGenerator(bot, logs);
+        logs.push('Code generation completed');
+        break;
+        
       default:
         throw new Error(`Unknown bot type: ${bot.type}`);
     }
@@ -2797,6 +2923,195 @@ async function runCustomBot(bot, logs) {
       executedAt: new Date().toISOString()
     };
   }
+}
+
+async function runCodeGenerator(bot, logs) {
+  logs.push('🚀 Running code generation bot...');
+  
+  try {
+    // Create supabase client
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    
+    // Get project details
+    const { data: project, error: projectError } = await supabase
+      .from('Projects')
+      .select('*')
+      .eq('id', bot.ProjectId)
+      .single();
+    
+    if (projectError || !project) {
+      throw new Error('Project not found');
+    }
+    
+    // Get user's GitHub token and Cursor API key
+    const { data: user, error: userError } = await supabase
+      .from('Users')
+      .select('githubToken, cursorApiKey')
+      .eq('id', project.UserId)
+      .single();
+    
+    if (userError || !user) {
+      throw new Error('User not found');
+    }
+    
+    const githubToken = decrypt(user.githubToken);
+    const cursorApiKey = decrypt(user.cursorApiKey);
+    
+    if (!githubToken) {
+      throw new Error('GitHub token not available');
+    }
+    
+    if (!cursorApiKey) {
+      throw new Error('Cursor API key not available');
+    }
+    
+    // Extract repo owner and name from URL
+    const repoMatch = project.repositoryUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+    if (!repoMatch) {
+      throw new Error('Invalid GitHub repository URL');
+    }
+    
+    const [, owner, repo] = repoMatch;
+    logs.push(`📁 Generating code for: ${owner}/${repo}`);
+    
+    // Get the code generation request from bot configuration
+    const config = bot.configuration || {};
+    const codeRequest = config.codeRequest || 'Create a simple React component';
+    
+    logs.push(`📝 Code request: ${codeRequest}`);
+    
+    // Get existing codebase context
+    let context = `Repository: ${owner}/${repo}\n`;
+    
+    // Try to read package.json for context
+    try {
+      const packageJson = await getGitHubFileContent(owner, repo, 'package.json', githubToken);
+      if (packageJson) {
+        context += `\nPackage.json:\n${packageJson}`;
+      }
+    } catch (error) {
+      logs.push('⚠️ Could not read package.json for context');
+    }
+    
+    // Generate code using Cursor API
+    logs.push('🤖 Generating code with Cursor API...');
+    const generatedCode = await generateCodeWithCursor(codeRequest, context, cursorApiKey);
+    
+    // Parse the generated code to extract files
+    const files = parseGeneratedCode(generatedCode);
+    logs.push(`📄 Generated ${files.length} files`);
+    
+    const results = {
+      executedAt: new Date().toISOString(),
+      repository: `${owner}/${repo}`,
+      request: codeRequest,
+      filesCreated: [],
+      filesUpdated: []
+    };
+    
+    // Create/update files in GitHub
+    for (const file of files) {
+      try {
+        logs.push(`📝 Creating file: ${file.path}`);
+        
+        // Check if file exists
+        const existingContent = await getGitHubFileContent(owner, repo, file.path, githubToken);
+        
+        if (existingContent) {
+          // Update existing file
+          const updateResult = await updateGitHubFile(
+            owner, 
+            repo, 
+            file.path, 
+            file.content, 
+            `Bot: Update ${file.path} - ${codeRequest}`,
+            file.sha || '', // We'd need to get the SHA from the file info
+            githubToken
+          );
+          results.filesUpdated.push({
+            path: file.path,
+            commit: updateResult.commit.sha
+          });
+          logs.push(`✅ Updated: ${file.path}`);
+        } else {
+          // Create new file
+          const createResult = await createGitHubFile(
+            owner, 
+            repo, 
+            file.path, 
+            file.content, 
+            `Bot: Create ${file.path} - ${codeRequest}`,
+            githubToken
+          );
+          results.filesCreated.push({
+            path: file.path,
+            commit: createResult.commit.sha
+          });
+          logs.push(`✅ Created: ${file.path}`);
+        }
+      } catch (error) {
+        logs.push(`❌ Error with file ${file.path}: ${error.message}`);
+      }
+    }
+    
+    return results;
+    
+  } catch (error) {
+    logs.push(`❌ Error in code generation: ${error.message}`);
+    throw error;
+  }
+}
+
+// Helper function to parse generated code into files
+function parseGeneratedCode(generatedCode) {
+  const files = [];
+  const lines = generatedCode.split('\n');
+  let currentFile = null;
+  let currentContent = [];
+  
+  for (const line of lines) {
+    // Look for file markers like "// File: path/to/file.js" or "```path/to/file.js"
+    const fileMatch = line.match(/^(?:\/\/ File:|```)(?:\s*)(.+)$/);
+    
+    if (fileMatch) {
+      // Save previous file if exists
+      if (currentFile) {
+        files.push({
+          path: currentFile,
+          content: currentContent.join('\n')
+        });
+      }
+      
+      // Start new file
+      currentFile = fileMatch[1].trim();
+      currentContent = [];
+    } else if (currentFile) {
+      // Add content to current file
+      currentContent.push(line);
+    }
+  }
+  
+  // Save last file
+  if (currentFile) {
+    files.push({
+      path: currentFile,
+      content: currentContent.join('\n')
+    });
+  }
+  
+  // If no files were parsed, treat the entire content as a single file
+  if (files.length === 0) {
+    files.push({
+      path: 'generated-code.js',
+      content: generatedCode
+    });
+  }
+  
+  return files;
 }
 
 // Stop bot endpoint
