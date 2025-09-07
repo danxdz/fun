@@ -2265,6 +2265,11 @@ async function checkModuleUpdates(bot, logs) {
     }
     
     const githubToken = decrypt(user.githubToken);
+    console.log('GitHub token decryption:', {
+      encrypted: user.githubToken ? 'Present' : 'Missing',
+      decrypted: githubToken ? 'Present' : 'Missing',
+      tokenPreview: githubToken ? githubToken.substring(0, 10) + '...' : 'None'
+    });
     if (!githubToken) {
       throw new Error('GitHub token not available');
     }
@@ -2385,6 +2390,11 @@ async function runSecurityScan(bot, logs) {
     }
     
     const githubToken = decrypt(user.githubToken);
+    console.log('GitHub token decryption:', {
+      encrypted: user.githubToken ? 'Present' : 'Missing',
+      decrypted: githubToken ? 'Present' : 'Missing',
+      tokenPreview: githubToken ? githubToken.substring(0, 10) + '...' : 'None'
+    });
     if (!githubToken) {
       throw new Error('GitHub token not available');
     }
@@ -2524,6 +2534,11 @@ async function checkDependencyUpdates(bot, logs) {
     }
     
     const githubToken = decrypt(user.githubToken);
+    console.log('GitHub token decryption:', {
+      encrypted: user.githubToken ? 'Present' : 'Missing',
+      decrypted: githubToken ? 'Present' : 'Missing',
+      tokenPreview: githubToken ? githubToken.substring(0, 10) + '...' : 'None'
+    });
     if (!githubToken) {
       throw new Error('GitHub token not available');
     }
@@ -2650,6 +2665,11 @@ async function runCustomBot(bot, logs) {
     }
     
     const githubToken = decrypt(user.githubToken);
+    console.log('GitHub token decryption:', {
+      encrypted: user.githubToken ? 'Present' : 'Missing',
+      decrypted: githubToken ? 'Present' : 'Missing',
+      tokenPreview: githubToken ? githubToken.substring(0, 10) + '...' : 'None'
+    });
     if (!githubToken) {
       throw new Error('GitHub token not available');
     }
