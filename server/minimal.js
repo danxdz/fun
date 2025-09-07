@@ -167,7 +167,7 @@ async function createGitHubFile(owner, repo, path, content, message, githubToken
     const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `token ${githubToken}`,
+        'Authorization': `token ${finalToken}`,
         'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json'
       },
@@ -194,7 +194,7 @@ async function updateGitHubFile(owner, repo, path, content, message, sha, github
     const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `token ${githubToken}`,
+        'Authorization': `token ${finalToken}`,
         'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json'
       },
@@ -221,7 +221,7 @@ async function getGitHubFileContent(owner, repo, path, githubToken) {
   try {
     const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
       headers: {
-        'Authorization': `token ${githubToken}`,
+        'Authorization': `token ${finalToken}`,
         'Accept': 'application/vnd.github.v3+json'
       }
     });
@@ -752,7 +752,7 @@ app.get('/auth/callback', async (req, res) => {
       // Get GitHub user info
       const userResponse = await fetch('https://api.github.com/user', {
         headers: {
-          'Authorization': `token ${githubToken}`,
+          'Authorization': `token ${finalToken}`,
           'Accept': 'application/vnd.github.v3+json',
         },
       });
@@ -1841,7 +1841,7 @@ app.post('/api/projects', async (req, res) => {
         const githubResponse = await fetch('https://api.github.com/user/repos', {
           method: 'POST',
           headers: {
-            'Authorization': `token ${githubToken}`,
+            'Authorization': `token ${finalToken}`,
             'Accept': 'application/vnd.github.v3+json',
             'Content-Type': 'application/json'
           },
@@ -2447,9 +2447,18 @@ async function checkModuleUpdates(bot, logs) {
     console.log('GitHub token decryption:', {
       encrypted: user.githubToken ? 'Present' : 'Missing',
       decrypted: githubToken ? 'Present' : 'Missing',
-      tokenPreview: githubToken ? githubToken.substring(0, 10) + '...' : 'None'
+      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
+      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
     });
-    if (!githubToken) {
+    
+    // If decryption failed but we have a token that looks like a GitHub token, use it directly
+    let finalToken = githubToken;
+    if (!finalToken && user.githubToken && (user.githubToken.startsWith('gho_') || user.githubToken.startsWith('ghp_'))) {
+      console.log('Using raw GitHub token (decryption failed but token looks valid)');
+      finalToken = user.githubToken;
+    }
+    
+    if (!finalToken) {
       throw new Error('GitHub token not available');
     }
     
@@ -2467,7 +2476,7 @@ async function checkModuleUpdates(bot, logs) {
       `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
       {
         headers: {
-          'Authorization': `token ${githubToken}`,
+          'Authorization': `token ${finalToken}`,
           'Accept': 'application/vnd.github.v3+json'
         }
       }
@@ -2572,9 +2581,18 @@ async function runSecurityScan(bot, logs) {
     console.log('GitHub token decryption:', {
       encrypted: user.githubToken ? 'Present' : 'Missing',
       decrypted: githubToken ? 'Present' : 'Missing',
-      tokenPreview: githubToken ? githubToken.substring(0, 10) + '...' : 'None'
+      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
+      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
     });
-    if (!githubToken) {
+    
+    // If decryption failed but we have a token that looks like a GitHub token, use it directly
+    let finalToken = githubToken;
+    if (!finalToken && user.githubToken && (user.githubToken.startsWith('gho_') || user.githubToken.startsWith('ghp_'))) {
+      console.log('Using raw GitHub token (decryption failed but token looks valid)');
+      finalToken = user.githubToken;
+    }
+    
+    if (!finalToken) {
       throw new Error('GitHub token not available');
     }
     
@@ -2592,7 +2610,7 @@ async function runSecurityScan(bot, logs) {
       `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
       {
         headers: {
-          'Authorization': `token ${githubToken}`,
+          'Authorization': `token ${finalToken}`,
           'Accept': 'application/vnd.github.v3+json'
         }
       }
@@ -2619,7 +2637,7 @@ async function runSecurityScan(bot, logs) {
           `https://api.github.com/repos/${owner}/${repo}/dependabot/alerts`,
           {
             headers: {
-              'Authorization': `token ${githubToken}`,
+              'Authorization': `token ${finalToken}`,
               'Accept': 'application/vnd.github.v3+json'
             }
           }
@@ -2716,9 +2734,18 @@ async function checkDependencyUpdates(bot, logs) {
     console.log('GitHub token decryption:', {
       encrypted: user.githubToken ? 'Present' : 'Missing',
       decrypted: githubToken ? 'Present' : 'Missing',
-      tokenPreview: githubToken ? githubToken.substring(0, 10) + '...' : 'None'
+      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
+      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
     });
-    if (!githubToken) {
+    
+    // If decryption failed but we have a token that looks like a GitHub token, use it directly
+    let finalToken = githubToken;
+    if (!finalToken && user.githubToken && (user.githubToken.startsWith('gho_') || user.githubToken.startsWith('ghp_'))) {
+      console.log('Using raw GitHub token (decryption failed but token looks valid)');
+      finalToken = user.githubToken;
+    }
+    
+    if (!finalToken) {
       throw new Error('GitHub token not available');
     }
     
@@ -2736,7 +2763,7 @@ async function checkDependencyUpdates(bot, logs) {
       `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
       {
         headers: {
-          'Authorization': `token ${githubToken}`,
+          'Authorization': `token ${finalToken}`,
           'Accept': 'application/vnd.github.v3+json'
         }
       }
@@ -2847,9 +2874,18 @@ async function runCustomBot(bot, logs) {
     console.log('GitHub token decryption:', {
       encrypted: user.githubToken ? 'Present' : 'Missing',
       decrypted: githubToken ? 'Present' : 'Missing',
-      tokenPreview: githubToken ? githubToken.substring(0, 10) + '...' : 'None'
+      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
+      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
     });
-    if (!githubToken) {
+    
+    // If decryption failed but we have a token that looks like a GitHub token, use it directly
+    let finalToken = githubToken;
+    if (!finalToken && user.githubToken && (user.githubToken.startsWith('gho_') || user.githubToken.startsWith('ghp_'))) {
+      console.log('Using raw GitHub token (decryption failed but token looks valid)');
+      finalToken = user.githubToken;
+    }
+    
+    if (!finalToken) {
       throw new Error('GitHub token not available');
     }
     
@@ -2876,7 +2912,7 @@ async function runCustomBot(bot, logs) {
         `https://api.github.com/repos/${owner}/${repo}/issues?state=open`,
         {
           headers: {
-            'Authorization': `token ${githubToken}`,
+            'Authorization': `token ${finalToken}`,
             'Accept': 'application/vnd.github.v3+json'
           }
         }
@@ -2904,7 +2940,7 @@ async function runCustomBot(bot, logs) {
         `https://api.github.com/repos/${owner}/${repo}/pulls?state=open`,
         {
           headers: {
-            'Authorization': `token ${githubToken}`,
+            'Authorization': `token ${finalToken}`,
             'Accept': 'application/vnd.github.v3+json'
           }
         }
@@ -2932,7 +2968,7 @@ async function runCustomBot(bot, logs) {
         `https://api.github.com/repos/${owner}/${repo}/releases`,
         {
           headers: {
-            'Authorization': `token ${githubToken}`,
+            'Authorization': `token ${finalToken}`,
             'Accept': 'application/vnd.github.v3+json'
           }
         }
