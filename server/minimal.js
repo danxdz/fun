@@ -1818,6 +1818,16 @@ app.post('/api/projects', async (req, res) => {
       
       try {
         // Create GitHub repository
+        const repoData = {
+          name: name,
+          description: description || '',
+          private: false, // You can make this configurable
+          auto_init: true // Initialize with README
+        };
+        
+        console.log('Creating GitHub repository with data:', repoData);
+        console.log('Using GitHub token:', githubToken.substring(0, 10) + '...');
+        
         const githubResponse = await fetch('https://api.github.com/user/repos', {
           method: 'POST',
           headers: {
@@ -1825,17 +1835,13 @@ app.post('/api/projects', async (req, res) => {
             'Accept': 'application/vnd.github.v3+json',
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            name: name,
-            description: description || '',
-            private: false, // You can make this configurable
-            auto_init: true // Initialize with README
-          })
+          body: JSON.stringify(repoData)
         });
         
         if (!githubResponse.ok) {
           const error = await githubResponse.json();
-          throw new Error(`GitHub API error: ${error.message}`);
+          console.error('GitHub API error details:', error);
+          throw new Error(`GitHub API error: ${error.message || 'Repository creation failed'}`);
         }
         
         const githubRepo = await githubResponse.json();
