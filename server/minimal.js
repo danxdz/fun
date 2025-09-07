@@ -107,6 +107,12 @@ const ALGORITHM = 'aes-256-gcm';
 function encrypt(text) {
   if (!text) return text;
   
+  // If ENCRYPTION_KEY is not set, return the text as-is (no encryption)
+  if (!process.env.ENCRYPTION_KEY) {
+    console.log('⚠️ ENCRYPTION_KEY not set - storing data unencrypted');
+    return text;
+  }
+  
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY, 'hex'), iv);
   cipher.setAAD(Buffer.from('autobot-manager', 'utf8'));
