@@ -3251,12 +3251,14 @@ async function initializeBotStates() {
 }
 
 // Start server
-app.listen(PORT, '0.0.0.0', async () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 AutoBot Manager running on port ${PORT}`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
   
-  // Initialize bot states on startup
-  await initializeBotStates();
+  // Initialize bot states on startup (non-blocking)
+  initializeBotStates().catch(error => {
+    console.error('Error initializing bot states:', error);
+  });
 });
 
 // Add error handling
