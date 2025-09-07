@@ -2109,7 +2109,9 @@ app.post('/api/bots/:id/execute', async (req, res) => {
     
     // Execute bot logic based on type
     try {
+      console.log(`Executing bot ${bot.name} (${bot.type}) for project ${bot.Projects.name}`);
       const executionResult = await executeBotLogic(bot, botRun.id, supabase);
+      console.log(`Bot execution completed:`, executionResult);
       
       // Update bot run with results
       await supabase
@@ -2147,6 +2149,7 @@ app.post('/api/bots/:id/execute', async (req, res) => {
       
     } catch (executionError) {
       console.error('Bot execution error:', executionError);
+      console.error('Bot execution error details:', JSON.stringify(executionError, null, 2));
       
       // Update bot run with error
       await supabase
