@@ -626,6 +626,7 @@ app.get('/auth/callback', async (req, res) => {
             </div>
           </div>
           <script>
+            console.log('Setting token and user data...');
             localStorage.setItem('token', '${appToken}');
             localStorage.setItem('user', JSON.stringify(${JSON.stringify({
               id: userId,
@@ -636,6 +637,9 @@ app.get('/auth/callback', async (req, res) => {
               githubAvatar: githubUser.avatar_url,
               githubToken: githubToken
             })}));
+            console.log('Token set:', localStorage.getItem('token') ? 'YES' : 'NO');
+            console.log('User set:', localStorage.getItem('user') ? 'YES' : 'NO');
+            console.log('Redirecting to dashboard...');
             setTimeout(() => {
               window.location.href = '/';
             }, 2000);
@@ -1081,8 +1085,12 @@ app.get('/api/me', async (req, res) => {
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
     
+    console.log('API /me called with token:', token ? 'Present' : 'Missing');
+    console.log('Auth header:', req.headers.authorization);
+    
     const { user, supabase } = await verifyTokenAndGetUser(token);
 
+    console.log('User found:', user.email);
     res.json({ user });
     
   } catch (error) {
