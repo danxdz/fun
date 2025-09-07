@@ -2595,15 +2595,6 @@ async function checkDependencyUpdates(bot, logs) {
   }
 }
 
-// Security scanner
-async function runSecurityScan(bot, logs) {
-  logs.push('Simulating security scan...');
-  // TODO: Implement actual security scanning
-  return [
-    { type: 'vulnerability', severity: 'medium', description: 'Outdated dependency with known vulnerability' }
-  ];
-}
-
 // Custom bot runner - REAL IMPLEMENTATION
 async function runCustomBot(bot, logs) {
   logs.push('⚙️ Running custom bot with configuration...');
