@@ -140,7 +140,12 @@ function decrypt(encryptedText) {
     return decrypted;
   } catch (error) {
     console.error('Decryption error:', error);
-    return encryptedText; // Return as-is if decryption fails
+    // If decryption fails, it might be old format or plain text
+    // Try to return as-is, or return empty string for sensitive data
+    if (encryptedText.includes(':')) {
+      return ''; // Return empty for encrypted data that can't be decrypted
+    }
+    return encryptedText; // Return original if it's not encrypted
   }
 }
 
