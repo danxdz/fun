@@ -1077,57 +1077,21 @@ app.post('/api/auth', async (req, res) => {
 // Get current user
 app.get('/api/me', async (req, res) => {
   try {
-
     const token = req.headers.authorization?.replace('Bearer ', '') || 
                   req.headers['x-api-key'] ||
                   req.headers.cookie?.match(/token=([^;]+)/)?.[1];
-
-    if (!token) {
-      return res.status(401).json({ 
-        error: 'No token provided',
-        receivedHeaders: Object.keys(req.headers),
-        authHeader: req.headers.authorization
-      });
-    }
     
-    // Verify our custom JWT token
-    const jwt = await import('jsonwebtoken');
-    let decoded;
-    
-    try {
-      decoded = jwt.default.verify(token, process.env.JWT_SECRET || 'fallback-secret');
-      
-    } catch (jwtError) {
-      console.error('JWT verification failed:', jwtError.message);
-      return res.status(401).json({ error: 'Invalid token' });
-    }
-    
-    // Get user from our database using the userId from JWT
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    
-    if (!supabaseUrl || !supabaseKey) {
-      return res.status(500).json({ error: 'Supabase not configured' });
-    }
-    
-    const { createClient } = await import('@supabase/supabase-js');
-    const supabase = createClient(supabaseUrl, supabaseKey);
-    
-    const { data: user, error } = await supabase
-      .from('Users')
-      .select('*')
-      .eq('id', decoded.userId)
-      .single();
-    
-    if (error || !user) {
-      console.error('User lookup failed:', { error, userId: decoded.userId });
-      return res.status(401).json({ error: 'User not found' });
-    }
+    const { user, supabase } = await verifyTokenAndGetUser(token);
 
     res.json({ user });
     
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Get user error:', error);
+    if (error.message === 'No token provided' || error.message === 'Invalid token' || error.message === 'User not found') {
+      res.status(401).json({ error: error.message });
+    } else {
+      res.status(500).json({ error: error.message });
+    }
   }
 });
 
