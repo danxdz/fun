@@ -122,6 +122,16 @@ function encrypt(text) {
 function decrypt(encryptedText) {
   if (!encryptedText) return encryptedText;
   
+  // If ENCRYPTION_KEY is not set, we can't decrypt properly
+  if (!process.env.ENCRYPTION_KEY) {
+    console.log('⚠️ ENCRYPTION_KEY not set - cannot decrypt sensitive data');
+    // For GitHub tokens, try to return the original if it looks like a token
+    if (encryptedText.startsWith('gho_') || encryptedText.startsWith('ghp_')) {
+      return encryptedText; // Return original GitHub token
+    }
+    return ''; // Return empty for other encrypted data
+  }
+  
   try {
     const parts = encryptedText.split(':');
     if (parts.length !== 3) {
@@ -3902,6 +3912,11 @@ async function initializeBotStates() {
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 AutoBot Manager running on port ${PORT}`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Check for critical environment variables
+  if (!process.env.ENCRYPTION_KEY) {
+    console.log('⚠️ WARNING: ENCRYPTION_KEY not set - bot functionality may be limited');
+  }
   
   // Initialize bot states on startup (non-blocking)
   initializeBotStates().catch(error => {
