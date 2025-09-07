@@ -167,7 +167,7 @@ async function createGitHubFile(owner, repo, path, content, message, githubToken
     const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `token ${finalToken}`,
+        'Authorization': `token ${githubToken}`,
         'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json'
       },
@@ -194,7 +194,7 @@ async function updateGitHubFile(owner, repo, path, content, message, sha, github
     const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
       method: 'PUT',
       headers: {
-        'Authorization': `token ${finalToken}`,
+        'Authorization': `token ${githubToken}`,
         'Accept': 'application/vnd.github.v3+json',
         'Content-Type': 'application/json'
       },
@@ -221,7 +221,7 @@ async function getGitHubFileContent(owner, repo, path, githubToken) {
   try {
     const response = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
       headers: {
-        'Authorization': `token ${finalToken}`,
+        'Authorization': `token ${githubToken}`,
         'Accept': 'application/vnd.github.v3+json'
       }
     });
@@ -1841,7 +1841,7 @@ app.post('/api/projects', async (req, res) => {
         const githubResponse = await fetch('https://api.github.com/user/repos', {
           method: 'POST',
           headers: {
-            'Authorization': `token ${finalToken}`,
+            'Authorization': `token ${githubToken}`,
             'Accept': 'application/vnd.github.v3+json',
             'Content-Type': 'application/json'
           },
@@ -2477,7 +2477,7 @@ async function checkModuleUpdates(bot, logs) {
       `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
       {
         headers: {
-          'Authorization': `token ${finalToken}`,
+          'Authorization': `token ${githubToken}`,
           'Accept': 'application/vnd.github.v3+json'
         }
       }
@@ -2612,7 +2612,7 @@ async function runSecurityScan(bot, logs) {
       `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
       {
         headers: {
-          'Authorization': `token ${finalToken}`,
+          'Authorization': `token ${githubToken}`,
           'Accept': 'application/vnd.github.v3+json'
         }
       }
@@ -2639,7 +2639,7 @@ async function runSecurityScan(bot, logs) {
           `https://api.github.com/repos/${owner}/${repo}/dependabot/alerts`,
           {
             headers: {
-              'Authorization': `token ${finalToken}`,
+              'Authorization': `token ${githubToken}`,
               'Accept': 'application/vnd.github.v3+json'
             }
           }
@@ -2766,7 +2766,7 @@ async function checkDependencyUpdates(bot, logs) {
       `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
       {
         headers: {
-          'Authorization': `token ${finalToken}`,
+          'Authorization': `token ${githubToken}`,
           'Accept': 'application/vnd.github.v3+json'
         }
       }
@@ -2916,7 +2916,7 @@ async function runCustomBot(bot, logs) {
         `https://api.github.com/repos/${owner}/${repo}/issues?state=open`,
         {
           headers: {
-            'Authorization': `token ${finalToken}`,
+            'Authorization': `token ${githubToken}`,
             'Accept': 'application/vnd.github.v3+json'
           }
         }
@@ -2944,7 +2944,7 @@ async function runCustomBot(bot, logs) {
         `https://api.github.com/repos/${owner}/${repo}/pulls?state=open`,
         {
           headers: {
-            'Authorization': `token ${finalToken}`,
+            'Authorization': `token ${githubToken}`,
             'Accept': 'application/vnd.github.v3+json'
           }
         }
@@ -2972,7 +2972,7 @@ async function runCustomBot(bot, logs) {
         `https://api.github.com/repos/${owner}/${repo}/releases`,
         {
           headers: {
-            'Authorization': `token ${finalToken}`,
+            'Authorization': `token ${githubToken}`,
             'Accept': 'application/vnd.github.v3+json'
           }
         }
