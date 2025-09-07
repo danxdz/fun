@@ -2218,6 +2218,13 @@ async function checkModuleUpdates(bot, logs) {
   logs.push('🔍 Checking for module updates in repository...');
   
   try {
+    // Create supabase client
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    
     // Get project details
     const { data: project, error: projectError } = await supabase
       .from('Projects')
@@ -2331,6 +2338,13 @@ async function runSecurityScan(bot, logs) {
   logs.push('🔒 Running security vulnerability scan...');
   
   try {
+    // Create supabase client
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    
     // Get project details
     const { data: project, error: projectError } = await supabase
       .from('Projects')
@@ -2463,6 +2477,13 @@ async function checkDependencyUpdates(bot, logs) {
   logs.push('🔗 Checking for dependency updates...');
   
   try {
+    // Create supabase client
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    
     // Get project details
     const { data: project, error: projectError } = await supabase
       .from('Projects')
@@ -2590,6 +2611,13 @@ async function runCustomBot(bot, logs) {
   try {
     const config = bot.configuration || {};
     logs.push(`📋 Custom configuration: ${JSON.stringify(config, null, 2)}`);
+    
+    // Create supabase client
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
     
     // Get project details
     const { data: project, error: projectError } = await supabase
