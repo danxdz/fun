@@ -99,7 +99,7 @@ const logRequest = (req, res, next) => {
 app.use(logRequest);
 
 // Encryption utilities for sensitive data
-const crypto = require('crypto');
+import crypto from 'crypto';
 
 const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || crypto.randomBytes(32).toString('hex');
 const ALGORITHM = 'aes-256-gcm';
@@ -633,7 +633,6 @@ app.get('/auth/callback', async (req, res) => {
       const supabase = createClient(supabaseUrl, supabaseKey);
       
       // Generate a UUID for the user (since GitHub ID is numeric)
-      const crypto = await import('crypto');
       const userId = crypto.randomUUID();
       
       // Generate a JWT token for our app
