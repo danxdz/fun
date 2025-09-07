@@ -2444,12 +2444,6 @@ async function checkModuleUpdates(bot, logs) {
     }
     
     const githubToken = decrypt(user.githubToken);
-    console.log('GitHub token decryption:', {
-      encrypted: user.githubToken ? 'Present' : 'Missing',
-      decrypted: githubToken ? 'Present' : 'Missing',
-      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
-      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
-    });
     
     // If decryption failed but we have a token that looks like a GitHub token, use it directly
     let finalToken = githubToken;
@@ -2457,6 +2451,13 @@ async function checkModuleUpdates(bot, logs) {
       console.log('Using raw GitHub token (decryption failed but token looks valid)');
       finalToken = user.githubToken;
     }
+    
+    console.log('GitHub token decryption:', {
+      encrypted: user.githubToken ? 'Present' : 'Missing',
+      decrypted: githubToken ? 'Present' : 'Missing',
+      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
+      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
+    });
     
     if (!finalToken) {
       throw new Error('GitHub token not available');
@@ -2578,12 +2579,6 @@ async function runSecurityScan(bot, logs) {
     }
     
     const githubToken = decrypt(user.githubToken);
-    console.log('GitHub token decryption:', {
-      encrypted: user.githubToken ? 'Present' : 'Missing',
-      decrypted: githubToken ? 'Present' : 'Missing',
-      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
-      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
-    });
     
     // If decryption failed but we have a token that looks like a GitHub token, use it directly
     let finalToken = githubToken;
@@ -2591,6 +2586,13 @@ async function runSecurityScan(bot, logs) {
       console.log('Using raw GitHub token (decryption failed but token looks valid)');
       finalToken = user.githubToken;
     }
+    
+    console.log('GitHub token decryption:', {
+      encrypted: user.githubToken ? 'Present' : 'Missing',
+      decrypted: githubToken ? 'Present' : 'Missing',
+      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
+      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
+    });
     
     if (!finalToken) {
       throw new Error('GitHub token not available');
@@ -2731,12 +2733,6 @@ async function checkDependencyUpdates(bot, logs) {
     }
     
     const githubToken = decrypt(user.githubToken);
-    console.log('GitHub token decryption:', {
-      encrypted: user.githubToken ? 'Present' : 'Missing',
-      decrypted: githubToken ? 'Present' : 'Missing',
-      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
-      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
-    });
     
     // If decryption failed but we have a token that looks like a GitHub token, use it directly
     let finalToken = githubToken;
@@ -2744,6 +2740,13 @@ async function checkDependencyUpdates(bot, logs) {
       console.log('Using raw GitHub token (decryption failed but token looks valid)');
       finalToken = user.githubToken;
     }
+    
+    console.log('GitHub token decryption:', {
+      encrypted: user.githubToken ? 'Present' : 'Missing',
+      decrypted: githubToken ? 'Present' : 'Missing',
+      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
+      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
+    });
     
     if (!finalToken) {
       throw new Error('GitHub token not available');
@@ -2871,12 +2874,6 @@ async function runCustomBot(bot, logs) {
     }
     
     const githubToken = decrypt(user.githubToken);
-    console.log('GitHub token decryption:', {
-      encrypted: user.githubToken ? 'Present' : 'Missing',
-      decrypted: githubToken ? 'Present' : 'Missing',
-      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
-      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
-    });
     
     // If decryption failed but we have a token that looks like a GitHub token, use it directly
     let finalToken = githubToken;
@@ -2884,6 +2881,13 @@ async function runCustomBot(bot, logs) {
       console.log('Using raw GitHub token (decryption failed but token looks valid)');
       finalToken = user.githubToken;
     }
+    
+    console.log('GitHub token decryption:', {
+      encrypted: user.githubToken ? 'Present' : 'Missing',
+      decrypted: githubToken ? 'Present' : 'Missing',
+      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
+      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
+    });
     
     if (!finalToken) {
       throw new Error('GitHub token not available');
