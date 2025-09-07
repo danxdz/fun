@@ -2213,15 +2213,106 @@ async function executeBotLogic(bot, botRunId, supabase) {
   return { logs, results };
 }
 
-// Module update checker
+// Module update checker - REAL IMPLEMENTATION
 async function checkModuleUpdates(bot, logs) {
-  logs.push('Simulating module update check...');
-  // TODO: Implement actual module update checking
-  // This would check package.json, requirements.txt, etc.
-  return [
-    { module: 'react', currentVersion: '18.2.0', latestVersion: '18.3.0', needsUpdate: true },
-    { module: 'axios', currentVersion: '1.4.0', latestVersion: '1.6.0', needsUpdate: true }
-  ];
+  logs.push('🔍 Checking for module updates in repository...');
+  
+  try {
+    // Get project details
+    const { data: project, error: projectError } = await supabase
+      .from('Projects')
+      .select('*')
+      .eq('id', bot.projectId)
+      .single();
+    
+    if (projectError || !project) {
+      throw new Error('Project not found');
+    }
+    
+    // Get user's GitHub token
+    const { data: user, error: userError } = await supabase
+      .from('Users')
+      .select('githubToken')
+      .eq('id', project.UserId)
+      .single();
+    
+    if (userError || !user) {
+      throw new Error('User not found');
+    }
+    
+    const githubToken = decrypt(user.githubToken);
+    if (!githubToken) {
+      throw new Error('GitHub token not available');
+    }
+    
+    // Extract repo owner and name from URL
+    const repoMatch = project.repositoryUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+    if (!repoMatch) {
+      throw new Error('Invalid GitHub repository URL');
+    }
+    
+    const [, owner, repo] = repoMatch;
+    logs.push(`📁 Analyzing repository: ${owner}/${repo}`);
+    
+    // Get package.json content
+    const packageJsonResponse = await fetch(
+      `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
+      {
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Accept': 'application/vnd.github.v3+json'
+        }
+      }
+    );
+    
+    if (!packageJsonResponse.ok) {
+      logs.push('⚠️ No package.json found or repository not accessible');
+      return [];
+    }
+    
+    const packageJsonData = await packageJsonResponse.json();
+    const packageJson = JSON.parse(Buffer.from(packageJsonData.content, 'base64').toString());
+    
+    logs.push(`📦 Found ${Object.keys(packageJson.dependencies || {}).length} dependencies`);
+    
+    const updates = [];
+    const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
+    
+    // Check each dependency for updates
+    for (const [depName, currentVersion] of Object.entries(dependencies)) {
+      try {
+        // Get latest version from npm registry
+        const npmResponse = await fetch(`https://registry.npmjs.org/${depName}`);
+        if (!npmResponse.ok) continue;
+        
+        const npmData = await npmResponse.json();
+        const latestVersion = npmData['dist-tags']?.latest;
+        
+        if (latestVersion && latestVersion !== currentVersion.replace(/[\^~]/, '')) {
+          updates.push({
+            module: depName,
+            currentVersion: currentVersion.replace(/[\^~]/, ''),
+            latestVersion: latestVersion,
+            needsUpdate: true,
+            updateType: getUpdateType(currentVersion.replace(/[\^~]/, ''), latestVersion)
+          });
+        }
+        
+        // Rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+      } catch (error) {
+        logs.push(`⚠️ Error checking ${depName}: ${error.message}`);
+      }
+    }
+    
+    logs.push(`✅ Found ${updates.length} modules that need updates`);
+    return updates;
+    
+  } catch (error) {
+    logs.push(`❌ Error checking module updates: ${error.message}`);
+    return [];
+  }
 }
 
 // Dependency update checker
