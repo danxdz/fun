@@ -107,10 +107,8 @@ const ALGORITHM = 'aes-256-gcm';
 function encrypt(text) {
   if (!text) return text;
   
-  // If ENCRYPTION_KEY is not set, return the text as-is (no encryption)
   if (!process.env.ENCRYPTION_KEY) {
-    console.log('⚠️ ENCRYPTION_KEY not set - storing data unencrypted');
-    return text;
+    throw new Error('ENCRYPTION_KEY is required for data security');
   }
   
   const iv = crypto.randomBytes(16);
@@ -128,14 +126,8 @@ function encrypt(text) {
 function decrypt(encryptedText) {
   if (!encryptedText) return encryptedText;
   
-  // If ENCRYPTION_KEY is not set, we can't decrypt properly
   if (!process.env.ENCRYPTION_KEY) {
-    console.log('⚠️ ENCRYPTION_KEY not set - cannot decrypt sensitive data');
-    // For GitHub tokens, try to return the original if it looks like a token
-    if (encryptedText.startsWith('gho_') || encryptedText.startsWith('ghp_')) {
-      return encryptedText; // Return original GitHub token
-    }
-    return ''; // Return empty for other encrypted data
+    throw new Error('ENCRYPTION_KEY is required for data security');
   }
   
   try {
@@ -3997,7 +3989,10 @@ app.listen(PORT, '0.0.0.0', () => {
   
   // Check for critical environment variables
   if (!process.env.ENCRYPTION_KEY) {
-    console.log('⚠️ WARNING: ENCRYPTION_KEY not set - bot functionality may be limited');
+    console.log('🚨 CRITICAL: ENCRYPTION_KEY not set - sensitive data will not be encrypted!');
+    console.log('🔐 Please set ENCRYPTION_KEY environment variable for data security');
+  } else {
+    console.log('🔐 ENCRYPTION_KEY is configured - sensitive data is encrypted');
   }
   
   // Initialize bot states on startup (non-blocking)
