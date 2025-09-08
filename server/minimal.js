@@ -827,7 +827,8 @@ app.get('/auth/callback', async (req, res) => {
         { expiresIn: '7d' }
       );
       
-      // Save user to database (encrypt sensitive data)
+      // Save user to database (encrypt sensitive data with expiration)
+      const tokenExpiration = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
       const userData = {
         id: userId,
         email: userEmail,
@@ -836,6 +837,8 @@ app.get('/auth/callback', async (req, res) => {
         githubUsername: githubUser.login,
         githubAvatar: githubUser.avatar_url,
         githubToken: encrypt(githubToken), // 🔒 ENCRYPTED GitHub token
+        tokenExpiresAt: tokenExpiration.toISOString(), // ⏰ Token expires in 24 hours
+        tokenCreatedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
 
@@ -1629,8 +1632,16 @@ app.put('/api/user/profile', async (req, res) => {
     if (lastName !== undefined) updateData.lastName = lastName;
     if (githubUsername !== undefined) updateData.githubUsername = githubUsername;
     if (githubAvatar !== undefined) updateData.githubAvatar = githubAvatar;
-    if (cursorApiKey !== undefined) updateData.cursorApiKey = encrypt(cursorApiKey); // 🔒 ENCRYPTED
-    if (githubToken !== undefined) updateData.githubToken = encrypt(githubToken); // 🔒 ENCRYPTED
+    if (cursorApiKey !== undefined) {
+      updateData.cursorApiKey = encrypt(cursorApiKey); // 🔒 ENCRYPTED
+      updateData.cursorApiKeyExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
+      updateData.cursorApiKeyCreatedAt = new Date().toISOString();
+    }
+    if (githubToken !== undefined) {
+      updateData.githubToken = encrypt(githubToken); // 🔒 ENCRYPTED
+      updateData.tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
+      updateData.tokenCreatedAt = new Date().toISOString();
+    }
     if (preferences !== undefined) updateData.preferences = preferences;
 
     // Use upsert instead of update to handle case where user doesn't exist yet
@@ -2385,6 +2396,13 @@ app.post('/api/bots/:id/execute', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// Helper function to check token expiration
+function checkTokenExpiration(tokenExpiresAt, tokenType = 'GitHub token') {
+  if (tokenExpiresAt && new Date(tokenExpiresAt) < new Date()) {
+    throw new Error(`${tokenType} has expired. Please re-authenticate.`);
+  }
+}
 
 // Bot execution logic function
 async function executeBotLogic(bot, botRunId, supabase) {
