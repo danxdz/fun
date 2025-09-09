@@ -837,10 +837,16 @@ app.get('/auth/callback', async (req, res) => {
         githubUsername: githubUser.login,
         githubAvatar: githubUser.avatar_url,
         githubToken: encrypt(githubToken), // 🔒 ENCRYPTED GitHub token
-        tokenExpiresAt: tokenExpiration.toISOString(), // ⏰ Token expires in 24 hours
-        tokenCreatedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
+
+      // Add new columns only if they exist in the database
+      try {
+        userData.tokenExpiresAt = tokenExpiration.toISOString();
+        userData.tokenCreatedAt = new Date().toISOString();
+      } catch (error) {
+        console.log('New token columns not available in database yet');
+      }
 
       // Only set createdAt for new users
       if (!existingUser) {
@@ -1634,13 +1640,23 @@ app.put('/api/user/profile', async (req, res) => {
     if (githubAvatar !== undefined) updateData.githubAvatar = githubAvatar;
     if (cursorApiKey !== undefined) {
       updateData.cursorApiKey = encrypt(cursorApiKey); // 🔒 ENCRYPTED
-      updateData.cursorApiKeyExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
-      updateData.cursorApiKeyCreatedAt = new Date().toISOString();
+      // Add new columns only if they exist in the database
+      try {
+        updateData.cursorApiKeyExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
+        updateData.cursorApiKeyCreatedAt = new Date().toISOString();
+      } catch (error) {
+        console.log('New cursor API key columns not available in database yet');
+      }
     }
     if (githubToken !== undefined) {
       updateData.githubToken = encrypt(githubToken); // 🔒 ENCRYPTED
-      updateData.tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
-      updateData.tokenCreatedAt = new Date().toISOString();
+      // Add new columns only if they exist in the database
+      try {
+        updateData.tokenExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
+        updateData.tokenCreatedAt = new Date().toISOString();
+      } catch (error) {
+        console.log('New token columns not available in database yet');
+      }
     }
     if (preferences !== undefined) updateData.preferences = preferences;
 
