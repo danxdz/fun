@@ -369,6 +369,55 @@ app.get('/debug/token', async (req, res) => {
   }
 });
 
+// Database migration endpoint
+app.post('/api/admin/migrate-database', async (req, res) => {
+  try {
+    const { action } = req.body;
+    
+    if (action === 'add_token_columns') {
+      const supabaseUrl = process.env.SUPABASE_URL;
+      const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+      
+      if (!supabaseUrl || !supabaseKey) {
+        return res.status(500).json({ error: 'Database configuration missing' });
+      }
+      
+      const { createClient } = await import('@supabase/supabase-js');
+      const supabase = createClient(supabaseUrl, supabaseKey);
+      
+      // Add token expiration columns
+      const migrations = [
+        'ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "tokenExpiresAt" TIMESTAMP WITH TIME ZONE',
+        'ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "tokenCreatedAt" TIMESTAMP WITH TIME ZONE',
+        'ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "cursorApiKeyExpiresAt" TIMESTAMP WITH TIME ZONE',
+        'ALTER TABLE "Users" ADD COLUMN IF NOT EXISTS "cursorApiKeyCreatedAt" TIMESTAMP WITH TIME ZONE',
+        'ALTER TABLE "Projects" ADD COLUMN IF NOT EXISTS "accessTokenExpiresAt" TIMESTAMP WITH TIME ZONE',
+        'ALTER TABLE "Projects" ADD COLUMN IF NOT EXISTS "accessTokenCreatedAt" TIMESTAMP WITH TIME ZONE'
+      ];
+      
+      let successCount = 0;
+      let errorCount = 0;
+      
+      // For Supabase, we need to use the SQL editor or direct connection
+      // This is a simplified approach - in production, use proper migration tools
+      res.json({
+        message: 'Database migration instructions',
+        action: 'add_token_columns',
+        instructions: 'Run these SQL commands in your Supabase SQL editor:',
+        migrations: migrations,
+        note: 'Copy and paste these commands into Supabase SQL editor to add the required columns'
+      });
+      
+    } else {
+      res.status(400).json({ error: 'Unknown migration action' });
+    }
+    
+  } catch (error) {
+    console.error('Migration error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Admin endpoint to encrypt existing sensitive data
 app.post('/api/admin/encrypt-existing-data', async (req, res) => {
   try {
