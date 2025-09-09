@@ -333,7 +333,8 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// Debug endpoint to check token decryption
+// Debug endpoint to check token decryption (PRODUCTION DISABLED)
+if (process.env.NODE_ENV !== 'production') {
 app.get('/debug/token', async (req, res) => {
   try {
     const { createClient } = await import('@supabase/supabase-js');
@@ -368,6 +369,7 @@ app.get('/debug/token', async (req, res) => {
     res.json({ error: error.message });
   }
 });
+} // End production check
 
 // Database migration endpoint
 app.post('/api/admin/migrate-database', async (req, res) => {
@@ -414,6 +416,124 @@ app.post('/api/admin/migrate-database', async (req, res) => {
     
   } catch (error) {
     console.error('Migration error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Token monitoring endpoint (Admin only)
+app.get('/api/admin/token-status', async (req, res) => {
+  // Check for admin authentication
+  const authHeader = req.headers.authorization;
+  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    return res.status(401).json({ error: 'Admin authentication required' });
+  }
+  
+  const token = authHeader.replace('Bearer ', '');
+  try {
+    const decoded = jwt.default.verify(token, process.env.JWT_SECRET);
+    // Add admin role check here if needed
+  } catch (error) {
+    return res.status(401).json({ error: 'Invalid admin token' });
+  }
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    
+    // Get token statistics
+    const { data: users, error: usersError } = await supabase
+      .from('Users')
+      .select('githubToken, cursorApiKey, tokenExpiresAt, cursorApiKeyExpiresAt');
+    
+    if (usersError) {
+      throw new Error('Failed to fetch user data');
+    }
+    
+    const stats = {
+      totalUsers: users.length,
+      usersWithGithubTokens: users.filter(u => u.githubToken && u.githubToken !== '').length,
+      usersWithCursorKeys: users.filter(u => u.cursorApiKey && u.cursorApiKey !== '').length,
+      expiredGithubTokens: users.filter(u => u.tokenExpiresAt && new Date(u.tokenExpiresAt) < new Date()).length,
+      expiredCursorKeys: users.filter(u => u.cursorApiKeyExpiresAt && new Date(u.cursorApiKeyExpiresAt) < new Date()).length,
+      githubTokensExpiringSoon: users.filter(u => {
+        if (!u.tokenExpiresAt) return false;
+        const expiresAt = new Date(u.tokenExpiresAt);
+        const oneHourFromNow = new Date(Date.now() + 60 * 60 * 1000);
+        return expiresAt > new Date() && expiresAt < oneHourFromNow;
+      }).length,
+      cursorKeysExpiringSoon: users.filter(u => {
+        if (!u.cursorApiKeyExpiresAt) return false;
+        const expiresAt = new Date(u.cursorApiKeyExpiresAt);
+        const oneHourFromNow = new Date(Date.now() + 60 * 60 * 1000);
+        return expiresAt > new Date() && expiresAt < oneHourFromNow;
+      }).length
+    };
+    
+    res.json({
+      timestamp: new Date().toISOString(),
+      statistics: stats,
+      recommendations: {
+        cleanupNeeded: stats.expiredGithubTokens > 0 || stats.expiredCursorKeys > 0,
+        attentionNeeded: stats.githubTokensExpiringSoon > 0 || stats.cursorKeysExpiringSoon > 0
+      }
+    });
+    
+  } catch (error) {
+    console.error('Token status error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Token cleanup endpoint
+app.post('/api/admin/cleanup-expired-tokens', async (req, res) => {
+  try {
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    
+    // Clean up expired GitHub tokens
+    const { data: githubCleaned, error: githubError } = await supabase
+      .from('Users')
+      .update({ 
+        githubToken: null, 
+        tokenExpiresAt: null,
+        updatedAt: new Date().toISOString()
+      })
+      .lt('tokenExpiresAt', new Date().toISOString())
+      .not('githubToken', 'is', null);
+    
+    if (githubError) {
+      console.error('Error cleaning up GitHub tokens:', githubError);
+    }
+    
+    // Clean up expired Cursor API keys
+    const { data: cursorCleaned, error: cursorError } = await supabase
+      .from('Users')
+      .update({ 
+        cursorApiKey: null, 
+        cursorApiKeyExpiresAt: null,
+        updatedAt: new Date().toISOString()
+      })
+      .lt('cursorApiKeyExpiresAt', new Date().toISOString())
+      .not('cursorApiKey', 'is', null);
+    
+    if (cursorError) {
+      console.error('Error cleaning up Cursor API keys:', cursorError);
+    }
+    
+    res.json({
+      message: 'Token cleanup completed',
+      githubTokensCleaned: githubCleaned?.length || 0,
+      cursorKeysCleaned: cursorCleaned?.length || 0,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Token cleanup error:', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -830,7 +950,9 @@ app.get('/auth/callback', async (req, res) => {
       }
       
       const githubToken = tokenData.access_token;
-      console.log('GitHub token obtained:', githubToken.substring(0, 10) + '...');
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('GitHub token obtained:', githubToken.substring(0, 10) + '...');
+      }
       
       // Get GitHub user info
       const userResponse = await fetch('https://api.github.com/user', {
@@ -2569,12 +2691,14 @@ async function checkModuleUpdates(bot, logs) {
       finalToken = user.githubToken;
     }
     
-    console.log('GitHub token decryption:', {
-      encrypted: user.githubToken ? 'Present' : 'Missing',
-      decrypted: githubToken ? 'Present' : 'Missing',
-      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
-      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('GitHub token decryption:', {
+        encrypted: user.githubToken ? 'Present' : 'Missing',
+        decrypted: githubToken ? 'Present' : 'Missing',
+        tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
+        rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
+      });
+    }
     
     if (!finalToken) {
       throw new Error('GitHub token not available');
@@ -2704,12 +2828,14 @@ async function runSecurityScan(bot, logs) {
       finalToken = user.githubToken;
     }
     
-    console.log('GitHub token decryption:', {
-      encrypted: user.githubToken ? 'Present' : 'Missing',
-      decrypted: githubToken ? 'Present' : 'Missing',
-      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
-      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('GitHub token decryption:', {
+        encrypted: user.githubToken ? 'Present' : 'Missing',
+        decrypted: githubToken ? 'Present' : 'Missing',
+        tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
+        rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
+      });
+    }
     
     if (!finalToken) {
       throw new Error('GitHub token not available');
@@ -2858,12 +2984,14 @@ async function checkDependencyUpdates(bot, logs) {
       finalToken = user.githubToken;
     }
     
-    console.log('GitHub token decryption:', {
-      encrypted: user.githubToken ? 'Present' : 'Missing',
-      decrypted: githubToken ? 'Present' : 'Missing',
-      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
-      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('GitHub token decryption:', {
+        encrypted: user.githubToken ? 'Present' : 'Missing',
+        decrypted: githubToken ? 'Present' : 'Missing',
+        tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
+        rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
+      });
+    }
     
     if (!finalToken) {
       throw new Error('GitHub token not available');
@@ -2999,12 +3127,14 @@ async function runCustomBot(bot, logs) {
       finalToken = user.githubToken;
     }
     
-    console.log('GitHub token decryption:', {
-      encrypted: user.githubToken ? 'Present' : 'Missing',
-      decrypted: githubToken ? 'Present' : 'Missing',
-      tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
-      rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
-    });
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('GitHub token decryption:', {
+        encrypted: user.githubToken ? 'Present' : 'Missing',
+        decrypted: githubToken ? 'Present' : 'Missing',
+        tokenPreview: finalToken ? finalToken.substring(0, 10) + '...' : 'None',
+        rawToken: user.githubToken ? user.githubToken.substring(0, 20) + '...' : 'None'
+      });
+    }
     
     if (!finalToken) {
       throw new Error('GitHub token not available');
