@@ -2506,10 +2506,17 @@ app.post('/api/bots/:id/execute', async (req, res) => {
       })
       .eq('id', id);
     
-    // Execute bot logic based on type
+    // Execute bot logic based on type with timeout
     try {
       console.log(`Executing bot ${bot.name} (${bot.type}) for project ${bot.Projects.name}`);
-      const executionResult = await executeBotLogic(bot, botRun.id, supabase);
+      
+      // Set a timeout for the entire bot execution (6 minutes)
+      const executionPromise = executeBotLogic(bot, botRun.id, supabase);
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Bot execution timed out after 6 minutes')), 6 * 60 * 1000);
+      });
+      
+      const executionResult = await Promise.race([executionPromise, timeoutPromise]);
       console.log(`Bot execution completed:`, executionResult);
       
       // Update bot run with results
@@ -2591,10 +2598,14 @@ function checkTokenExpiration(tokenExpiresAt, tokenType = 'GitHub token') {
   }
 }
 
-// Bot execution logic function
+// Bot execution logic function with timeout handling
 async function executeBotLogic(bot, botRunId, supabase) {
   const logs = [`Starting ${bot.type} bot execution`];
   const results = {};
+  
+  // Set execution timeout (5 minutes)
+  const executionTimeout = 5 * 60 * 1000; // 5 minutes
+  const startTime = Date.now();
   
   try {
     switch (bot.type) {
@@ -2638,10 +2649,25 @@ async function executeBotLogic(bot, botRunId, supabase) {
         throw new Error(`Unknown bot type: ${bot.type}`);
     }
     
-    logs.push('Bot execution completed successfully');
+    // Check execution time
+    const executionTime = Date.now() - startTime;
+    logs.push(`Bot execution completed successfully in ${executionTime}ms`);
+    
+    // Check if we're approaching timeout
+    if (executionTime > executionTimeout * 0.8) {
+      logs.push(`⚠️ Warning: Bot execution took ${executionTime}ms (approaching timeout)`);
+    }
     
   } catch (error) {
-    logs.push(`Error during execution: ${error.message}`);
+    const executionTime = Date.now() - startTime;
+    logs.push(`Error during execution after ${executionTime}ms: ${error.message}`);
+    
+    // Check if it was a timeout
+    if (executionTime >= executionTimeout) {
+      logs.push(`❌ Bot execution timed out after ${executionTime}ms`);
+      throw new Error(`Bot execution timed out after ${executionTime}ms`);
+    }
+    
     throw error;
   }
   
@@ -2737,8 +2763,16 @@ async function checkModuleUpdates(bot, logs) {
     const updates = [];
     const dependencies = { ...packageJson.dependencies, ...packageJson.devDependencies };
     
-    // Check each dependency for updates
-    for (const [depName, currentVersion] of Object.entries(dependencies)) {
+    // Check each dependency for updates (limit to prevent timeouts)
+    const dependencyEntries = Object.entries(dependencies);
+    const maxDependencies = 50; // Limit to prevent timeouts
+    const limitedDependencies = dependencyEntries.slice(0, maxDependencies);
+    
+    if (dependencyEntries.length > maxDependencies) {
+      logs.push(`⚠️ Limiting dependency check to ${maxDependencies} out of ${dependencyEntries.length} dependencies to prevent timeout`);
+    }
+    
+    for (const [depName, currentVersion] of limitedDependencies) {
       try {
         // Get latest version from npm registry
         const npmResponse = await fetch(`https://registry.npmjs.org/${depName}`);
@@ -2757,8 +2791,8 @@ async function checkModuleUpdates(bot, logs) {
           });
         }
         
-        // Rate limiting
-        await new Promise(resolve => setTimeout(resolve, 100));
+        // Rate limiting (reduced to prevent timeouts)
+        await new Promise(resolve => setTimeout(resolve, 50));
         
       } catch (error) {
         logs.push(`⚠️ Error checking ${depName}: ${error.message}`);
@@ -2924,8 +2958,8 @@ async function runSecurityScan(bot, logs) {
           }
         }
         
-        // Rate limiting
-        await new Promise(resolve => setTimeout(resolve, 200));
+        // Rate limiting (reduced to prevent timeouts)
+        await new Promise(resolve => setTimeout(resolve, 100));
         
       } catch (error) {
         logs.push(`⚠️ Error checking ${depName} for vulnerabilities: ${error.message}`);
@@ -3058,8 +3092,8 @@ async function checkDependencyUpdates(bot, logs) {
           });
         }
         
-        // Rate limiting
-        await new Promise(resolve => setTimeout(resolve, 150));
+        // Rate limiting (reduced to prevent timeouts)
+        await new Promise(resolve => setTimeout(resolve, 75));
         
       } catch (error) {
         logs.push(`⚠️ Error checking ${depName}: ${error.message}`);
